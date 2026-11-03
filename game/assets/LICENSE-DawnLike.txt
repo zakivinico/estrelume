@@ -1,0 +1,3 @@
+DawnLike 16x16 Universal Rogue-like tileset v1.81 by DragonDePlatino, palette by DawnBringer.
+License: CC-BY 4.0 (https://opengameart.org/content/dawnlike-16x16-universal-rogue-like-tileset-v181)
+Obtained via https://github.com/MattConrad/DawnLikeUpscaled (orig16by16).
