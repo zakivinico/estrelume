@@ -1481,7 +1481,7 @@ function attachHead(obj, mixer, id) {
   if (obj.userData.acc) { if (obj.userData.acc.parent) obj.userData.acc.parent.remove(obj.userData.acc); obj.userData.acc = null; }
   if (!id.startsWith('__hair__')) obj.traverse((n) => { if (/(_Hat|_Helmet|_Hood)$/.test(n.name || '')) n.visible = /_Hood$/.test(n.name) ? id === 'none' : false; });
   if (!id || id === 'none') return; let head = null, hm = null;
-  obj.traverse((n) => { if (n.name === 'head' && !head) head = n; if (n.isMesh && /_Head$/.test(n.name || '')) hm = n; });
+  obj.traverse((n) => { if (n.name === 'head' && !head) head = n; if (n.isMesh && /_Head(_Hooded)?$/.test(n.name || '')) hm = n; });
   if (!head || !hm) return; obj.updateMatrixWorld(true);
   const b = new THREE.Box3().setFromObject(hm, true), top = new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y - (b.max.y - b.min.y) * 0.08, (b.min.z + b.max.z) / 2);
   const g = makeAcc(id), ws = head.getWorldScale(new THREE.Vector3()).x, f = Math.max(0.2, b.max.x - b.min.x) / 0.62;
@@ -1600,7 +1600,22 @@ function deliverNpc(n) {
 }
 
 /* =================== minha fazenda (personalizável) =================== */
-function makeScarecrow() { const g = new THREE.Group(), wood = lam('#8a5a3b'); const p = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.5, 6), wood); p.position.y = 0.75; const a = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.0, 6), wood); a.rotation.z = Math.PI / 2; a.position.y = 1.05; const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 0.55, 8), lam('#79b8ce')); body.position.y = 0.95; const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), lam('#ecc76e')); head.position.y = 1.42; const patch = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.02), lam('#e0394c')); patch.position.set(0.08, 0.9, 0.25); [p, a, body, head, patch].forEach((m) => { m.castShadow = true; g.add(m); }); const hat = makeAcc('palha'); hat.position.y = 1.52; hat.scale.setScalar(0.8); g.add(hat); return g; }
+function makeScarecrow() {
+  const g = new THREE.Group(), wood = lam('#8a5a3b'), straw = lam('#f0c95a'), sack = pmat('#e8cf9c', 'vichy', 0.6), shirt = pmat('#e25a6a', 'xadrez', 1.2), pants = pmat('#6fa8dc', 'lisa', 1), ink = lam('#3a2d4a');
+  const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.castShadow = true; o.receiveShadow = true; g.add(o); return o; };
+  add(new THREE.BoxGeometry(0.09, 1.55, 0.09), wood, 0, 0.78, -0.02); add(new THREE.BoxGeometry(1.05, 0.08, 0.08), wood, 0, 1.12, -0.02);
+  add(new THREE.BoxGeometry(0.42, 0.24, 0.26), pants, 0, 0.62, 0); for (const sx of [-1, 1]) add(new THREE.BoxGeometry(0.17, 0.32, 0.2), pants, sx * 0.11, 0.38, 0);
+  for (const sx of [-1, 1]) { add(new THREE.BoxGeometry(0.06, 0.32, 0.04), pants, sx * 0.13, 0.86, 0.13); for (let k = 0; k < 4; k++) add(new THREE.ConeGeometry(0.03, 0.16, 4), straw, sx * (0.07 + k * 0.03), 0.17, 0.02 * k, Math.PI, 0, (k - 1.5) * 0.25); }
+  add(new THREE.BoxGeometry(0.48, 0.42, 0.3), shirt, 0, 0.92, 0); add(new THREE.BoxGeometry(0.98, 0.17, 0.2), shirt, 0, 1.08, 0);
+  for (const sx of [-1, 1]) for (let k = 0; k < 5; k++) add(new THREE.ConeGeometry(0.035, 0.2, 4), straw, sx * (0.56 + (k % 2) * 0.03), 1.08 + (k - 2) * 0.035, (k - 2) * 0.02, 0, 0, sx * (Math.PI / 2 + (k - 2) * 0.25));
+  add(new THREE.BoxGeometry(0.12, 0.12, 0.02), pmat('#7fe0b0', 'listras', 0.5), 0.12, 0.84, 0.16);
+  const head = add(new THREE.SphereGeometry(0.24, 14, 10), sack, 0, 1.43, 0); head.scale.set(1, 0.95, 0.92); add(new THREE.CylinderGeometry(0.07, 0.11, 0.08, 8), lam('#c9a06a'), 0, 1.22, 0);
+  for (const sx of [-1, 1]) { add(new THREE.CylinderGeometry(0.045, 0.045, 0.02, 10), ink, sx * 0.09, 1.47, 0.215, Math.PI / 2); add(new THREE.SphereGeometry(0.035, 8, 6), lam('#ff9db8'), sx * 0.15, 1.38, 0.19); }
+  const sm = add(new THREE.TorusGeometry(0.07, 0.013, 6, 12, Math.PI), ink, 0, 1.39, 0.215, 0, 0, Math.PI); for (let k = -2; k <= 2; k++) add(new THREE.BoxGeometry(0.008, 0.03, 0.01), ink, k * 0.03, 1.355 - Math.abs(k) * -0.006, 0.225);
+  const hat = makeAcc('palha'); hat.position.set(0, 1.6, 0); hat.rotation.z = 0.12; hat.scale.setScalar(0.95); g.add(hat);
+  // passarinho amigo no braço
+  const bird = new THREE.Group(); const bm = lam('#7cc4ff'); const bb = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), bm); bb.scale.set(1, 0.9, 1.2); bird.add(bb); const bh = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), bm); bh.position.set(0, 0.07, 0.07); bird.add(bh); const bk = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.05, 4), lam('#ffd45a')); bk.rotation.x = Math.PI / 2; bk.position.set(0, 0.07, 0.13); bird.add(bk); for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.012, 6, 4), ink); e.position.set(sx * 0.03, 0.09, 0.11); bird.add(e); } bird.position.set(0.42, 1.24, 0); bird.rotation.y = -0.5; bird.userData.bird = 1; g.add(bird);
+  return g; }
 function makeUmbrella() { const g = new THREE.Group(); const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.8, 6), lam('#ffffff')); pole.position.y = 0.9; g.add(pole); for (let i = 0; i < 8; i++) { const seg = new THREE.Mesh(new THREE.ConeGeometry(0.9, 0.35, 8, 1, true, (i / 8) * Math.PI * 2, Math.PI / 4), new THREE.MeshLambertMaterial({ color: i % 2 ? '#ffffff' : '#e0394c', side: THREE.DoubleSide })); seg.position.y = 1.85; seg.castShadow = true; g.add(seg); } const towel = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.02, 1.2), lam('#79b8ff')); towel.position.set(0.55, 0.01, 0.3); g.add(towel); return g; }
 function makePalm(x, z, ry) { const g = new THREE.Group(), tr = lam('#a77a4c'), lf = lam('#4fa34a'); let px = 0, py = 0; for (let i = 0; i < 6; i++) { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.09 - i * 0.006, 0.11 - i * 0.006, 0.46, 7), tr); px += 0.04 + i * 0.012; py += 0.42; s.position.set(px, py - 0.2, 0); s.rotation.z = -0.1 - i * 0.03; s.castShadow = true; g.add(s); }
   for (let i = 0; i < 7; i++) { const pv = new THREE.Group(); pv.position.set(px, py, 0); pv.rotation.y = (i / 7) * Math.PI * 2; const l = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 6), lf); l.scale.set(1, 0.07, 0.26); l.position.x = 0.45; l.rotation.z = -0.4; l.castShadow = true; pv.add(l); g.add(pv); }
@@ -1992,12 +2007,13 @@ function openCreator_v13(fromTitle) {
   if (!crLook) { crModel = null; crGender = S.gender || 'f'; crLook = Object.assign({}, fromTitle ? { tint: 'orig', acc: 'none', trail: 'none', hc: 'castanho', hs: 'none', sk: 'orig' } : lookFull()); crName = fromTitle ? '' : S.name || ''; crTab = 'corpo'; }
   const chips = (obj, key, cat, cur, sw) => Object.entries(obj).map(([k, v]) => { const own = fromTitle ? (WARD_FREE[cat] || []).includes(k) || cat === 'sk' : owns(cat, k); return `<button class="btn chip ${cur === k ? 'on' : ''} ${own ? '' : 'locked'}" data-${key}="${k}" ${own ? '' : `title="Compre no Ateliê da Fifi"`}>${sw ? `<i style="background:${sw(v)}"></i>` : v.e ? v.e + ' ' : ''}${v.n}${own ? '' : ' 🔒'}</button>`; }).join('');
   const outs = [[genderBase(), 'Básica'], ...OUTFITS.filter((o) => S.outfits[o.id]).map((o) => [o.id, o.n])];
-  const tabs = { corpo: '🧑 Corpo', rosto: '😊 Rosto', cabelo: '💇 Cabelo', roupa: '👗 Roupa', estilo: '✨ Estilo' };
+  const tabs = { corpo: '🧑 Corpo', rosto: '😊 Rosto', cabelo: '💇 Cabelo', roupa: '👗 Roupa', acess: '🎀 Acessórios', estilo: '✨ Estilo' };
   let body = '';
   if (crTab === 'corpo') body = `${modelChips(crModel || (fromTitle ? (crGender === 'm' ? 'knight' : 'rogue') : S.outfit || genderBase()))}<div class="crl">Tom de pele</div><div class="chips">${chips(SKINS, 'sk', 'sk', crLook.sk, (v) => v.c || '#f4c29b')}${cpick('sk', crLook.sk)}</div>`;
   if (crTab === 'cabelo') body = hairTab(crLook, chips);
   if (crTab === 'roupa') body = `${fromTitle ? '' : `<div class="crl">Roupa</div><div class="chips">${outs.map(([k, n]) => `<button class="btn chip ${(S.outfit || genderBase()) === k ? 'on' : ''}" data-ou="${k}">${n}</button>`).join('')}</div>`}<div class="crl">Cor da roupa</div><div class="chips">${chips(CLOTH, 'cl', 'cl', crLook.tint, (v) => v.c || '#3f9a4a')}${cpick('cl', crLook.tint)}</div><div class="crl">Acessório</div><div class="chips">${chips(ACCS, 'ac', 'ac', crLook.acc)}</div>`;
   if (crTab === 'rosto') body = faceTab(crLook);
+  if (crTab === 'acess') body = accTab(crLook, fromTitle);
   if (crTab === 'estilo') body = `<div class="crl">Rastro ao andar</div><div class="chips">${chips(TRAILS, 'tr', 'tr', crLook.trail)}</div>`;
   openModal(`<h2>👤 ${fromTitle ? 'Crie sua personagem' : 'Personagem'}</h2><div class="cr"><div class="cr3d" id="cr3d"></div><div class="crf">
    <label class="crl">Nome <input id="crName" maxlength="14" value="${escapeHtml(crName)}" placeholder="Como você se chama?"></label>
@@ -2011,7 +2027,7 @@ function openCreator_v13(fromTitle) {
   document.querySelectorAll('[data-ct]').forEach((el) => (el.onclick = () => { crTab = el.dataset.ct; sfx('switch'); openCreator(fromTitle); }));
   for (const [attr, cat, k] of [['sk', 'sk', 'sk'], ['hc', 'hc', 'hc'], ['hs', 'hs', 'hs'], ['cl', 'cl', 'tint'], ['ac', 'ac', 'acc'], ['tr', 'tr', 'trail'], ['fc', 'fc', 'fc'], ['gl', 'gl', 'gl'], ['sz', 'sz', 'sz'], ['hd', 'hd', 'hd'], ['hm', 'hm', 'hm'], ['hv', 'hv', 'hv']]) document.querySelectorAll(`[data-${attr}]`).forEach((el) => (el.onclick = () => set(cat, k, el.dataset[attr], el)));
   document.querySelectorAll('[data-md]').forEach((el) => (el.onclick = () => { const k = el.dataset.md; sfx('accept'); if (k === 'rogue' || k === 'knight') { crGender = k === 'knight' ? 'm' : 'f'; crModel = null; } else crModel = k; if (!fromTitle) { S.gender = crGender; S.outfit = crModel; setOutfit(true); } openCreator(fromTitle); setTimeout(scPower, 60); }));
-  document.querySelectorAll('[data-cp]').forEach((el) => { el.onclick = (e) => e.stopPropagation(); el.onchange = () => { const k = { sk: 'sk', hc: 'hc', cl: 'tint' }[el.dataset.cp]; crLook[k] = el.value; sfx('accept'); openCreator(fromTitle); setTimeout(scPower, 60); }; });
+  document.querySelectorAll('[data-cp]').forEach((el) => { el.onclick = (e) => e.stopPropagation(); el.onchange = () => { const k = { sk: 'sk', hc: 'hc', cl: 'tint' }[el.dataset.cp] || el.dataset.cp; crLook[k] = el.value; sfx('accept'); openCreator(fromTitle); setTimeout(scPower, 60); }; });
   document.querySelectorAll('[data-ou]').forEach((el) => (el.onclick = () => { S.outfit = el.dataset.ou === 'rogue' ? null : el.dataset.ou; sfx('accept'); setOutfit(true); openCreator(fromTitle); }));
   $('crOk').onclick = () => { const nm = (crName || '').trim().slice(0, 14) || 'Estrela', lk = crLook; crLook = null; closeModal(); if (fromTitle) startFrom(null); S.name = nm; S.look = lk; S.gender = crGender; if (crModel) S.outfit = crModel; else if (fromTitle) S.outfit = null; crModel = null; setOutfit(true); lastHud = ''; hud(); sfx('quest'); if (!fromTitle) toast(`✨ Visual salvo, ${escapeHtml(nm)}!`); else playIntro(); };
 }
@@ -3019,7 +3035,7 @@ function analyzeChar(obj, key) {
   if (CHARMAP[key]) return CHARMAP[key]; let img = null; const parts = {};
   obj.updateMatrixWorld(true);
   obj.traverse((m) => { if (!m.isMesh || !m.material || !m.material.map) return; const nm = (m.name || '') + ' ' + ((m.parent && m.parent.name) || ''); const t0 = (m.material.userData && m.material.userData.map0) || m.material.map; if (!img && t0.image) img = t0.image;
-    const part = /_Head\b/.test(nm) ? 'head' : /_Arm(Left|Right)\b/.test(nm) ? 'arm' : /_(Body|Cape|Leg(Left|Right))\b/.test(nm) ? 'body' : null; if (!part) return;
+    const part = /_Head(\b|_)/.test(nm) ? 'head' : /_Arm(Left|Right)\b/.test(nm) ? 'arm' : /_(Body|Cape|Leg(Left|Right))\b/.test(nm) ? 'body' : null; if (!part) return;
     const g = m.geometry, uv = g.attributes.uv, pos = g.attributes.position; if (!uv) return; g.computeBoundingBox(); const bb = g.boundingBox, hgt = bb.max.y - bb.min.y || 1, dep = bb.max.z - bb.min.z || 1;
     const P = (parts[part] = parts[part] || { all: {}, top: {}, face: {} });
     for (let i = 0; i < uv.count; i++) { const [cx, cy] = cellOfUV(uv.getX(i), uv.getY(i)), k = cx + ',' + cy; P.all[k] = (P.all[k] || 0) + 1; const y = (pos.getY(i) - bb.min.y) / hgt, z = (pos.getZ(i) - bb.min.z) / dep;
@@ -3045,10 +3061,10 @@ function remapTex(t0, A, key, { hair, skin, cloth }) {
   paintCells(A, id.data, A.hair, hair); paintCells(A, id.data, A.skin, skin); paintCells(A, id.data, A.cloth, cloth); x.putImageData(id, 0, 0);
   const t = new THREE.CanvasTexture(c); t.flipY = t0.flipY; t.colorSpace = t0.colorSpace; t.wrapS = t0.wrapS; t.wrapT = t0.wrapT; t.magFilter = t0.magFilter; t.minFilter = t0.minFilter; t.generateMipmaps = true; t.anisotropy = 4; return (REMAP[k] = t);
 }
-function applyLook(obj, look) {
+function applyLook_v15(obj, look) {
   const lk = Object.assign({ tint: 'orig', acc: 'none', hc: 'castanho', hs: 'none', sk: 'orig' }, look || {}); applyCloth(obj, 'orig'); attachHead(obj, null, lk.acc); if (String(obj.userData.ck || '').startsWith('h_')) return;
   const key = obj.userData.ck || 'x', A = analyzeChar(obj, key); const hc = lookCol(HAIRC, lk.hc), sk = lookCol(SKINS, lk.sk), cl = lk.tint !== 'orig' ? lookCol(CLOTH, lk.tint) || null : null;
-  if (A) obj.traverse((m) => { if (!m.isMesh || !m.material || !m.material.map) return; const nm = (m.name || '') + ' ' + ((m.parent && m.parent.name) || ''); const head = /_Head\b/.test(nm), arm = /_Arm(Left|Right)\b/.test(nm), body = /_(Body|Cape|Leg(Left|Right))\b/.test(nm); if (!head && !arm && !body) return;
+  if (A) obj.traverse((m) => { if (!m.isMesh || !m.material || !m.material.map) return; const nm = (m.name || '') + ' ' + ((m.parent && m.parent.name) || ''); const head = /_Head(\b|_)/.test(nm), arm = /_Arm(Left|Right)\b/.test(nm), body = /_(Body|Cape|Leg(Left|Right))\b/.test(nm); if (!head && !arm && !body) return;
     if (!m.userData.own && !m.userData.own2) { m.material = m.material.clone(); m.userData.own2 = true; } const mt = m.material; if (!mt.userData.map0) mt.userData.map0 = mt.map;
     mt.map = remapTex(mt.userData.map0, A, key + (head ? 'H' : arm ? 'A' : 'B'), { hair: head ? hc : null, skin: head || arm ? sk : null, cloth: body || arm ? cl : null }); mt.needsUpdate = true; });
   if (obj.userData.hair) { if (obj.userData.hair.parent) obj.userData.hair.parent.remove(obj.userData.hair); obj.userData.hair = null; }
@@ -3613,7 +3629,7 @@ function applyBody(o, lk) {
   if (!o) return; lk = lk || {}; const isH = (o.userData.ck || '').startsWith('h_'); const base = isH ? 1.12 : 1; o.scale.setScalar(base * ((SIZES[lk.sz] || SIZES.n)[1]));
   const hb = headBoneOf(o); if (hb) { const hs = (HEADS[lk.hd] || HEADS.n)[1]; hb.userData.hs = hs; if (!hb.userData.hk) { hb.userData.hk = 1; hb.updateMatrix = function () { if (this.userData.hs && this.userData.hs !== 1) this.scale.setScalar(this.userData.hs); THREE.Object3D.prototype.updateMatrix.call(this); }; } hb.scale.setScalar(hs); }
   if (o.userData.face) { o.userData.face.parent && o.userData.face.parent.remove(o.userData.face); o.userData.face = null; }
-  const fc = lk.fc || 'none', gl = lk.gl || 'none'; if ((fc === 'none' && gl === 'none') || !hb || isH) return;
+  const fc = lk.fc || 'none', gl = 'none'; if ((fc === 'none' && gl === 'none') || !hb || isH) return;
   o.updateMatrixWorld(true); const inv = o.matrixWorld.clone().invert();
   const hm = headMesh(o);
   const hp = new THREE.Vector3(); hb.getWorldPosition(hp); hp.applyMatrix4(inv); let fb = null; if (hm) { fb = new THREE.Box3().setFromObject(hm, true).applyMatrix4(inv); }
@@ -3629,7 +3645,7 @@ function applyBody(o, lk) {
 }
 function setOutfit(force) { if (S.outfit && String(S.outfit).startsWith('h_')) S.outfit = null; setOutfit_v12(force); try { applyBody(player.obj, lookFull()); } catch (e) {} }
 function modelChips_v13(cur) { return `<div class="crl">Modelo</div><div class="chips mdl">${[['rogue', 'Aventureira'], ['knight', 'Aventureiro'], ...HUM_LOOKS.map((h) => ['h_' + h, petById(h) ? petById(h).n : h])].map(([k, n]) => `<button class="btn chip ${cur === k ? 'on' : ''}" data-md="${k}">${THUMB['p_' + k.slice(2)] && k.startsWith('h_') ? `<img class="ti" src="${THUMB['p_' + k.slice(2)]}">` : ''}${n}</button>`).join('')}</div><p class="note">Os modelos especiais mantêm as cores e o rosto originais; altura, cabeça e acessórios funcionam em todos.</p>`; }
-function faceTab_v13(lk) { const ch = (T, key, cur) => Object.entries(T).map(([k, v]) => `<button class="btn chip ${cur === k ? 'on' : ''}" data-${key}="${k}">${Array.isArray(v) ? v[0] : v}</button>`).join(''); return `<div class="crl">Rosto</div><div class="chips">${ch(FACES, 'fc', lk.fc || 'none')}</div><div class="crl">Óculos</div><div class="chips">${ch(GLASSES, 'gl', lk.gl || 'none')}</div><div class="crl">Altura</div><div class="chips">${ch(SIZES, 'sz', lk.sz || 'n')}</div><div class="crl">Tamanho da cabeça</div><div class="chips">${ch(HEADS, 'hd', lk.hd || 'n')}</div>`; }
+function faceTab_v13(lk) { const ch = (T, key, cur) => Object.entries(T).map(([k, v]) => `<button class="btn chip ${cur === k ? 'on' : ''}" data-${key}="${k}">${Array.isArray(v) ? v[0] : v}</button>`).join(''); return `<div class="crl">Rosto</div><div class="chips">${ch(FACES, 'fc', lk.fc || 'none')}</div><div class="crl">Altura</div><div class="chips">${ch(SIZES, 'sz', lk.sz || 'n')}</div><div class="crl">Tamanho da cabeça</div><div class="chips">${ch(HEADS, 'hd', lk.hd || 'n')}</div>`; }
 let crModel = null;
 
 // ---------- todas as construções têm interior ----------
@@ -3789,11 +3805,14 @@ function decor14() {
 function modelChips(cur) { return `<div class="crl">Base do corpo</div><div class="chips mdl">${[['rogue', 'Menina'], ['knight', 'Menino']].map(([k, n]) => `<button class="btn chip ${cur === k || (k === 'rogue' && cur !== 'knight') ? 'on' : ''}" data-md="${k}">${n}</button>`).join('')}</div><p class="note">Escolha a base e personalize pele, rosto, cabelo, roupa e tamanho.</p>`; }
 
 // ---------- cabelos: femininos e masculinos, mechas e volume ----------
+const HRFIT = { hr_female1: [0, 0, -0.02, 1.05], hr_female2: [0, 0, -0.03, 1.05], hr_female3: [0, 0, -0.02, 1.05], hr_female4: [0, 0, -0.06, 1.05], hr_male1: [0, 0, -0.01, 1.05], hr_male2: [0, 0, -0.02, 1.05], hr_male3: [0, 0, -0.02, 1.05], hr_male4: [0, 0, -0.02, 1.05] };
+for (const k of Object.keys(HRFIT)) { MODEL_LIST.push(k); FIT[k] = { s: 1 }; }
+Object.assign(HSTYLE, { hr_female1: { n: 'Longo repicado', e: '💇', g: 'u' }, hr_female2: { n: 'Rabo volumoso', e: '🎀', g: 'u' }, hr_female3: { n: 'Chanel moderno', e: '💇', g: 'u' }, hr_female4: { n: 'Coque bagunçado', e: '🍡', g: 'u' }, hr_male1: { n: 'Clássico', e: '✂️', g: 'u' }, hr_male2: { n: 'Franja moderna', e: '✂️', g: 'm' }, hr_male3: { n: 'Topete alto', e: '✂️', g: 'm' }, hr_male4: { n: 'Raspadinho', e: '✂️', g: 'm' } });
 Object.assign(HSTYLE, { rabo_alto: { n: 'Rabo alto', e: '🎀', g: 'f' }, ondas: { n: 'Ondas longas', e: '💇', g: 'f' }, coroa: { n: 'Coroa de trança', e: '🪢', g: 'f' }, bob: { n: 'Bob curtinho', e: '💇', g: 'f' },
   curto: { n: 'Curtinho', e: '✂️', g: 'm' }, topete: { n: 'Topete', e: '✂️', g: 'm' }, espetado: { n: 'Espetado', e: '⚡', g: 'm' }, moicano: { n: 'Moicano', e: '⚡', g: 'm' }, afro: { n: 'Black power', e: '🧶', g: 'u' }, samurai: { n: 'Coque samurai', e: '🍡', g: 'm' }, baguncado: { n: 'Bagunçado', e: '🌪', g: 'm' }, franja_lado: { n: 'Franja de lado', e: '✂️', g: 'u' } });
 for (const k of ['rabo', 'maria', 'coque', 'coques', 'trancas', 'longo', 'lateral', 'chanel', 'tranca1', 'cacheado']) if (HSTYLE[k]) HSTYLE[k].g = HSTYLE[k].g || 'f';
 if (HSTYLE.franja) HSTYLE.franja.g = 'u'; if (HSTYLE.none) HSTYLE.none.g = 'u';
-WARD_FREE.hs.push('curto', 'topete', 'espetado', 'franja_lado', 'rabo_alto', 'bob', 'samurai');
+WARD_FREE.hs.push(...Object.keys(HRFIT), 'curto', 'topete', 'espetado', 'franja_lado', 'rabo_alto', 'bob', 'samurai');
 const HMECH = { none: { n: 'Sem mechas', c: null }, rosa: { n: 'Rosa', c: '#ff8fc8' }, azul: { n: 'Azul', c: '#7cc4ff' }, lilas: { n: 'Lilás', c: '#b79cff' }, loiro: { n: 'Douradas', c: '#ffd45a' }, branco: { n: 'Brancas', c: '#f5f0ff' }, verde: { n: 'Menta', c: '#8ff0c0' } };
 const HVOL = { p: { n: 'Pouco volume', s: 0.86 }, n: { n: 'Normal', s: 1 }, g: { n: 'Volumoso', s: 1.18 }, x: { n: 'Enorme', s: 1.36 } };
 WARD_FREE.hm = Object.keys(HMECH); WARD_FREE.hv = Object.keys(HVOL);
@@ -3814,7 +3833,8 @@ function makeHairPiece(style, col, mc, vol) {
     if (style === 'samurai') { add(g, S_(0.27), 0, -0.04, -0.03, 1.05, 0.38, 1.05); add(g, S_(0.08), 0, 0.1, -0.12); add(g, new THREE.TorusGeometry(0.05, 0.016, 6, 10), 0, 0.05, -0.12, 1, 1, 1, lam('#e0394c')).rotation.x = Math.PI / 2; }
     if (style === 'baguncado') { add(g, S_(0.27), 0, -0.04, -0.03, 1.05, 0.42, 1.05); for (let i = 0; i < 9; i++) { const a = R2() * 6.28, rr = R2() * 0.22; add(g, S_(0.07 + R2() * 0.04), Math.cos(a) * rr, 0.02 + R2() * 0.05, Math.sin(a) * rr, 1, 0.8, 1); } }
     if (style === 'franja_lado') { for (let i = 0; i < 5; i++) add(g, S_(0.07), -0.18 + i * 0.075, -0.06 - i * 0.025, 0.24, 1, 0.75, 0.6); add(g, S_(0.26), 0, -0.04, -0.05, 1.05, 0.4, 1.05); }
-  } else g = makeHairPiece_v13(style, col);
+  } else if (/^hr_/.test(style) && MODELS[style]) { g = new THREE.Group(); const o = cloneM(style); o.traverse((n) => { if (n.isMesh) { n.material = m; n.castShadow = true; } }); const bb = new THREE.Box3().setFromObject(o), sz = bb.getSize(new THREE.Vector3()), t = HRFIT[style] || [0, 0, 0, 1]; const k = (0.74 * t[3]) / Math.max(0.01, sz.x); o.scale.multiplyScalar(k); o.position.set(t[0], -sz.y * k * (t[4] ?? 0.8) + t[1], t[2]); g.add(o); }
+  else g = makeHairPiece_v13(style, col);
   if (mc) { const mm = lam(mc); let i = 0; g.traverse((o) => { if (o.isMesh && o.material === m && i++ % 3 === 1) o.material = mm; }); }
   const vs = (HVOL[vol] || HVOL.n).s; g.scale.setScalar(vs); return g;
 }
@@ -3877,10 +3897,12 @@ renderer.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefau
 renderer.domElement.addEventListener('webglcontextrestored', () => { try { applyQuality(); } catch (e) {} }, false);
 const PERF = { t: 0, n: 0, slow: 0, told: false };
 function perfUpdate(dt) { if (titleOn || modalOpen()) return; PERF.t += dt; PERF.n++; if (PERF.t < 4) return; const fps = PERF.n / PERF.t; PERF.t = 0; PERF.n = 0; if (fps < 28) PERF.slow++; else PERF.slow = 0; if (PERF.slow >= 2 && SET.quality !== 'baixa' && !SET.qLock) { SET.quality = SET.quality === 'alta' ? 'media' : 'baixa'; saveSettings(); applyQuality(); PERF.slow = 0; if (!PERF.told) { PERF.told = true; toast(`Ajustei a qualidade gráfica para <b>${SET.quality === 'media' ? 'Média' : 'Baixa'}</b> para o jogo ficar mais leve. Você pode mudar em Configurações.`); } } }
-function v14Update(dt) { pvpUpdate(dt); perfUpdate(dt); seaUpdate(dt); }
+const SHT = { t: 0, x: 0, z: 0 };
+function shadowThrottle(dt) { if (!renderer.shadowMap.enabled) return; renderer.shadowMap.autoUpdate = false; SHT.t -= dt; const mv = Math.hypot(P.x - SHT.x, P.z - SHT.z); if (SHT.t <= 0 || mv > 0.6 || mode !== 'out') { renderer.shadowMap.needsUpdate = true; SHT.t = 1 / 20; SHT.x = P.x; SHT.z = P.z; } }
+function v14Update(dt) { shadowThrottle(dt); if (player) slotAnimate(player.obj, gtime); pvpUpdate(dt); perfUpdate(dt); seaUpdate(dt); }
 
 /* ---------- v14b: palco com zoom no rosto, enquadramento preciso e criador mais divertido ---------- */
-const headMesh = (o) => { let hm = null; o.traverse((m) => { if (!hm && m.isMesh && m.visible && /_Head$/.test(m.name || '')) hm = m; }); if (!hm) o.traverse((m) => { if (!hm && m.isMesh && /head/i.test(m.name || '') && !/hat|helmet|hood/i.test(m.name)) hm = m; }); return hm; };
+const headMesh = (o) => { let hm = null; o.traverse((m) => { if (!hm && m.isMesh && m.visible && /_Head(_Hooded)?$/.test(m.name || '')) hm = m; }); if (!hm) o.traverse((m) => { if (!hm && m.isMesh && /head/i.test(m.name || '') && !/hat|helmet|hood/i.test(m.name)) hm = m; }); return hm; };
 function scMount(el, obj, opt = {}) { SC.focus = opt.focus || 'body'; scMount_v13(el, obj, opt); SC.camP = null; scFit(); SC.refit = 0; }
 function scFit() {
   scFit_v13(); if (!SC.cam || !SC.obj) return; const f = (SC.cam.fov * Math.PI) / 360, asp = SC.cam.aspect || 1; SC.obj.updateMatrixWorld(true);
@@ -3896,14 +3918,16 @@ const GLCOL = { auto: ['Padrão', null], preto: ['Preto', '#3a2d4a'], rosa: ['Ro
 Object.assign(FACES, { estrela: 'Estrelinha no rosto', coracao: 'Coraçãozinho', pinta: 'Pintinha charmosa' });
 function faceTab(lk) {
   const ch = (T, key, cur) => Object.entries(T).map(([k, v]) => `<button class="btn chip ${cur === k ? 'on' : ''}" data-${key}="${k}">${Array.isArray(v) ? (v[1] && v[1][0] === '#' ? `<i style="background:${v[1]}"></i>` : '') + v[0] : v}</button>`).join('');
-  return `<div class="crl">Rosto</div><div class="chips">${ch(FACES, 'fc', lk.fc || 'none')}</div><div class="crl">Cor das bochechas</div><div class="chips">${ch(BLUSH, 'bc', lk.bc || 'rosa')}</div><div class="crl">Óculos</div><div class="chips">${ch(GLASSES, 'gl', lk.gl || 'none')}</div><div class="crl">Cor dos óculos</div><div class="chips">${ch(GLCOL, 'gc', lk.gc || 'auto')}</div><div class="crl">Altura</div><div class="chips">${ch(SIZES, 'sz', lk.sz || 'n')}</div><div class="crl">Tamanho da cabeça</div><div class="chips">${ch(HEADS, 'hd', lk.hd || 'n')}</div>`;
+  return `<div class="crl">Rosto</div><div class="chips">${ch(FACES, 'fc', lk.fc || 'none')}</div><div class="crl">Cor das bochechas</div><div class="chips">${ch(BLUSH, 'bc', lk.bc || 'rosa')}</div><div class="crl">Altura</div><div class="chips">${ch(SIZES, 'sz', lk.sz || 'n')}</div><div class="crl">Tamanho da cabeça</div><div class="chips">${ch(HEADS, 'hd', lk.hd || 'n')}</div>`;
 }
 function randLook(fromTitle) { const pk = (cat, T) => { const ks = Object.keys(T).filter((k) => fromTitle ? (WARD_FREE[cat] || Object.keys(T)).includes(k) : owns(cat, k) || !WARD_FREE[cat]); return pick(ks.length ? ks : Object.keys(T)); };
   Object.assign(crLook, { sk: pk('sk', SKINS), hc: pk('hc', HAIRC), hs: pk('hs', HSTYLE), hm: rand() < 0.4 ? pick(Object.keys(HMECH)) : 'none', hv: pick(Object.keys(HVOL)), tint: pk('cl', CLOTH), acc: pk('ac', ACCS), fc: pick(Object.keys(FACES)), bc: pick(Object.keys(BLUSH)), gl: rand() < 0.35 ? pick(Object.keys(GLASSES)) : 'none', gc: pick(Object.keys(GLCOL)), sz: pick(Object.keys(SIZES)), hd: pick(Object.keys(HEADS)) }); }
 function openCreator(fromTitle) {
   openCreator_v13(fromTitle); const st = document.querySelector('.cr3d'); if (!st || !crLook) return;
   for (const [a, k] of [['bc', 'bc'], ['gc', 'gc']]) document.querySelectorAll(`[data-${a}]`).forEach((el) => (el.onclick = () => { crLook[k] = el.dataset[a]; sfx('accept'); openCreator(fromTitle); setTimeout(scPower, 60); }));
-  const head = crTab === 'rosto' || crTab === 'cabelo'; if (SC.zoomUser) SC.focus = SC.zoomUser; else SC.focus = head ? 'head' : 'body'; scFit();
+  document.querySelectorAll('[data-as]').forEach((el) => (el.onclick = () => { ACCTAB = el.dataset.as; sfx('switch'); openCreator(fromTitle); }));
+  for (const a of ['bk', 'wa', 'acc_c', 'acc_p', 'glc', 'glp', 'bkc', 'bkp', 'wac', 'wap', 'gl']) document.querySelectorAll(`[data-${a}]`).forEach((el) => (el.onclick = () => { crLook[a] = el.dataset[a]; sfx('accept'); openCreator(fromTitle); setTimeout(scPower, 60); }));
+  const head = crTab === 'rosto' || crTab === 'cabelo' || (crTab === 'acess' && (ACCTAB === 'cabeca' || ACCTAB === 'rosto')); if (SC.zoomUser) SC.focus = SC.zoomUser; else SC.focus = head ? 'head' : 'body'; scFit();
   st.insertAdjacentHTML('beforeend', `<div class="crtools"><button class="btn chip ${SC.focus === 'head' ? 'on' : ''}" id="crZh">Rosto</button><button class="btn chip ${SC.focus !== 'head' ? 'on' : ''}" id="crZb">Corpo inteiro</button><button class="btn chip gold" id="crRnd">Aleatório</button></div>`);
   $('crZh').onclick = () => { SC.zoomUser = 'head'; SC.focus = 'head'; scFit(); sfx('switch'); $('crZh').classList.add('on'); $('crZb').classList.remove('on'); };
   $('crZb').onclick = () => { SC.zoomUser = 'body'; SC.focus = 'body'; scFit(); sfx('switch'); $('crZb').classList.add('on'); $('crZh').classList.remove('on'); };
@@ -4106,6 +4130,126 @@ function krUpdate(dt) {
   if (Math.hypot(P.x - KR.x, P.z - KR.z) < 3.6) { const dx = P.x - KR.x, dz = P.z - KR.z, l = Math.hypot(dx, dz) || 1; P.x = KR.x + (dx / l) * 3.6; P.z = KR.z + (dz / l) * 3.6; }
 }
 
+/* =================== v16: acessórios em lugares fixos, óculos 3D, estampas pixel =================== */
+// ---------- estampas pixel (16×16, sem suavização) ----------
+const PATS = { lisa: 'Lisa', xadrez: 'Xadrez', bolinhas: 'Bolinhas', listras: 'Listras', estrelas: 'Estrelinhas', coracoes: 'Corações', vichy: 'Vichy' };
+const PATTEX = {};
+function patTex(pat, hex) {
+  const k = pat + hex; if (PATTEX[k]) return PATTEX[k]; const c = document.createElement('canvas'); c.width = c.height = 16; const x = c.getContext('2d'); const base = new THREE.Color(hex), lt = base.clone().lerp(new THREE.Color('#ffffff'), 0.55), dk = base.clone().multiplyScalar(0.72);
+  const B = '#' + base.getHexString(), L = '#' + lt.getHexString(), D = '#' + dk.getHexString(); x.fillStyle = B; x.fillRect(0, 0, 16, 16); const px = (a, b, col) => { x.fillStyle = col; x.fillRect(a, b, 1, 1); };
+  if (pat === 'xadrez') { x.fillStyle = L; for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) if ((i + j) % 2) x.fillRect(i * 4, j * 4, 4, 4); }
+  if (pat === 'vichy') { x.fillStyle = L; x.globalAlpha = 0.55; for (let i = 0; i < 16; i += 4) { x.fillRect(i, 0, 2, 16); x.fillRect(0, i, 16, 2); } x.globalAlpha = 1; }
+  if (pat === 'bolinhas') for (const [a, b] of [[2, 2], [10, 2], [6, 6], [14, 6], [2, 10], [10, 10], [6, 14], [14, 14]]) { x.fillStyle = L; x.fillRect(a - 1, b - 1, 2, 2); }
+  if (pat === 'listras') { x.fillStyle = L; for (let i = 0; i < 16; i += 4) x.fillRect(0, i, 16, 2); }
+  if (pat === 'estrelas') for (const [a, b] of [[4, 4], [12, 11]]) { for (const [dx, dy] of [[0, -1], [-1, 0], [0, 0], [1, 0], [0, 1]]) px(a + dx, b + dy, '#fff6c8'); px(a - 2, b, '#ffe18d'); px(a + 2, b, '#ffe18d'); px(a, b - 2, '#ffe18d'); px(a, b + 2, '#ffe18d'); }
+  if (pat === 'coracoes') for (const [a, b] of [[4, 4], [12, 12]]) for (const [dx, dy] of [[-1, -1], [1, -1], [-2, 0], [-1, 0], [0, 0], [1, 0], [2, 0], [-1, 1], [0, 1], [1, 1], [0, 2]]) px(a + dx, b + dy, L);
+  const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; return (PATTEX[k] = t);
+}
+const pmat = (hex, pat, rep = 1, e = 0) => { const t = patTex(pat || 'lisa', hex).clone(); t.needsUpdate = true; t.repeat.set(rep, rep); t.offset.set(0.27, 0.27); const m = new THREE.MeshLambertMaterial({ map: t, emissive: e ? hex : '#000000', emissiveIntensity: e }); return m; };
+
+// ---------- catálogo por lugar do corpo ----------
+const ASLOT = {
+  cabeca: { n: 'Cabeça', key: 'acc' },
+  rosto: { n: 'Rosto', key: 'gl' },
+  costas: { n: 'Costas', key: 'bk' },
+  cintura: { n: 'Cintura', key: 'wa' },
+};
+const ACC2 = {
+  rosto: { none: 'Nada', redondo: 'Óculos redondos', quadrado: 'Óculos quadrados', gatinho: 'Óculos de gatinho', coracao: 'Óculos de coração', estrela: 'Óculos de estrela', sol: 'Óculos de sol' },
+  costas: { none: 'Nada', mochila: 'Mochilinha', asas: 'Asinhas de fada', laco: 'Laçarote', aljava: 'Aljava de flores' },
+  cintura: { none: 'Nada', bolsa: 'Bolsinha', sininho: 'Sininho', flor: 'Flor na cintura', cinto: 'Cinto de estrelas' },
+};
+Object.assign(ACCS, { boina: { n: 'Boina', e: '🎨' }, gato: { n: 'Orelhas de gatinho', e: '🐱' }, tiara: { n: 'Tiara de coração', e: '💗' } });
+for (const s of ['rosto', 'costas', 'cintura']) WARD_FREE['a_' + s] = Object.keys(ACC2[s]);
+WARD_FREE.ac.push('boina', 'gato', 'tiara');
+const ACOL = { rosa: '#ff8fb8', lilas: '#b79cff', ceu: '#7cc4ff', menta: '#7fe0b0', sol: '#ffd45a', coral: '#ff8a6a', creme: '#fff2dc', grafite: '#4a4458' };
+
+// ---------- modelos 3D dos acessórios (unidades: largura da cabeça = 1) ----------
+function makeGlasses(id, hex, pat) {
+  const g = new THREE.Group(); const fr = pmat(hex, pat, 0.5), lensC = id === 'sol' ? '#3a2d4a' : '#d8f0ff';
+  const lens = new THREE.MeshLambertMaterial({ color: lensC, transparent: true, opacity: id === 'sol' ? 0.85 : 0.35, depthWrite: false, side: THREE.DoubleSide });
+  const shapeOf = (r) => { const s = new THREE.Shape(); if (id === 'coracao') { s.moveTo(0, -r); s.bezierCurveTo(r * 1.5, -r * 0.1, r * 0.9, r * 1.15, 0, r * 0.45); s.bezierCurveTo(-r * 0.9, r * 1.15, -r * 1.5, -r * 0.1, 0, -r); } else if (id === 'estrela') { for (let i = 0; i < 10; i++) { const a = Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.5 : r * 1.12; i ? s.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : s.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); } } else if (id === 'quadrado' || id === 'sol') { const w = r * (id === 'sol' ? 1.2 : 1.05), h = r * 0.82, q = r * 0.25; s.moveTo(-w + q, -h); s.lineTo(w - q, -h); s.quadraticCurveTo(w, -h, w, -h + q); s.lineTo(w, h - q); s.quadraticCurveTo(w, h, w - q, h); s.lineTo(-w + q, h); s.quadraticCurveTo(-w, h, -w, h - q); s.lineTo(-w, -h + q); s.quadraticCurveTo(-w, -h, -w + q, -h); } else if (id === 'gatinho') { s.moveTo(-r, -r * 0.6); s.quadraticCurveTo(0, -r * 1.05, r, -r * 0.6); s.quadraticCurveTo(r * 1.25, r * 0.2, r * 1.35, r * 0.95); s.quadraticCurveTo(0, r * 0.7, -r, r * 0.55); s.quadraticCurveTo(-r * 1.1, 0, -r, -r * 0.6); } else s.absarc(0, 0, r, 0, Math.PI * 2, false); return s; };
+  const r = 0.16, sep = 0.2;
+  for (const sx of [-1, 1]) { const outer = shapeOf(r * 1.18), hole = shapeOf(r); const ring = new THREE.Shape(outer.getPoints(40)); ring.holes.push(new THREE.Path(hole.getPoints(40).reverse ? hole.getPoints(40) : hole.getPoints(40))); const geo = new THREE.ExtrudeGeometry(ring, { depth: 0.035, bevelEnabled: false, curveSegments: 18 }); const f = new THREE.Mesh(geo, fr); f.position.set(sx * sep, 0, 0); if (sx < 0 && id === 'gatinho') f.scale.x = -1; g.add(f);
+    const l = new THREE.Mesh(new THREE.ShapeGeometry(hole, 18), lens); l.position.set(sx * sep, 0, 0.016); if (sx < 0 && id === 'gatinho') l.scale.x = -1; g.add(l);
+    const tm = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.46), fr); tm.position.set(sx * (sep + r * 1.15), r * 0.25, -0.22); tm.rotation.y = sx * 0.06; g.add(tm); }
+  const br = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.016, 6, 12, Math.PI), fr); br.position.set(0, r * 0.25, 0.02); g.add(br);
+  if (id === 'sol') { const sh = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.12), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.7 })); sh.position.set(sep - 0.06, 0.04, 0.03); sh.rotation.z = 0.5; g.add(sh); }
+  return g;
+}
+function makeBack(id, hex, pat) {
+  const g = new THREE.Group(), m = pmat(hex, pat, 1.2), dk = lam(new THREE.Color(hex).multiplyScalar(0.75)), add = (geo, mt, x, y, z) => { const o = new THREE.Mesh(geo, mt); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  if (id === 'mochila') { const b = add(new THREE.BoxGeometry(0.62, 0.66, 0.3), m, 0, 0, -0.16); add(new THREE.BoxGeometry(0.5, 0.26, 0.1), dk, 0, -0.14, -0.33); add(new THREE.SphereGeometry(0.05, 8, 6), lam('#ffe18d'), 0, -0.05, -0.38); b.geometry.translate(0, 0, 0); }
+  if (id === 'asas') for (const sx of [-1, 1]) { const s = new THREE.Shape(); s.moveTo(0, 0); s.bezierCurveTo(0.35, 0.55, 0.85, 0.5, 0.75, 0.05); s.bezierCurveTo(0.7, -0.25, 0.35, -0.35, 0, 0); const w = add(new THREE.ShapeGeometry(s, 16), new THREE.MeshLambertMaterial({ map: patTex(pat || 'lisa', hex), transparent: true, opacity: 0.82, side: THREE.DoubleSide, emissive: hex, emissiveIntensity: 0.25 }), sx * 0.06, 0.1, -0.14); w.scale.x = sx; w.rotation.y = sx * -0.5; w.userData.flap = sx; }
+  if (id === 'laco') { for (const sx of [-1, 1]) { const a = add(new THREE.SphereGeometry(0.22, 12, 8), m, sx * 0.24, 0.05, -0.16); a.scale.set(1, 0.65, 0.3); const t = add(new THREE.BoxGeometry(0.1, 0.42, 0.04), m, sx * 0.12, -0.28, -0.16); t.rotation.z = sx * 0.3; } add(new THREE.SphereGeometry(0.1, 10, 8), dk, 0, 0.05, -0.18); }
+  if (id === 'aljava') { const q = add(new THREE.CylinderGeometry(0.13, 0.11, 0.7, 12), m, 0.12, 0, -0.18); q.rotation.z = 0.45; for (let i = 0; i < 3; i++) { add(new THREE.SphereGeometry(0.07, 8, 6), lam(['#ff8fb8', '#ffe18d', '#b79cff'][i]), -0.04 + i * 0.07, 0.42 + (i % 2) * 0.05, -0.18 - i * 0.02); } }
+  return g;
+}
+function makeWaist(id, hex, pat) {
+  const g = new THREE.Group(), m = pmat(hex, pat, 0.8), add = (geo, mt, x, y, z) => { const o = new THREE.Mesh(geo, mt); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  if (id === 'bolsa') { add(new THREE.BoxGeometry(0.26, 0.22, 0.12), m, 0, 0, 0); add(new THREE.SphereGeometry(0.035, 8, 6), lam('#ffe18d'), 0, 0.02, 0.07); }
+  if (id === 'sininho') { add(new THREE.SphereGeometry(0.09, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.6), lam('#ffd45a', 0.2), 0, 0, 0); add(new THREE.SphereGeometry(0.03, 8, 6), lam('#a8743f'), 0, -0.07, 0); add(new THREE.TorusGeometry(0.04, 0.012, 6, 10), m, 0, 0.1, 0); }
+  if (id === 'flor') { for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; const p = add(new THREE.SphereGeometry(0.07, 8, 6), m, Math.cos(a) * 0.08, Math.sin(a) * 0.08, 0); p.scale.z = 0.4; } add(new THREE.SphereGeometry(0.05, 8, 6), lam('#ffe18d'), 0, 0, 0.02); }
+  if (id === 'cinto') { const t = add(new THREE.TorusGeometry(0.5, 0.035, 6, 32), m, 0, 0, 0); t.rotation.x = Math.PI / 2; t.scale.z = 0.7; add(starGeo, lam('#ffe18d', 0.4), 0, 0, 0.36).scale.setScalar(0.4); }
+  return g;
+}
+// chapéus novos na cabeça
+{ const mk0 = makeAcc; makeAcc = function (id) { if (!['boina', 'gato', 'tiara'].includes(id)) { const g0 = mk0(id); if (!id.startsWith('__hair__') && (ACCSTYLE.hex || ACCSTYLE.pat !== 'lisa')) g0.traverse((o) => { if (o.isMesh && o.material && o.material.color) { const h = ACCSTYLE.hex && !(o.material.emissive && o.material.emissive.r > 0.2) ? ACCSTYLE.hex : '#' + o.material.color.getHexString(); o.material = pmat(h, ACCSTYLE.pat, 0.8, o.material.emissiveIntensity && o.material.emissive && o.material.emissive.r > 0 ? 0.3 : 0); } }); return g0; }
+  const g = new THREE.Group(), hex = ACCSTYLE.hex || (id === 'boina' ? '#ff8fb8' : id === 'gato' ? '#3a3040' : '#ff6fa5'), m = pmat(hex, ACCSTYLE.pat, 0.8), add = (geo, mt, x, y, z) => { const o = new THREE.Mesh(geo, mt); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  if (id === 'boina') { const b = add(new THREE.SphereGeometry(0.27, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), m, 0.03, -0.04, -0.02); b.scale.set(1.15, 0.45, 1.1); b.rotation.z = -0.18; add(new THREE.CylinderGeometry(0.015, 0.015, 0.06, 6), m, 0.06, 0.1, 0); }
+  if (id === 'gato') for (const sx of [-1, 1]) { const e = add(new THREE.ConeGeometry(0.1, 0.18, 4), m, sx * 0.16, 0.06, -0.02); e.rotation.z = sx * -0.3; const i = add(new THREE.ConeGeometry(0.055, 0.1, 4), lam('#ffb3c8'), sx * 0.16, 0.05, 0.03); i.rotation.z = sx * -0.3; }
+  if (id === 'tiara') { const t = add(new THREE.TorusGeometry(0.22, 0.016, 6, 28, Math.PI), m, 0, -0.04, 0); t.rotation.y = Math.PI / 2; t.rotation.z = Math.PI / 2; const s = new THREE.Shape(); const r = 0.07; s.moveTo(0, -r); s.bezierCurveTo(r * 1.4, -r * 0.1, r * 0.8, r * 1.1, 0, r * 0.4); s.bezierCurveTo(-r * 0.8, r * 1.1, -r * 1.4, -r * 0.1, 0, -r); add(new THREE.ExtrudeGeometry(s, { depth: 0.03, bevelEnabled: false }), lam('#ff6fa5', 0.25), 0, 0.12, 0.14); }
+  return g; }; }
+const ACCSTYLE = { hex: null, pat: 'lisa' };
+
+// ---------- âncoras fixas por modelo: ossos + ajustes finos por personagem ----------
+const ANCH_T = { // [x, y, z, escala] em relação ao ponto calculado (frações da cabeça)
+  rogue: { rosto: [0, 0, 0, 1], costas: [0, 0, 0, 1], cintura: [0, 0, 0, 1] },
+  rogue_hooded: { rosto: [0, -0.02, 0.03, 1], costas: [0, 0, -0.04, 1.05], cintura: [0, 0, 0, 1] },
+  knight: { rosto: [0, 0, 0.02, 1.02], costas: [0, 0, -0.06, 1.1], cintura: [0, 0, 0.02, 1.08] },
+  barbarian: { rosto: [0, 0, 0.02, 1.04], costas: [0, 0, -0.06, 1.12], cintura: [0, 0, 0.03, 1.12] },
+  mage: { rosto: [0, 0, 0, 1], costas: [0, 0, -0.04, 1.04], cintura: [0, 0, 0, 1.02] },
+};
+const ANCH = {};
+function anchorsOf(obj, key) {
+  if (ANCH[key]) return ANCH[key]; const bones = {}; obj.traverse((n) => { if (n.isBone || n.type === 'Bone' || /^(head|chest|spine|hips)$/.test(n.name)) bones[n.name] = bones[n.name] || n; });
+  obj.updateMatrixWorld(true); const inv = obj.matrixWorld.clone().invert(); let hm = null, bm = null; obj.traverse((m) => { if (!m.isMesh) return; if (/_Head(_Hooded)?$/.test(m.name || '')) hm = m; if (/_Body$/.test(m.name || '')) bm = m; });
+  if (!hm || !bm || !bones.head) return null; const hb = new THREE.Box3().setFromObject(hm, true).applyMatrix4(inv), bb = new THREE.Box3().setFromObject(bm, true).applyMatrix4(inv);
+  const hw = hb.max.x - hb.min.x, hh = hb.max.y - hb.min.y, T = ANCH_T[key] || ANCH_T.rogue;
+  const A = { hw, rosto: { bone: 'head', p: new THREE.Vector3((hb.min.x + hb.max.x) / 2, hb.min.y + hh * 0.42, hb.max.z - hw * 0.03), s: hw * 0.78 }, costas: { bone: bones.chest ? 'chest' : 'spine', p: new THREE.Vector3((bb.min.x + bb.max.x) / 2, bb.min.y + (bb.max.y - bb.min.y) * 0.62, bb.min.z + 0.02), s: hw * 0.9 }, cintura: { bone: bones.hips ? 'hips' : 'spine', p: new THREE.Vector3(bb.max.x - (bb.max.x - bb.min.x) * 0.2, bb.min.y + (bb.max.y - bb.min.y) * 0.12, bb.max.z - 0.04), s: hw * 0.9 } };
+  A.cintura.p.x = (bb.min.x + bb.max.x) / 2 + (bb.max.x - bb.min.x) * 0.3;
+  for (const k of ['rosto', 'costas', 'cintura']) { const t = T[k]; A[k].p.add(new THREE.Vector3(t[0] * hw, t[1] * hw, t[2] * hw)); A[k].s *= t[3]; }
+  if (A.cinturaFull === undefined) A.cinturaFull = { bone: A.cintura.bone, p: new THREE.Vector3((bb.min.x + bb.max.x) / 2, bb.min.y + (bb.max.y - bb.min.y) * 0.12, (bb.min.z + bb.max.z) / 2), s: (bb.max.x - bb.min.x) * 1.05 };
+  return (ANCH[key] = A);
+}
+function equipSlots(obj, lk) {
+  if (!obj) return; const key = String(obj.userData.ck || 'rogue'); if (key.startsWith('h_')) return;
+  for (const g of obj.userData.slotG || []) g.parent && g.parent.remove(g); obj.userData.slotG = [];
+  const A = anchorsOf(obj, key); if (!A) return; const bones = {}; obj.traverse((n) => { if (/^(head|chest|spine|hips)$/.test(n.name) && !bones[n.name]) bones[n.name] = n; });
+  obj.updateMatrixWorld(true); const om = obj.matrixWorld;
+  const put = (slot, g, full) => { const a = full ? A.cinturaFull : A[slot], b = bones[a.bone]; if (!b) return; const wp = a.p.clone().applyMatrix4(om); obj.add(g); g.position.copy(a.p); g.scale.setScalar(a.s); g.updateMatrixWorld(true); b.attach(g); obj.userData.slotG.push(g); };
+  const col = (k) => lookCol(ACOL, lk[k]) || null;
+  if (lk.gl && lk.gl !== 'none') put('rosto', makeGlasses(lk.gl, col('glc') || (GLCOL[lk.gc] && GLCOL[lk.gc][1]) || '#3a2d4a', lk.glp));
+  if (lk.bk && lk.bk !== 'none') put('costas', makeBack(lk.bk, col('bkc') || '#ff8fb8', lk.bkp));
+  if (lk.wa && lk.wa !== 'none') put('cintura', makeWaist(lk.wa, col('wac') || '#ffd45a', lk.wap), lk.wa === 'cinto');
+}
+function slotAnimate(obj, t) { for (const g of (obj && obj.userData.slotG) || []) g.traverse((o) => { if (o.userData.flap) o.rotation.y = o.userData.flap * (-0.5 - Math.sin(t * 9) * 0.25); }); }
+// aba de acessórios no criador
+function accTab(lk, fromTitle) {
+  const own = (slot, k) => fromTitle || owns('a_' + slot, k) || (WARD_FREE['a_' + slot] || []).includes(k);
+  const chipsOf = (T, attr, cur) => Object.entries(T).map(([k, n]) => `<button class="btn chip ${cur === k ? 'on' : ''}" data-${attr}="${k}">${typeof n === 'string' ? n : n.n}</button>`).join('');
+  const colorRow = (attr, cur) => Object.entries(ACOL).map(([k, h]) => `<button class="btn chip sw ${cur === k ? 'on' : ''}" data-${attr}="${k}" title="${k}"><i style="background:${h}"></i></button>`).join('') + cpick(attr, cur);
+  const patRow = (attr, cur) => Object.entries(PATS).map(([k, n]) => `<button class="btn chip pat ${(cur || 'lisa') === k ? 'on' : ''}" data-${attr}="${k}"><i style="background-image:url(${patTex(k, '#ff8fb8').image.toDataURL()});background-size:12px;image-rendering:pixelated"></i>${n}</button>`).join('');
+  return `<div class="slotsel">${Object.entries(ASLOT).map(([k, v]) => `<button class="btn ctab ${ACCTAB === k ? 'on' : ''}" data-as="${k}">${v.n}</button>`).join('')}</div>` +
+    (ACCTAB === 'cabeca' ? `<div class="crl">Cabeça</div><div class="chips">${chipsOf(Object.fromEntries(Object.entries(ACCS).map(([k, v]) => [k, v.n])), 'ac', lk.acc)}</div><div class="crl">Cor</div><div class="chips">${colorRow('acc_c', lk.acc_c)}</div><div class="crl">Estampa pixel</div><div class="chips">${patRow('acc_p', lk.acc_p)}</div>` :
+     ACCTAB === 'rosto' ? `<div class="crl">Óculos</div><div class="chips">${chipsOf(ACC2.rosto, 'gl', lk.gl || 'none')}</div><div class="crl">Cor da armação</div><div class="chips">${colorRow('glc', lk.glc)}</div><div class="crl">Estampa pixel</div><div class="chips">${patRow('glp', lk.glp)}</div>` :
+     ACCTAB === 'costas' ? `<div class="crl">Costas</div><div class="chips">${chipsOf(ACC2.costas, 'bk', lk.bk || 'none')}</div><div class="crl">Cor</div><div class="chips">${colorRow('bkc', lk.bkc)}</div><div class="crl">Estampa pixel</div><div class="chips">${patRow('bkp', lk.bkp)}</div>` :
+     `<div class="crl">Cintura</div><div class="chips">${chipsOf(ACC2.cintura, 'wa', lk.wa || 'none')}</div><div class="crl">Cor</div><div class="chips">${colorRow('wac', lk.wac)}</div><div class="crl">Estampa pixel</div><div class="chips">${patRow('wap', lk.wap)}</div>`);
+}
+let ACCTAB = 'cabeca';
+
+function applyLook(obj, look) { const lk = Object.assign({}, look || {}); ACCSTYLE.hex = lookCol(ACOL, lk.acc_c) || null; ACCSTYLE.pat = lk.acc_p || 'lisa'; try { applyLook_v15(obj, look); } finally { ACCSTYLE.hex = null; ACCSTYLE.pat = 'lisa'; } try { equipSlots(obj, lk); } catch (e) { console.error(e); } }
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -4149,4 +4293,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
