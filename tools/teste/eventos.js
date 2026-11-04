@@ -1,0 +1,56 @@
+// Mede programas (shaders) compilados por evento depois do carregamento.
+const { chromium } = require('playwright');
+(async () => {
+  const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  const p = await b.newPage({ viewport: { width: 640, height: 400 } });
+  const errs = []; p.on('pageerror', (e) => errs.push('PAGEERROR ' + e.message)); p.on('console', (m) => { if (m.type() === 'error') errs.push('error ' + m.text()); });
+  await p.goto(process.argv[2], { timeout: 180000, waitUntil: 'commit' }); await p.waitForSelector('#loading.off', { state: 'attached', timeout: 400000 });
+  const n0 = await p.evaluate(() => window.__g.renderer.info.programs.length);
+  await p.evaluate(() => { const g = window.__g; g.S.tstep = 999; g.S.lv = 8; g.startFrom(null); g.S.lv = 12; }); await p.waitForTimeout(4000);
+  const info = () => p.evaluate(() => { const g = window.__g; const r = g.renderer; const L = r.info.programs; const res = []; const known = window.__pk || (window.__pk = new Set()); for (const pr of L) if (!known.has(pr)) { known.add(pr); res.push(pr); }
+    const out = []; if (window.__pkInit) { const byProg = new Map(); g.scene.traverse((o) => { const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : []; for (const m of ms) { const pp = r.properties.get(m); const cp = pp && pp.currentProgram; if (cp && res.includes(cp) && !byProg.has(cp)) byProg.set(cp, `${m.type}${m.name ? ':' + m.name : ''} @${o.name || o.type}<${o.parent ? (o.parent.name || o.parent.type) : ''}<${o.parent && o.parent.parent ? (o.parent.parent.name || o.parent.parent.type) : ''}`); } });
+      for (const pr of res) out.push(pr.name + ' => ' + (byProg.get(pr) || '?')); }
+    window.__pkInit = 1; return { n: L.length, out }; });
+  console.log('load progs', n0); console.log('start', JSON.stringify(await info()));
+  const clean = () => p.evaluate(() => { const g = window.__g; try { g.closeModal(); } catch (e) {} for (let i = 0; i < 12 && g.dlg; i++) try { g.advDlg(); } catch (e) { break; } });
+  const step = async (name, fn, wait = 3500) => { try { await p.evaluate(fn); } catch (e) { console.log(name, 'ERR', e.message.slice(0, 200)); } await p.waitForTimeout(wait); await clean(); await p.waitForTimeout(800); const r = await info(); console.log('##', name, r.n, r.out.length ? '\n   ' + r.out.join('\n   ') : ''); };
+  const S = (s) => new Function(`const g = window.__g; ${s}`);
+  await step('praca', S('g.P.x=41;g.P.z=37;'));
+  await step('noite', S('g.S.time=((22-6)/18)*g.DAYLEN;'));
+  await step('dia', S('g.S.time=((10-6)/18)*g.DAYLEN;'));
+  await step('chuva', S('g.WX.k=1; if(g.S.wx) g.S.wx.rain=1; else g.S.wx={rain:1};'), 6000);
+  await step('semchuva', S('if(g.S.wx) g.S.wx.rain=0;'));
+  await step('espada', S('g.setSlot(0); g.swordAttack && g.swordAttack();'));
+  await step('levelup', S('g.gainXp(9999);'));
+  await step('drop', S('g.drop(g.P.x+1,g.P.z,"star",null,5); g.drop(g.P.x,g.P.z+1,"item","madeira",3);'));
+  await step('slimes', S('g.__spawnSlimes(); const s=g.slimes[0]; if(s) g.damageSlime(s, 1);'));
+  await step('bike', S('g.toggleBike(); g.toggleBike();'));
+  await step('bosque', S('g.P.x=141;g.P.z=32;'), 5000);
+  await step('farol', S('g.P.x=146;g.P.z=6;'), 5000);
+  await step('casa', S('g.enterHouse();')); await step('saicasa', S('g.exitHouse();'));
+  await step('forja', S("g.enterShop('forja');")); await step('saiforja', S('g.exitShop();'));
+  await step('atelie', S("g.enterShop('atelie');")); await step('saiatelie', S('g.exitShop();'));
+  await step('room', S('const d=g.doorList().find((x)=>x.id&&!["tico","forja","atelie"].includes(x.id)); if(d) g.enterRoom(d);')); await step('sairoom', S('g.exitShop();'));
+  await step('caverna', S('g.enterCave();'), 5000);
+  await step('reislime', S('g.spawnBoss();'), 4000);
+  await step('saicaverna', S('g.exitCave();'), 4000);
+  await step('rosa', S('g.rosaStart();'), 6000);
+  await step('rosa_fim', S('g.RB.hp=0;'), 4000);
+  await step('pvp', S('g.pvpEnter();'), 4000); await step('pvp_sai', S('g.pvpLeave();'), 3000);
+  await step('arco', S('g.S.pw={arco:3}; g.S.pwSel="arco"; g.DUEL.on=true; g.weaponAttack && g.weaponAttack(); g.DUEL.on=false;'), 3000);
+  await step('barco', S('g.P.x=55; g.P.z=g.BEACHY+2; g.boardBoat && g.boardBoat();'), 5000);
+  await step('kraken', S('g.krakenStart();'), 6000);
+  await step('boatfire', S('g.boatFire && g.boatFire();'), 3000);
+  await step('saibarco', S('g.leaveBoat && g.leaveBoat();'), 4000);
+  await step('poço', S('g.S.stars=5000; g.openWish(); g.doWish(1);'), 6000);
+  await step('criador', S('g.openCreator();'), 5000);
+  await step('historia', S('g.showStory(true);'), 3000);
+  await step('fazenda', S('g.openFarm();'), 3000); await step('fazenda_sai', S('g.closeFarm();'), 2000);
+  await step('decor', S('g.openDecor && g.openDecor();'), 3000);
+  await step('q_media', S('g.SET.quality="media"; g.applyQuality();'), 3000);
+  await step('q_baixa', S('g.SET.quality="baixa"; g.applyQuality(); window.__sh = g.renderer.shadowMap.enabled;'), 3000);
+  console.log('shadow on after baixa:', await p.evaluate(() => window.__sh));
+  await step('nev', S('g.P.x=60;g.P.z=60; if(g.NEV) { g.NEV.t = 0; }'), 3000);
+  console.log('ERRORS\n' + errs.slice(0, 20).join('\n'));
+  await b.close();
+})().catch((e) => { console.error('FAIL', e); process.exit(1); });

@@ -4969,9 +4969,9 @@ shadowThrottle = function (dt) { if (!renderer.shadowMap.enabled) return; if (SE
 { let last = ''; const base = v14Update; v14Update = function (dt) { base(dt); const k = (fighting() ? 1 : 0) + pwSel() + S.slot; if (k !== last) { last = k; try { updateHand(); } catch (e) {} } }; }
 
 // sons novos da v19: cacarejo, quá-quá e murmúrio de vila (CC0, créditos em game/assets/CREDITS-v17-sons.md)
-AMB_KEYS.push('amb_village'); EXTRA_SFX.push('ani_cluck_1', 'ani_cluck_2', 'ani_quack_1', 'ani_quack_2', 'amb_village');
-SFXALT.cluck = ['ani_cluck_1', 'ani_cluck_2']; SFXALT.quack = ['ani_quack_1', 'ani_quack_2'];
-Object.assign(SFXV, { ani_cluck_1: 0.5, ani_cluck_2: 0.5, ani_quack_1: 0.5, ani_quack_2: 0.5 });
+AMB_KEYS.push('amb_village'); EXTRA_SFX.push('ani_cluck_1', 'ani_cluck_2', 'ani_cluck_3', 'ani_quack_1', 'ani_quack_2', 'amb_village');
+SFXALT.cluck = ['ani_cluck_1', 'ani_cluck_2', 'ani_cluck_1', 'ani_cluck_2', 'ani_cluck_3']; SFXALT.quack = ['ani_quack_1', 'ani_quack_2'];
+Object.assign(SFXV, { ani_cluck_1: 0.5, ani_cluck_2: 0.5, ani_cluck_3: 0.45, ani_quack_1: 0.5, ani_quack_2: 0.5 });
 const ANI_SND = { chicken: 'cluck', duck: 'quack' };
 { const base = petCritter; petCritter = function (c) { const k = ANI_SND[c.kind]; if (!k || !AE.buf[SFXALT[k][0]]) return base(c); const was = c.kind; c.kind = '_' + was; try { base(c); } finally { c.kind = was; } setTimeout(() => sfx(k, c.x, c.z), 120); }; }
 // vila: conversa baixinha perto da praça e da Vila Girassol, de dia
@@ -4982,6 +4982,13 @@ const VILLAGES = [{ x: 41, z: 37, r: 11 }, { x: 92, z: 32, r: 10 }];
 let aniT = 4;
 { const base = v14Update; v14Update = function (dt) { base(dt); aniT -= dt; if (aniT > 0) return; aniT = 5 + rand() * 7; if (mode !== 'out' || !AE.ready || !critters) return;
   const near = critters.filter((c) => ANI_SND[c.kind] && Math.hypot(c.x - P.x, c.z - P.z) < 9); if (near.length) { const c = pick(near); sfx(ANI_SND[c.kind], c.x, c.z); } }; }
+
+// pré-compilação completa: chuva (criada só no 1º temporal) e malhas instanciadas que ainda não têm nenhum exemplar
+// (os cogumelos e trevos do dia nascem depois do carregamento e criavam um shader novo no Bosque)
+{ const base = precompileAll; precompileAll = function () { const tmp = [];
+  try { if (!WX.rain) buildRain(); } catch (e) {}
+  for (const k of Object.keys(INST)) { const M = MODELS[k]; if (!M || !M.root) continue; M.root.updateMatrixWorld(true); M.root.traverse((o) => { if (!o.isMesh) return; const im = new THREE.InstancedMesh(o.geometry, o.material, 1); im.setMatrixAt(0, ZERO); im.receiveShadow = true; im.castShadow = !NO_SHADOW.test(k); im.frustumCulled = false; world.add(im); tmp.push(im); }); }
+  try { base(); } finally { for (const im of tmp) { world.remove(im); im.dispose(); } } }; }
 
 /* =================== início, título e carregamento =================== */
 let ready = false;

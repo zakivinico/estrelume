@@ -1,4 +1,4 @@
-# Sons adicionados na v17 (todos CC0 1.0, domínio público)
+# Sons adicionados na v17 e na v19 (todos CC0 1.0, domínio público)
 
 Convertidos para OGG mono, com volume normalizado, por ffmpeg. Fonte e autor de cada pacote:
 
@@ -26,3 +26,7 @@ Convertidos para OGG mono, com volume normalizado, por ffmpeg. Fonte e autor de 
 | amb_cave | Loopable Dungeon Ambience | JaggedStone | https://opengameart.org/content/loopable-dungeon-ambience |
 | amb_rain | Rain (loopable) | Ylmir | https://opengameart.org/content/rain-loopable |
 | amb_waves | Beach Ocean Waves | qubodup | https://opengameart.org/content/beach-ocean-waves |
+| ani_cluck_1, ani_cluck_3 | Hen Lays 2 (s0976) | Joseph Sardin | https://bigsoundbank.com/hen-lays-2-s0976.html |
+| ani_cluck_2 | Hens Lays (s0978) | Joseph Sardin | https://bigsoundbank.com/hens-lays-s0978.html |
+| ani_quack_1, ani_quack_2 | Ducks (s0276) | Joseph Sardin | https://bigsoundbank.com/ducks-s0276.html |
+| amb_village | Outdoor Market 1 (s2728), recortado, com filtro e loop | Joseph Sardin | https://bigsoundbank.com/outdoor-market-1-s2728.html |

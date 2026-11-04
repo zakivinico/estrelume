@@ -8,6 +8,7 @@ node tools/teste/tour.js http://localhost:8765/ depois   # fotos de cada área +
 node tools/teste/mp.js http://localhost:8765/            # multiplayer com duas abas e uma sala simulada (roomstub.js)
 node tools/teste/audit.js http://localhost:8765/         # alcançabilidade: marcos, totens, portas e bolsões fechados
 node tools/teste/duel.js http://localhost:8765/          # duelo entre duas abas (convite, arco, placar)
+node tools/teste/eventos.js http://localhost:8765/       # shaders compilados no meio do jogo, evento por evento (o ideal é nenhum)
 ```
 
 - `roomstub.js` imita a capacidade `room` do claude.ai (contrato 0.2.96: `join`, `presence`, `onPeers` com `{peers, joined, left, updated}`) usando BroadcastChannel, para testar o multiplayer fora do claude.ai.

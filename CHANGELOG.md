@@ -2,6 +2,12 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v19: pendências da v18
+- **Arco com cara de arco:** ícone novo em pixel art no atlas (antes usava o da varinha) e, durante o PvP e os duelos, a personagem segura um arco 3D (ou o machado, conforme a arma escolhida).
+- **Sem engasgo ao baixar a qualidade:** ligar ou desligar o mapa de sombras recompilava todos os shaders. Agora, quando o jogo baixa para a qualidade Baixa no meio da partida, as sombras continuam ligadas, só que baratas (mapa 512 atualizado no máximo 10×/s). Ao abrir o jogo já em Baixa, elas começam desligadas. Ligar as sombras pelo menu compila tudo de uma vez, com o menu aberto.
+- **Pré-compilação completa:** a chuva e as malhas instanciadas sem nenhum exemplar no carregamento, como os cogumelos e trevos que nascem durante o dia, também entram na pré-compilação. Num passeio por 40 eventos (chuva, bosque, chefes, barco, Kraken, duelo, poço, criador...), nenhum shader novo aparece mais no meio do jogo.
+- **Sons novos (CC0, BigSoundBank, Joseph Sardin):** galinhas cacarejam e patos fazem quá-quá no carinho e de vez em quando, quando você está por perto. A praça e a Vila Girassol ganharam um murmúrio baixinho de vila durante o dia.
+
 ## v18: duas moedas, craft, reforma da casa, natureza que volta e duelos
 **Economia**
 - Duas moedas: **🪙 Moedas** para comércio (vender, comprar, sementes, arar, Ateliê, Forja, expansões, reforma da casa e armas) e **⭐ Desejos**, só para o Poço dos Desejos (estrelas caídas, tarefas do dia, presentes, cartas, eventos e chefes).

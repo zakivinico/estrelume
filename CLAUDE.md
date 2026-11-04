@@ -28,6 +28,8 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - **Não troque o tipo da névoa nem use `scene.fog = null`.** Interiores usam `NOFOG` (mesmo tipo `Fog`, só que longe). Trocar o tipo recompila todos os shaders.
 - Todos os shaders são pré-compilados no carregamento (`precompileAll`). Material novo que só aparece num evento raro também fica coberto, desde que esteja na cena (mesmo invisível) ao carregar.
 - Vegetação e objetos repetidos vão por `Instancer` (blocos de 16×16 tiles, recortados por distância além da névoa). Itens miúdos não projetam sombra (`NO_SHADOW`).
+- **Não ligue/desligue `renderer.shadowMap.enabled` durante o jogo** (recompila tudo). A v19 mantém as sombras ligadas em Baixa (`QSH.cheap`: mapa 512, atualização espaçada); só o carregamento decide se começam desligadas.
+- Coisas criadas só em eventos (chuva, malhas instanciadas ainda vazias) entram no `precompileAll` da v19. Ao criar algo novo assim, aqueça ali. `tools/teste/eventos.js` mede shaders novos por evento.
 - Meça com `node tools/teste/tour.js` (draw calls, triângulos, luzes e shaders por área). Referência da v17 na praça: cerca de 1.200 draw calls e 2,4 milhões de triângulos.
 
 ## Mundo e conteúdo
