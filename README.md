@@ -2,7 +2,7 @@
 
 Um jogo cozy em 3D no navegador: plante, pesque, faça amizades, deseje bichinhos mágicos no Poço dos Desejos, enfrente a Vovó Rosa, navegue até o Mar Estrelado e encare o Kraken.
 
-**Versão atual: v16** (acessórios por região, estampas em pixel art e cabelos 3D novos). Histórico completo em [`CHANGELOG.md`](CHANGELOG.md).
+**Versão atual: v17** (sem travamentos, multiplayer funcionando, rosto pintado, chão novo e um vale mais cheio). Histórico completo em [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Jogar
 
@@ -34,6 +34,8 @@ O build é determinístico: o mesmo `src/main.js` sempre gera o mesmo `game/bund
 | `tools/glb2js.mjs` | Empacota `.glb` em `game/assets/m/<nome>.js`: `npm run glb2js -- modelo.glb`. |
 | `tools/kraken.mjs` | Modela o Kraken com three.js e exporta GLB: `npm run kraken -- kr_kraken.glb`. |
 | `CLAUDE.md` | Convenções do projeto para trabalhar com o Claude por aqui. |
+| `tools/teste/` | Testes no navegador: tour visual com métricas, multiplayer com sala simulada e auditoria do mapa. |
+| `docs/REFERENCIAS.md` | Referências de game design, game feel e desempenho usadas no projeto. |
 
 ## Créditos
 

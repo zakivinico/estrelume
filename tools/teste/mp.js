@@ -1,0 +1,26 @@
+const { chromium } = require('playwright'); const fs = require('fs');
+(async () => {
+  const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  const ctx = await b.newContext({ viewport: { width: 720, height: 450 } }); await ctx.addInitScript({ content: fs.readFileSync(require('path').join(__dirname, 'roomstub.js'), 'utf8') });
+  const errs = []; const mk = async (tag) => { const p = await ctx.newPage(); p.on('pageerror', (e) => errs.push(tag + ' PAGEERROR ' + e.message)); p.on('console', (m) => { if (m.type() === 'error') errs.push(tag + ' ' + m.text()); }); await p.goto(process.argv[2], { timeout: 180000, waitUntil: 'commit' }); return p; };
+  const a = await mk('A'), c = await mk('B');
+  for (const p of [a, c]) await p.waitForSelector('#loading.off', { state: 'attached', timeout: 400000 });
+  await a.evaluate(() => { window.__g.S.name = 'Ana'; window.__g.S.look = Object.assign({}, window.__g.S.look || {}, { hs: 'hr_female2', hc: 'rosa', gl: 'coracao', bk: 'asas' }); window.__g.startFrom(null); });
+  await c.evaluate(() => { window.__g.S.name = 'Bia'; window.__g.startFrom(null); });
+  await a.waitForTimeout(3000);
+  console.log('pockets opened:', await a.evaluate(() => window.__g.OPENED_POCKETS), 'MP.R?', await a.evaluate(() => !!window.__g.MP.R));
+  await a.evaluate(() => { window.__g.openMP(); document.getElementById('mpnew').click(); }); await a.waitForTimeout(1500);
+  const code = await a.evaluate(() => window.__g.MP.code); console.log('code', code);
+  await c.evaluate((code) => { window.__g.openMP(); document.getElementById('mpin').value = code; document.getElementById('mpgo').click(); }, code); await c.waitForTimeout(2500);
+  await a.evaluate(() => { window.__g.closeModal(); const P = window.__g.P; P.x = 40; P.z = 33; });
+  await c.evaluate(() => { window.__g.closeModal(); const P = window.__g.P; P.x = 38; P.z = 36; });
+  await c.waitForTimeout(4000);
+  const st = async (p) => p.evaluate(() => { const M = window.__g.MP; return { on: M.on, code: M.code, peers: Object.values(M.peers).map((q) => `${q.n}@${q.x},${q.z}`), chars: Object.values(M.chars).filter(Boolean).map((ch) => `${ch.key}@${ch.x.toFixed(1)},${ch.z.toFixed(1)} look=${ch.lkKey ? 'sim' : 'nao'} slots=${(ch.obj.userData.slotG || []).length}`) }; });
+  console.log('A sees', JSON.stringify(await st(a))); console.log('B sees', JSON.stringify(await st(c)));
+  await a.evaluate(() => { const P = window.__g.P; P.x = 39; P.z = 37; }); await c.waitForTimeout(2500);
+  console.log('B sees after A moved', JSON.stringify(await st(c)));
+  await c.screenshot({ path: 'mp_b.png', timeout: 300000 });
+  await a.evaluate(async () => { window.__g.openMP(); document.getElementById('mpleave').click(); }); await c.waitForTimeout(2500);
+  console.log('B after A left', JSON.stringify(await st(c)));
+  console.log('ERRORS\n' + errs.slice(0, 30).join('\n')); await b.close();
+})().catch((e) => { console.error('FAIL', e); process.exit(1); });
