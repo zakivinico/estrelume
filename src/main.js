@@ -231,6 +231,8 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: SET.quality === 'a
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NeutralToneMapping || THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 const scene = new THREE.Scene(); const FOG = new THREE.Fog(0xa7dcff, 24, 52); scene.fog = FOG;
+// interiores usam uma névoa do mesmo tipo, só que longe: trocar Fog por null recompilaria todos os shaders
+const NOFOG = new THREE.Fog(0x000000, 1e4, 1e5);
 const camera = new THREE.PerspectiveCamera(38, 1, 0.5, 220);
 const world = new THREE.Group(), room = new THREE.Group(); scene.add(world, room); room.visible = false;
 const ov = $('ov'), octx = ov.getContext('2d');
@@ -405,7 +407,7 @@ function loadAll(onProgress) {
 }
 const cloneM = (k) => { const m = MODELS[k]; if (!m) return new THREE.Group(); return m.isChar ? SkeletonUtils.clone(m.root) : m.root.clone(true); };
 /* ---------- instanciador em blocos ---------- */
-const CH = 8;
+const CH = 16; // v17: blocos maiores = ~4× menos draw calls (o recorte por distância compensa)
 const BOUNDS_DIRTY = new Set(); const flushBounds = () => { if (!BOUNDS_DIRTY.size) return; for (const c of BOUNDS_DIRTY) c.bounds(); BOUNDS_DIRTY.clear(); };
 class ChunkInst {
   constructor(k, max) { this.parts = []; const root = MODELS[k].root; root.updateMatrixWorld(true);
@@ -883,7 +885,7 @@ function dayBanner(t) { $('daytxt').textContent = t; $('dayban').classList.add('
 function fade(mid) { const f = $('fade'); f.classList.add('on'); setTimeout(() => { mid(); setTimeout(() => f.classList.remove('on'), 120); }, 380); }
 /* ---------- casa: entrar, sair e decorar ---------- */
 let decor = null; // { sel: id|null, r: 0, hold: index|null, cell: [x,y] }
-function enterHouse() { toggleBike(false); sfx('doorOpen_1'); fade(() => { mode = 'in'; world.visible = false; room.visible = true; scene.fog = null; P.x = RX + DOOR + 0.5; P.z = RZ + IH - 0.6; P.fx = 0; P.fz = -1; P.ang = Math.PI; if (petObj) { pet.x = P.x + 0.7; pet.z = P.z - 0.2; } endFish(); updateHand(); camera.position.set(P.x, 7.4, P.z + 6.6); camLook.set(P.x, 0.6, P.z); hud(); toast('🏠 Sua casinha! Aperte <span class="key">V</span> para decorar.'); writeSlot('ve3d-auto'); }); sfx('accept'); }
+function enterHouse() { toggleBike(false); sfx('doorOpen_1'); fade(() => { mode = 'in'; world.visible = false; room.visible = true; scene.fog = NOFOG; P.x = RX + DOOR + 0.5; P.z = RZ + IH - 0.6; P.fx = 0; P.fz = -1; P.ang = Math.PI; if (petObj) { pet.x = P.x + 0.7; pet.z = P.z - 0.2; } endFish(); updateHand(); camera.position.set(P.x, 7.4, P.z + 6.6); camLook.set(P.x, 0.6, P.z); hud(); toast('🏠 Sua casinha! Aperte <span class="key">V</span> para decorar.'); writeSlot('ve3d-auto'); }); sfx('accept'); }
 function exitHouse() { if (decor) closeDecor(); sfx('doorClose_2'); fade(() => { mode = 'out'; world.visible = true; room.visible = false; scene.fog = FOG; P.x = HOME.x; P.z = HOME.z; P.fz = 1; P.fx = 0; P.ang = 0; if (petObj) { pet.x = P.x - 0.7; pet.z = P.z; } updateHand(); camera.position.set(P.x, 9.5, P.z + 8.6); camLook.set(P.x, 0.6, P.z); hud(); writeSlot('ve3d-auto'); }); sfx('menu'); }
 function openDecor() { if (mode !== 'in') { toast('Entre em casa para decorar. 🏠'); return; } decor = { sel: null, r: 0, hold: null, cell: null }; renderDecor(); $('decor').classList.add('on'); sfx('menu'); }
 function closeDecor() { if (decor && decor.hold !== null) { /* devolve ao inventário */ } decor = null; $('decor').classList.remove('on'); if (ghost) { scene.remove(ghost); ghost = null; } }
@@ -1765,7 +1767,7 @@ function respawn() {
   if (P.boat) { P.boat = false; krakenEnd(false); const d = seaDockSpot(); SEA.boat.position.set(d.x, -0.05, d.z); }
   $('death').classList.remove('on'); sfx('accept');
   fade(() => { P.dead = false; P.hp = maxHp(); P.st = 100; P.hurt = 0; P.kx = P.kz = 0; if (player) { player.once = 0; player.play('Idle'); }
-    mode = 'in'; world.visible = false; room.visible = true; cave.group.visible = false; scene.fog = null; const bed = S.home.items.find((it) => FURN[it.id] && FURN[it.id].bed);
+    mode = 'in'; world.visible = false; room.visible = true; cave.group.visible = false; scene.fog = NOFOG; const bed = S.home.items.find((it) => FURN[it.id] && FURN[it.id].bed);
     P.x = RX + DOOR + 0.5; P.z = RZ + IH - 0.6; if (bed) { const [w, h] = footprint(FURN[bed.id], bed.r); const cx = RX + bed.x + w + 0.5, cz = RZ + bed.y + h / 2; if (!solidRoom(cx, cz)) { P.x = cx; P.z = cz; } }
     updateHand(); camera.position.set(P.x, 7.4, P.z + 6.6); camLook.set(P.x, 0.6, P.z); lastHud = ''; hud(); writeSlot('ve3d-auto'); toast('A Vovó Rosa cuidou de você. Descanse e volte com tudo! 💗'); });
 }
@@ -2964,13 +2966,18 @@ function openFeedback() {
 }
 /* ---------- multiplayer: ver outros jogadores no vale ---------- */
 const MP = { room: null, peers: {}, chars: {}, t: 0, on: false };
-(async () => { try { if (window.claude && claude.use) { const r = await claude.use('room'); if (!r) return; MP.R = r; MP.onPeersFn = ((list) => { const seen = {}; for (const p of list || []) { if (p.self || p.you || p.me) continue; const id = p.id || p.peerId || p.clientId || JSON.stringify(p).slice(0, 40); const st = p.state || p.presence || p.data || p; if (!st || st.x === undefined) continue; seen[id] = 1; MP.peers[id] = Object.assign(MP.peers[id] || {}, st, { t: performance.now() }); } for (const id of Object.keys(MP.peers)) if (!seen[id]) removePeer(id); }); } } catch (e) { MP.on = false; } })();
-function removePeer(id) { const c = MP.chars[id]; if (c) { scene.remove(c.obj); if (c.lbl) scene.remove(c.lbl); } delete MP.chars[id]; delete MP.peers[id]; }
+(async () => { try { if (window.claude && claude.use) { const r = await claude.use('room'); if (!r) return; MP.R = r; MP.onPeersFn = ((ch) => { const list = (ch && ch.peers) || (Array.isArray(ch) ? ch : []); const seen = {}; for (const p of list) { if (!p || p.isMe || p.kind === 'agent') continue; const id = p.peer; const st = p.presence; if (!id || !st || typeof st.x !== 'number' || typeof st.z !== 'number') continue; seen[id] = 1; MP.peers[id] = Object.assign({}, st, { t: performance.now() }); } for (const id of Object.keys(MP.peers)) if (!seen[id]) removePeer(id); }); } } catch (e) { MP.on = false; } })();
+function removePeer(id) { const c = MP.chars[id]; if (c) { scene.remove(c.obj); if (c.lbl) { scene.remove(c.lbl); c.lbl.material.map.dispose(); c.lbl.material.dispose(); } try { disposeSlots(c.obj); } catch (e) {} } delete MP.chars[id]; delete MP.peers[id]; }
 function mpUpdate(dt) {
   if (!MP.on || !MP.room || titleOn) return; MP.t -= dt;
-  if (MP.t <= 0) { MP.t = 0.2; try { MP.room.presence({ x: +P.x.toFixed(2), z: +P.z.toFixed(2), a: +P.ang.toFixed(2), m: mode, mv: P.moving ? 1 : 0, n: S.name, g: S.gender || 'f', o: S.outfit || genderBase(), ...mpExtra() }); } catch (e) {} }
-  for (const [id, p] of Object.entries(MP.peers)) { let c = MP.chars[id]; if (!c) { try { c = MP.chars[id] = new Char(p.o || 'rogue'); c.lbl = nameSprite(p.n || 'Amiga'); scene.add(c.lbl); c.x = p.x; c.z = p.z; } catch (e) { continue; } }
-    c.x = lerp(c.x, p.x, Math.min(1, dt * 8)); c.z = lerp(c.z, p.z, Math.min(1, dt * 8)); c.obj.position.set(c.x, 0, c.z); c.obj.rotation.y = angLerp(c.obj.rotation.y, p.a || 0, Math.min(1, dt * 10)); c.obj.visible = p.m === mode; c.lbl.visible = c.obj.visible; c.lbl.position.set(c.x, 2.3, c.z); c.update(dt, p.mv ? 'Walking_A' : 'Idle'); }
+  if (MP.t <= 0) { MP.t = 0.1; try { MP.room.presence({ x: +P.x.toFixed(2), z: +P.z.toFixed(2), a: +P.ang.toFixed(2), m: mode, mv: P.moving ? 1 : 0, n: String(S.name || '').slice(0, 14), g: S.gender || 'f', o: S.outfit || genderBase(), lk: lookFull(), ...mpExtra() }).catch(() => {}); } catch (e) {} }
+  const kp = 1 - Math.exp(-dt * 10), ka = 1 - Math.exp(-dt * 14);
+  for (const [id, p] of Object.entries(MP.peers)) { let c = MP.chars[id]; const ok = (MODELS['ch_' + p.o] && !String(p.o).startsWith('h_')) ? p.o : 'rogue';
+    if (c && c.key !== ok) { scene.remove(c.obj); try { disposeSlots(c.obj); } catch (e) {} const lbl = c.lbl; c = null; MP.chars[id] = null; if (lbl) scene.remove(lbl); }
+    if (!c) { try { c = MP.chars[id] = new Char(ok); c.lbl = nameSprite(String(p.n || 'Amiga').slice(0, 14)); scene.add(c.lbl); c.x = p.x; c.z = p.z; c.lkKey = ''; } catch (e) { continue; } }
+    if (p.lk && typeof p.lk === 'object') { const key = JSON.stringify(p.lk); if (key !== c.lkKey) { c.lkKey = key; try { applyLook(c.obj, p.lk); applyBody(c.obj, p.lk); } catch (e) {} } }
+    if (Math.hypot(p.x - c.x, p.z - c.z) > 6) { c.x = p.x; c.z = p.z; }
+    c.x = lerp(c.x, p.x, kp); c.z = lerp(c.z, p.z, kp); c.obj.position.set(c.x, 0, c.z); c.obj.rotation.y = angLerp(c.obj.rotation.y, p.a || 0, ka); c.obj.visible = p.m === mode; c.lbl.visible = c.obj.visible; c.lbl.position.set(c.x, 2.3, c.z); c.update(dt, p.mv ? 'Walking_A' : 'Idle'); }
 }
 function nameSprite(t) { const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d'); x.font = '700 30px "Pixelify Sans", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineWidth = 7; x.strokeStyle = '#5a3d68'; x.strokeText(t, 128, 32); x.fillStyle = '#fff'; x.fillText(t, 128, 32); const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true })); s.scale.set(1.6, 0.4, 1); s.renderOrder = 10; return s; }
 /* ---------- placas sempre ao lado de um caminho ---------- */
@@ -2993,7 +3000,7 @@ function buildShops() {
     const sg = makeSign(sh.n); sg.position.set(x + w / 2, 1.7, z + 0.12); sg.scale.setScalar(1.2); g.add(sg); }
 }
 const solidShop_v12 = (wx, wz) => { const sh = SHOPS[curShop]; if (!sh) return true; const x = wx - sh.x, z = wz - sh.z; if (x < 0.3 || z < 0.4 || x > sh.w - 0.3 || z > sh.h - 0.2) return true; if (Math.abs(x - sh.w / 2) < 2.1 && Math.abs(z - 2.4) < 0.5) return true; if (z < 1.2 && (x < 2 || x > sh.w - 2)) return true; return false; };
-function enterShop(id) { const sh = SHOPS[id]; if (!sh) return; toggleBike(false); sfx('doorOpen_1'); fade(() => { curShop = id; mode = 'shop'; world.visible = false; room.visible = false; cave.group.visible = false; for (const s of Object.values(SHOPS)) s.g.visible = s === sh; sh.L.intensity = 2.2; scene.fog = null; P.x = sh.x + sh.w / 2; P.z = sh.z + sh.h - 0.7; P.fx = 0; P.fz = -1; P.ang = Math.PI; endFish(); updateHand(); camera.position.set(P.x, 7.4, P.z + 6.6); camLook.set(P.x, 0.6, P.z); lastHud = ''; hud(); miniT = 0; toast(`<b>${sh.n}</b>. Fale com ${sh.who} no balcão.`); ev('shop0'); }); }
+function enterShop(id) { const sh = SHOPS[id]; if (!sh) return; toggleBike(false); sfx('doorOpen_1'); fade(() => { curShop = id; mode = 'shop'; world.visible = false; room.visible = false; cave.group.visible = false; for (const s of Object.values(SHOPS)) s.g.visible = s === sh; sh.L.intensity = 2.2; scene.fog = NOFOG; P.x = sh.x + sh.w / 2; P.z = sh.z + sh.h - 0.7; P.fx = 0; P.fz = -1; P.ang = Math.PI; endFish(); updateHand(); camera.position.set(P.x, 7.4, P.z + 6.6); camLook.set(P.x, 0.6, P.z); lastHud = ''; hud(); miniT = 0; toast(`<b>${sh.n}</b>. Fale com ${sh.who} no balcão.`); ev('shop0'); }); }
 function exitShop_v12() { const id = curShop; sfx('doorClose_2'); fade(() => { const sh = SHOPS[id]; sh.g.visible = false; sh.L.intensity = 0; curShop = null; mode = 'out'; world.visible = true; scene.fog = FOG; const d = id === 'tico' ? [SHOP.x + 1.5, SHOP.y + 3.6] : id === 'forja' ? [SMITH.x + 1.5, SMITH.y + 3.6] : [ATELIE.x + 1.5, ATELIE.y + 3.6]; P.x = d[0]; P.z = d[1]; P.fz = 1; P.fx = 0; P.ang = 0; updateHand(); camera.position.set(P.x, 9.5, P.z + 8.6); camLook.set(P.x, 0.6, P.z); lastHud = ''; hud(); miniT = 0; }); }
 function shopSpecials_v12(list) { const sh = SHOPS[curShop]; if (!sh) return; list.push({ d: Math.hypot(P.x - (sh.x + sh.w / 2), P.z - (sh.z + sh.h - 0.3)) - 0.9, label: 'Sair', act: exitShop }); list.push({ d: Math.hypot(P.x - (sh.x + sh.w / 2), P.z - (sh.z + 3.2)) - 1.4, label: `Falar com ${sh.who}`, act: sh.open }); }
 /* ---------- mapa com zoom ---------- */
@@ -3095,7 +3102,7 @@ function regionAt(x, z) {
   return REGIONS[3];
 }
 const tutDone = () => S.tstep >= TUT.length;
-function regionOpen(r) { if (r.lv === 0) return true; if (!tutDone()) return false; return (S.lv || 1) >= r.lv; }
+function regionOpen(r) { if (r.lv === 0) return true; if (!tutDone()) return r.lv <= 1 && (S.tstep || 0) >= 4; /* v17: a Praia do Sol abre no meio do tutorial */ return (S.lv || 1) >= r.lv; }
 let lockMsgT = 0;
 function regionBlocked(nx, nz) { if (mode !== 'out' || CUT) return false; const to = regionAt(nx, nz); if (regionOpen(to)) return false; const from = regionAt(P.x, P.z); if (!regionOpen(from)) return false;
   if (gtime - lockMsgT > 2.5) { lockMsgT = gtime; sfx('cancel'); toast(!tutDone() ? `A <b>Névoa Sonolenta</b> cobre a saída da vila. Termine o <b>tutorial</b> para ganhar brilho.` : `A névoa sobre <b>${to.n}</b> só se abre com <b>nível ${to.lv}</b> de brilho. Você está no nível ${S.lv}.`); burst(nx, 0.6, nz, ['#e8dcff', '#ffffff'], 8, 1); fogFirst(); } return true; }
@@ -3636,7 +3643,7 @@ function applyBody(o, lk) {
   if (!o) return; lk = lk || {}; const isH = (o.userData.ck || '').startsWith('h_'); const base = isH ? 1.12 : 1; o.scale.setScalar(base * ((SIZES[lk.sz] || SIZES.n)[1]));
   const hb = headBoneOf(o); if (hb) { const hs = (HEADS[lk.hd] || HEADS.n)[1]; hb.userData.hs = hs; if (!hb.userData.hk) { hb.userData.hk = 1; hb.updateMatrix = function () { if (this.userData.hs && this.userData.hs !== 1) this.scale.setScalar(this.userData.hs); THREE.Object3D.prototype.updateMatrix.call(this); }; } hb.scale.setScalar(hs); }
   if (o.userData.face) { o.userData.face.parent && o.userData.face.parent.remove(o.userData.face); o.userData.face = null; }
-  const fc = lk.fc || 'none', gl = 'none'; // v16: óculos viraram acessório 3D (equipSlots) if ((fc === 'none' && gl === 'none') || !hb || isH) return;
+  const fc = lk.fc || 'none', gl = 'none'; /* v16: óculos viraram acessório 3D (equipSlots) */ if ((fc === 'none' && gl === 'none') || !hb || isH) return;
   o.updateMatrixWorld(true); const inv = o.matrixWorld.clone().invert();
   const hm = headMesh(o);
   const hp = new THREE.Vector3(); hb.getWorldPosition(hp); hp.applyMatrix4(inv); let fb = null; if (hm) { fb = new THREE.Box3().setFromObject(hm, true).applyMatrix4(inv); }
@@ -3690,7 +3697,7 @@ function buildRoomFor(D) {
   const sg = makeSign(D.n); sg.position.set(x + w / 2, 2.25, z + 0.12); sg.scale.setScalar(1.05); g.add(sg);
   SHOPS[R.id] = R; ROOMS[D.id] = R; return R;
 }
-function enterRoom(D) { const R = ROOMS[D.id] || buildRoomFor(D); toggleBike(false); sfx('doorOpen_1'); fade(() => { curShop = R.id; mode = 'shop'; world.visible = false; room.visible = false; cave.group.visible = false; for (const s of Object.values(SHOPS)) if (s.g) s.g.visible = s === R; if (!ROOM_LIGHT) { ROOM_LIGHT = new THREE.PointLight(0xffd9a8, 0, 14, 1.3); scene.add(ROOM_LIGHT); } ROOM_LIGHT.position.set(R.x + R.w / 2, 2.6, R.z + R.h / 2); ROOM_LIGHT.intensity = 2.2; scene.fog = null; P.x = R.x + R.w / 2; P.z = R.z + R.h - 0.7; P.fx = 0; P.fz = -1; P.ang = Math.PI; endFish(); updateHand(); camera.position.set(P.x, 7.4, P.z + 6.6); camLook.set(P.x, 0.6, P.z); lastHud = ''; hud(); miniT = 0; toast(`<b>${R.n}</b>`); }); }
+function enterRoom(D) { const R = ROOMS[D.id] || buildRoomFor(D); toggleBike(false); sfx('doorOpen_1'); fade(() => { curShop = R.id; mode = 'shop'; world.visible = false; room.visible = false; cave.group.visible = false; for (const s of Object.values(SHOPS)) if (s.g) s.g.visible = s === R; if (!ROOM_LIGHT) { ROOM_LIGHT = new THREE.PointLight(0xffd9a8, 0, 14, 1.3); scene.add(ROOM_LIGHT); } ROOM_LIGHT.position.set(R.x + R.w / 2, 2.6, R.z + R.h / 2); ROOM_LIGHT.intensity = 2.2; scene.fog = NOFOG; P.x = R.x + R.w / 2; P.z = R.z + R.h - 0.7; P.fx = 0; P.fz = -1; P.ang = Math.PI; endFish(); updateHand(); camera.position.set(P.x, 7.4, P.z + 6.6); camLook.set(P.x, 0.6, P.z); lastHud = ''; hud(); miniT = 0; toast(`<b>${R.n}</b>`); }); }
 function exitShop() { const R = SHOPS[curShop]; if (!R || !R.home) return exitShop_v12(); sfx('doorClose_2'); fade(() => { R.g.visible = false; if (ROOM_LIGHT) ROOM_LIGHT.intensity = 0; curShop = null; mode = 'out'; world.visible = true; scene.fog = FOG; P.x = R.D.ex; P.z = R.D.ez; P.fz = 1; P.fx = 0; P.ang = 0; updateHand(); camera.position.set(P.x, 9.5, P.z + 8.6); camLook.set(P.x, 0.6, P.z); lastHud = ''; hud(); miniT = 0; }); }
 const solidShop = (wx, wz) => { const R = SHOPS[curShop]; if (!R || !R.home) return solidShop_v12(wx, wz); const x = wx - R.x, z = wz - R.z; if (x < 0.3 || z < 0.4 || x > R.w - 0.3 || z > R.h - 0.2) return true; for (const r of R.rects) if (wx > r[0] - 0.05 && wx < r[2] + 0.05 && wz > r[1] - 0.05 && wz < r[3] + 0.05) return true; return false; };
 function shopSpecials(list) { const R = SHOPS[curShop]; if (!R || !R.home) return shopSpecials_v12(list); list.push({ d: Math.hypot(P.x - (R.x + R.w / 2), P.z - (R.z + R.h - 0.3)) - 0.9, label: 'Sair', act: exitShop }); if (R.D.type === 'casa' || R.D.type === 'rosa') list.push({ d: Math.hypot(P.x - (R.x + 2), P.z - (R.z + 1.8)) - 1.2, label: 'Descansar um pouco na cama', act: () => fade(() => { P.hp = Math.min(maxHp(), P.hp + maxHp() * 0.5); P.st = maxSt(); lastHud = ''; hud(); toast('Você descansou um pouquinho. Que cama fofa!'); }) }); }
@@ -3728,7 +3735,7 @@ function openMenu(tab = 'main') {
 
 // ---------- multiplayer: criar ou entrar numa partida com código ----------
 const mpCode = () => Array.from({ length: 5 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[(Math.random() * 32) | 0]).join('');
-async function mpJoin(code) { if (!MP.R) { toast('O multiplayer só funciona com o jogo aberto dentro do Claude.'); return false; } try { if (MP.room && MP.room.leave) await MP.room.leave(); } catch (e) {} for (const id of Object.keys(MP.peers)) removePeer(id); try { MP.room = await MP.R.join('estrelume-' + code); MP.code = code; MP.on = true; if (MP.onPeersFn) MP.room.onPeers(MP.onPeersFn); mpChip(); sfx('quest'); return true; } catch (e) { MP.on = false; toast('Não consegui entrar nessa partida agora.'); return false; } }
+async function mpJoin(code) { if (!MP.R) { toast('O multiplayer só funciona com o jogo aberto dentro do Claude.'); return false; } try { if (MP.room && MP.room.leave) await MP.room.leave(); } catch (e) {} for (const id of Object.keys(MP.peers)) removePeer(id); try { MP.room = await MP.R.join('estrelume-' + String(code).toLowerCase()); MP.code = code; MP.on = true; if (MP.onPeersFn) MP.room.onPeers(MP.onPeersFn); mpChip(); sfx('quest'); return true; } catch (e) { MP.on = false; toast('Não consegui entrar nessa partida agora.'); return false; } }
 async function mpLeave() { try { if (MP.room && MP.room.leave) await MP.room.leave(); } catch (e) {} for (const id of Object.keys(MP.peers)) removePeer(id); MP.room = null; MP.on = false; MP.code = null; mpChip(); }
 function mpChip() { let c = $('mpchip'); if (!c) { const t = document.querySelector('.trinfo'); if (!t) return; t.insertAdjacentHTML('beforeend', '<div class="hud pill" id="mpchip"></div>'); c = $('mpchip'); c.onclick = () => openMP(); } c.style.display = MP.code ? '' : 'none'; if (MP.code) c.innerHTML = `Partida <b>${MP.code}</b> · ${1 + Object.keys(MP.peers).length}`; }
 function openMP() {
@@ -3782,7 +3789,7 @@ function rosaUpdate(dt) {
 function talkRosa() { if (RB.on) return; const st = TUT[S.tstep]; if (st && st.ev === 'rosaboss') { rosa.wait = 4; sayWho = rosaC; say('Vovó Rosa', THUMB.rosa, ['Você cuidou da horta, pescou, vendeu e arrumou a casinha. Estou orgulhosa!', 'Mas lá fora a Névoa Sonolenta esconde slimes e perigos.', 'Antes de deixar você sair, vou fazer um pequeno teste de magia. Não se preocupe: eu não deixo você se machucar de verdade.', 'Pronta? Vamos até o campo perto do lago!'], () => rosaStart()); return; } talkRosa_v12(); }
 
 // ---------- tudo junto no loop ----------
-function v13Update(dt) { if (mode === 'out') { if (ADM.fly) { scene.fog = null; for (const m of FOGR.mats) m.visible = false; } else if (!scene.fog) scene.fog = FOG; } hungerUpdate(dt); wxUpdate(dt); rosaUpdate(dt); roomsUpdate(dt); if (MP.code && rand() < dt) mpChip(); }
+function v13Update(dt) { if (mode === 'out') { if (ADM.fly) { scene.fog = NOFOG; for (const m of FOGR.mats) m.visible = false; } else if (scene.fog !== FOG) scene.fog = FOG; } hungerUpdate(dt); wxUpdate(dt); rosaUpdate(dt); roomsUpdate(dt); if (MP.code && rand() < dt) mpChip(); }
 addEventListener('keydown', (e) => { if (e.code === 'F9' && SET.admin && ready && !titleOn) { e.preventDefault(); openAdmin(); } if (e.code === 'KeyU' && ready && !titleOn && !modalOpen() && !(e.target && e.target.tagName === 'INPUT')) eatBest(); });
 if (/[?&]admin=1/.test(location.search)) SET.admin = true;
 
@@ -3930,6 +3937,7 @@ function scCamStep(dt) { SC.refit = (SC.refit || 0) - dt; if (SC.refit <= 0) { S
 const BLUSH = { rosa: ['Rosa', '#ff8fb0'], pessego: ['Pêssego', '#ffb38a'], coral: ['Coral', '#ff6f6f'], lilas: ['Lilás', '#c9a2ff'] };
 const GLCOL = { auto: ['Padrão', null], preto: ['Preto', '#3a2d4a'], rosa: ['Rosa', '#ff6fa5'], ouro: ['Dourado', '#f2b83a'], azul: ['Azul', '#4aa3ff'] };
 Object.assign(FACES, { estrela: 'Estrelinha no rosto', coracao: 'Coraçãozinho', pinta: 'Pintinha charmosa' });
+Object.assign(FACES, { bigodes: 'Bigodinhos de gatinho', brilhos: 'Brilhinhos', curativo: 'Curativo fofo', fada: 'Pintura de fada', arcoiris: 'Arco-íris na bochecha', rubor: 'Rubor forte' });
 function faceTab(lk) {
   const ch = (T, key, cur) => Object.entries(T).map(([k, v]) => `<button class="btn chip ${cur === k ? 'on' : ''}" data-${key}="${k}">${Array.isArray(v) ? (v[1] && v[1][0] === '#' ? `<i style="background:${v[1]}"></i>` : '') + v[0] : v}</button>`).join('');
   return `<div class="crl">Rosto</div><div class="chips">${ch(FACES, 'fc', lk.fc || 'none')}</div><div class="crl">Cor das bochechas</div><div class="chips">${ch(BLUSH, 'bc', lk.bc || 'rosa')}</div><div class="crl">Altura</div><div class="chips">${ch(SIZES, 'sz', lk.sz || 'n')}</div><div class="crl">Tamanho da cabeça</div><div class="chips">${ch(HEADS, 'hd', lk.hd || 'n')}</div>`;
@@ -4342,6 +4350,302 @@ function accTab(lk, fromTitle) {
   };
 }
 
+/* =================== v17: mundo sem becos, multiplayer de verdade, desempenho e rosto pintado =================== */
+// Abre passagem para bolsões de chão fechados por árvores/pedras (lá podiam nascer estrelas e coletáveis inalcançáveis).
+const POCKET_CUT = new Set(['tree', 'pine', 'rock', 'bush', 'palm']);
+function openPockets() {
+  const N = W * H, start = I(34, 29); let opened = 0;
+  for (let pass = 0; pass < 40; pass++) {
+    const comp = new Int32Array(N).fill(-1), q = []; comp[start] = 0; q.push(start);
+    while (q.length) { const c = q.pop(), cx = c % W, cy = (c / W) | 0; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = cx + dx, ny = cy + dy; if (!inb(nx, ny)) continue; const k = I(nx, ny); if (comp[k] >= 0 || solidAt(nx, ny)) continue; comp[k] = 0; q.push(k); } }
+    let seed = -1; for (let k = 0; k < N; k++) if (comp[k] < 0 && !solidAt(k % W, (k / W) | 0)) { seed = k; break; }
+    if (seed < 0) break;
+    // 0-1 BFS a partir do bolsão: chão livre custa 0, árvore/pedra/arbusto custa 1, o resto é parede
+    const dist = new Int32Array(N).fill(1e9), prev = new Int32Array(N).fill(-1), dq = [seed]; dist[seed] = 0; let hit = -1;
+    const pocket = []; { const st = [seed], vis = new Uint8Array(N); vis[seed] = 1; while (st.length) { const c = st.pop(); pocket.push(c); dist[c] = 0; const cx = c % W, cy = (c / W) | 0; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = cx + dx, ny = cy + dy; if (!inb(nx, ny)) continue; const k = I(nx, ny); if (vis[k] || solidAt(nx, ny)) continue; vis[k] = 1; st.push(k); } } }
+    const dq2 = pocket.slice(); let head = 0;
+    while (head < dq2.length && hit < 0) { const c = dq2[head++], cx = c % W, cy = (c / W) | 0; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = cx + dx, ny = cy + dy; if (!inb(nx, ny)) continue; const k = I(nx, ny); if (dist[k] <= dist[c] + 1) continue; const o = obj[k], free = !solidAt(nx, ny), cut = !free && tile[k] !== WA && o && POCKET_CUT.has(o.t); if (!free && !cut) continue; dist[k] = dist[c] + (free ? 0 : 1); prev[k] = c; if (free && comp[k] === 0) { hit = k; break; } dq2.push(k); } }
+    if (hit < 0 || dist[hit] > 3) { for (const k of pocket) obj[k] = obj[k] || { t: 'part', pocket: 1 }; continue; } // sem saída barata: o bolsão vira mato fechado (nada nasce lá)
+    for (let k = hit; k >= 0 && dist[k] > 0; k = prev[k]) if (obj[k] && POCKET_CUT.has(obj[k].t)) { obj[k] = null; opened++; }
+  }
+  OPENED_POCKETS = opened;
+}
+let OPENED_POCKETS = 0;
+
+// ---------- luzes: um pool fixo de luzes reais copia as fontes mais próximas ----------
+// O three.js recompila todos os shaders quando o número de luzes visíveis muda (entrar na casa, na caverna, nas lojas)
+// e cada luz extra pesa em todos os pixels. Aqui as luzes do jogo viram "fontes" fora da camada da câmera e só
+// lpCount() luzes reais (sempre na cena) recebem cor, força e posição das fontes acesas mais perto de onde a câmera olha.
+const LP = { real: [], src: [], scanT: 0 }, LP_LAYER = 31;
+const lpCount = () => 4; // fixo: mudar a quantidade recompilaria todos os shaders
+function lightPoolInit() {
+  for (const l of LP.real) scene.remove(l); LP.real = [];
+  for (let i = 0; i < lpCount(); i++) { const l = new THREE.PointLight(0xffffff, 0, 1, 2); l.userData.pool = 1; scene.add(l); LP.real.push(l); }
+  lpScan();
+}
+function lpScan() { LP.src = []; scene.traverse((o) => { if (o.isPointLight && !o.userData.pool) { o.layers.set(LP_LAYER); LP.src.push(o); } }); }
+const lpShown = (o) => { for (let n = o; n; n = n.parent) { if (!n.visible) return false; if (n === scene) return true; } return false; };
+const LPV = new THREE.Vector3();
+function lightPoolUpdate(dt) {
+  if (!LP.real.length) return;
+  LP.scanT -= dt; if (LP.scanT <= 0) { LP.scanT = 1.5; lpScan(); }
+  const fx = camLook.x, fz = camLook.z, pick = [];
+  for (const l of LP.src) { if (!(l.intensity > 0.001) || !lpShown(l)) continue; l.getWorldPosition(LPV); const d = Math.hypot(LPV.x - fx, LPV.z - fz) - (l.distance || 10) * 0.5; if (d > 26) continue; pick.push({ l, d, x: LPV.x, y: LPV.y, z: LPV.z }); }
+  pick.sort((a, b) => a.d - b.d);
+  for (let i = 0; i < LP.real.length; i++) { const r = LP.real[i], q = pick[i]; if (!q) { r.intensity = 0; continue; } r.position.set(q.x, q.y, q.z); r.color.copy(q.l.color); r.intensity = q.l.intensity; r.distance = q.l.distance; r.decay = q.l.decay; }
+}
+{ const base = v14Update; v14Update = function (dt) { base(dt); lightPoolUpdate(dt); }; }
+// toda troca de área passa pelo fade: adota na hora as luzes recém-criadas (caverna, salas), antes do próximo quadro
+{ const base = fade; fade = function (mid) { return base(() => { mid(); try { if (LP.real.length) lpScan(); } catch (e) {} }); }; }
+
+// ---------- rosto pintado como textura ----------
+// Uma cópia da malha da cabeça (só os triângulos da frente) recebe UVs projetados de frente, no espaço de bind,
+// e uma textura desenhada em canvas. Como compartilha o esqueleto, acompanha todas as animações e o tamanho da cabeça.
+const FACE_GEO = {}, FACE_TEX = {};
+function faceGeoFor(hm) {
+  const key = hm.geometry.uuid; if (FACE_GEO[key]) return FACE_GEO[key];
+  const g = hm.geometry, pos = g.attributes.position, n = pos.count, M = hm.isSkinnedMesh ? hm.bindMatrix : new THREE.Matrix4();
+  const P3 = new Array(n); for (let i = 0; i < n; i++) P3[i] = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)).applyMatrix4(M);
+  const idx = g.index ? Array.from(g.index.array) : [...Array(n).keys()], front = [], ab = new THREE.Vector3(), ac = new THREE.Vector3(), nn = new THREE.Vector3();
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, minZ = 1e9, maxZ = -1e9; for (const v of P3) { minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x); minY = Math.min(minY, v.y); maxY = Math.max(maxY, v.y); minZ = Math.min(minZ, v.z); maxZ = Math.max(maxZ, v.z); }
+  const midZ = (minZ + maxZ) / 2;
+  for (let t = 0; t + 2 < idx.length; t += 3) { const a = P3[idx[t]], b = P3[idx[t + 1]], c = P3[idx[t + 2]]; ab.subVectors(b, a); ac.subVectors(c, a); nn.crossVectors(ab, ac).normalize(); if (nn.z > 0.25 && (a.z + b.z + c.z) / 3 > midZ) front.push(idx[t], idx[t + 1], idx[t + 2]); }
+  const h = maxY - minY || 1, cx = (minX + maxX) / 2, uv = new Float32Array(n * 2);
+  for (let i = 0; i < n; i++) { uv[i * 2] = 0.5 + (P3[i].x - cx) / h; uv[i * 2 + 1] = (P3[i].y - minY) / h; }
+  const ng = new THREE.BufferGeometry(); for (const [k, a] of Object.entries(g.attributes)) if (k !== 'uv') ng.setAttribute(k, a);
+  ng.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); ng.setIndex(front); ng.boundingSphere = g.boundingSphere; ng.boundingBox = g.boundingBox;
+  return (FACE_GEO[key] = { geo: ng, wr: (maxX - minX) / h });
+}
+function faceTex(lk, wr) {
+  const fc = lk.fc || 'none', bc = (BLUSH[lk.bc] || BLUSH.rosa)[1], key = fc + '|' + bc + '|' + wr.toFixed(2); if (FACE_TEX[key]) return FACE_TEX[key];
+  const S2 = 256, cv = document.createElement('canvas'); cv.width = cv.height = S2; const c = cv.getContext('2d');
+  const X = (u) => u * S2, Y = (v) => (1 - v) * S2, hw = Math.min(wr, 1.1), eyeV = 0.4, chV = eyeV - 0.12, chU = 0.27 * hw, mU = 0.21 * hw; // mU: marcas únicas, mais perto do centro
+  const dot = (u, v, r, col, a = 1) => { c.globalAlpha = a; c.fillStyle = col; c.beginPath(); c.arc(X(u), Y(v), r * S2, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1; };
+  const blush = (a, r) => { for (const sx of [-1, 1]) { const g = c.createRadialGradient(X(0.5 + sx * chU), Y(chV), 0, X(0.5 + sx * chU), Y(chV), r * S2); g.addColorStop(0, bc); g.addColorStop(1, 'rgba(255,255,255,0)'); c.globalAlpha = a; c.fillStyle = g; c.beginPath(); c.arc(X(0.5 + sx * chU), Y(chV), r * S2, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1; } };
+  const star = (u, v, r, col) => { c.fillStyle = col; c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = (i % 2 ? r * 0.5 : r) * S2; c[i ? 'lineTo' : 'moveTo'](X(u) + Math.cos(a) * rr, Y(v) + Math.sin(a) * rr); } c.closePath(); c.fill(); };
+  const heart = (u, v, r, col) => { const x = X(u), y = Y(v), R = r * S2; c.fillStyle = col; c.beginPath(); c.moveTo(x, y + R); c.bezierCurveTo(x + R * 1.5, y + R * 0.1, x + R * 0.9, y - R * 1.15, x, y - R * 0.4); c.bezierCurveTo(x - R * 0.9, y - R * 1.15, x - R * 1.5, y + R * 0.1, x, y + R); c.fill(); };
+  if (fc === 'blush' || fc === 'ambos') blush(0.75, 0.085 * hw);
+  if (fc === 'rubor') { blush(0.95, 0.11 * hw); for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) { c.strokeStyle = '#ffffffaa'; c.lineWidth = 2; c.beginPath(); const x = X(0.5 + sx * chU) + (i - 1) * 7, y = Y(chV); c.moveTo(x - 2, y + 4); c.lineTo(x + 2, y - 4); c.stroke(); } }
+  if (fc === 'sardas' || fc === 'ambos') for (const sx of [-1, 1]) for (let i = 0; i < 5; i++) dot(0.5 + sx * (0.15 + (i % 3) * 0.045) * hw, chV + 0.05 - (i % 2) * 0.035 - Math.floor(i / 3) * 0.02, 0.011, '#a8643f', 0.85);
+  if (fc === 'estrela') star(0.5 + mU, chV, 0.05 * hw, '#ffd45a');
+  if (fc === 'coracao') heart(0.5 + mU, chV, 0.045 * hw, '#ff5f8f');
+  if (fc === 'pinta') dot(0.5 + mU * 0.9, chV - 0.03, 0.014, '#5a3424');
+  if (fc === 'bigodes') for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) { c.strokeStyle = '#3a2d4a'; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath(); const x0 = X(0.5 + sx * chU * 0.75), y0 = Y(chV) + (i - 1) * 8; c.moveTo(x0, y0); c.lineTo(x0 + sx * 28, y0 + (i - 1) * 6); c.stroke(); }
+  if (fc === 'brilhos') { star(0.5 + chU * 1.05, eyeV + 0.02, 0.028, '#fff6c8'); star(0.5 - chU * 1.1, chV - 0.02, 0.02, '#ffe18d'); dot(0.5 + chU * 0.8, chV - 0.05, 0.008, '#ffffff'); }
+  if (fc === 'curativo') { c.save(); c.translate(X(0.5 + mU), Y(chV)); c.rotate(-0.5); c.fillStyle = '#ffd9b8'; c.fillRect(-26, -9, 52, 18); c.fillStyle = '#ffb3c8'; c.fillRect(-9, -9, 18, 18); c.fillStyle = '#e88aa3'; for (const [a, b] of [[-4, -4], [4, -4], [-4, 4], [4, 4]]) c.fillRect(a - 1, b - 1, 2, 2); c.restore(); }
+  if (fc === 'fada') for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) { const a = Math.PI * (0.15 + i * 0.22); dot(0.5 + sx * (chU + Math.cos(a) * 0.06), chV + 0.06 + Math.sin(a) * 0.05, 0.012 - i * 0.002, ['#b79cff', '#7cc4ff', '#ff8fb8', '#ffe18d'][i]); }
+  if (fc === 'arcoiris') { const x = X(0.5 + mU), y = Y(chV) + 6; ['#ff6f6f', '#ffb347', '#ffe18d', '#8ff0c0', '#7cc4ff', '#b79cff'].forEach((col, i) => { c.strokeStyle = col; c.lineWidth = 3; c.beginPath(); c.arc(x, y, 20 - i * 3, Math.PI, 0); c.stroke(); }); }
+  c.clearRect(0, 0, S2, 1); c.clearRect(0, S2 - 1, S2, 1); c.clearRect(0, 0, 1, S2); c.clearRect(S2 - 1, 0, 1, S2); // borda transparente (textura presa nas bordas)
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.anisotropy = 4;
+  return (FACE_TEX[key] = t);
+}
+function faceOverlay(o, lk) {
+  if (o.userData.face2) { o.userData.face2.parent && o.userData.face2.parent.remove(o.userData.face2); o.userData.face2.material.dispose(); o.userData.face2 = null; }
+  const fc = (lk && lk.fc) || 'none'; if (fc === 'none' || String(o.userData.ck || '').startsWith('h_')) return;
+  const hm = headMesh(o); if (!hm || !hm.geometry || !hm.geometry.attributes.position) return;
+  const F = faceGeoFor(hm), mat = new THREE.MeshLambertMaterial({ map: faceTex(lk, F.wr), transparent: true, alphaTest: 0.02, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+  const m = hm.isSkinnedMesh ? new THREE.SkinnedMesh(F.geo, mat) : new THREE.Mesh(F.geo, mat);
+  if (hm.isSkinnedMesh) m.bind(hm.skeleton, hm.bindMatrix);
+  m.position.copy(hm.position); m.quaternion.copy(hm.quaternion); m.scale.copy(hm.scale); m.renderOrder = 2; m.frustumCulled = false; m.name = 'FacePaint';
+  hm.parent.add(m); o.userData.face2 = m;
+}
+{ const base = applyBody; applyBody = function (o, lk) { base(o, Object.assign({}, lk || {}, { fc: 'none' })); try { faceOverlay(o, lk || {}); } catch (e) { console.error(e); } }; }
+
+// ---------- mais pacotes de modelos CC0 (Kenney, Quaternius, KayKit) ----------
+const V17M = { kn_stall: { s: 2.3 }, kn_stall_red: { s: 2.3 }, kn_stall_green: { s: 2.3 }, kn_cart: { s: 1.5 }, kn_fountain: { s: 2.8 }, kn_lantern: { h: 1.5 }, kn_stump: { s: 0.8 }, kn_logs: { s: 1.3 }, kn_mushgrp: { h: 0.42 }, kn_campfire: { s: 1.1 }, kn_tent: { s: 2.3 }, kn_canoe: { s: 2.2 }, kn_buoy: { h: 1.2 }, kn_disp_fruit: { s: 1.3 }, kn_disp_bread: { s: 1.3 },
+  kk_umb_pink: { h: 2.3 }, kk_umb_yellow: { h: 2.3 }, kk_umb_blue: { h: 2.3 }, qv_market1: { s: 2.5 }, qv_market2: { s: 2.5 }, qv_hay: { s: 1.0 }, qv_gazebo: { s: 3.4 }, qv_bench: { s: 1.5 }, qv_bonfire: { s: 1.1 },
+  qn_flower3: { h: 0.42 }, qn_flower4: { h: 0.42 }, qn_fern: { h: 0.55 }, qn_mush: { h: 0.32 }, qn_pebble: { s: 0.32 }, qn_bushfl: { h: 0.85 },
+  f_bed_double_B: { s: 1.92 }, f_bed_single_B: { s: 1.92 }, f_couch: { s: 1.92 }, f_armchair: { s: 0.96 }, f_chair_B: { h: 1.0 }, f_rug_oval_B: { s: 1.92 }, f_rug_rectangle_B: { s: 1.92 }, f_pictureframe_large_B: { h: 1.0 }, f_pictureframe_standing_B: { h: 0.45 }, f_cactus_medium_B: { h: 0.8 },
+  f_shelf_A_big: { s: 1.92 }, f_cabinet_small_decorated: { s: 0.96 }, f_table_medium_long: { s: 1.92 }, f_shelf_B_small_decorated: { s: 0.96 }, qi_fireplace: { s: 1.9 }, qi_plant1: { h: 1.0 }, qi_plant4: { h: 1.1 }, qi_bookshelf: { s: 1.9 } };
+for (const [k, v] of Object.entries(V17M)) { MODEL_LIST.push(k); FIT[k] = v; }
+Object.assign(FURN, {
+  bed_double_b: { n: 'Cama de Casal Clássica', m: 'f_bed_double_B', w: 2, h: 2, price: 380, solid: 1, bed: 1 }, bed_single_b: { n: 'Cama de Solteiro Clássica', m: 'f_bed_single_B', w: 1, h: 2, price: 140, solid: 1, bed: 1 },
+  couch_b: { n: 'Sofá Liso', m: 'f_couch', w: 2, h: 1, price: 260, solid: 1 }, armchair_b: { n: 'Poltrona Lisa', m: 'f_armchair', w: 1, h: 1, price: 140, solid: 1 }, chair_b: { n: 'Cadeira Colorida', m: 'f_chair_B', w: 1, h: 1, price: 60, solid: 1 },
+  rug_oval_b: { n: 'Tapete Oval Florido', m: 'f_rug_oval_B', w: 2, h: 2, price: 110, rug: 1 }, rug_rect_b: { n: 'Tapete Retangular', m: 'f_rug_rectangle_B', w: 2, h: 2, price: 120, rug: 1 },
+  frame_large: { n: 'Quadro Grande', m: 'f_pictureframe_large_B', w: 1, h: 1, price: 90 }, frame_stand_b: { n: 'Porta-retrato', m: 'f_pictureframe_standing_B', w: 1, h: 1, price: 40 }, cactus_b: { n: 'Cacto Redondo', m: 'f_cactus_medium_B', w: 1, h: 1, price: 50, solid: 1 },
+  shelf_big: { n: 'Estante Grande', m: 'f_shelf_A_big', w: 2, h: 1, price: 220, solid: 1 }, cabinet_small: { n: 'Armarinho Decorado', m: 'f_cabinet_small_decorated', w: 1, h: 1, price: 150, solid: 1 }, table_long: { n: 'Mesa Comprida', m: 'f_table_medium_long', w: 2, h: 1, price: 180, solid: 1 },
+  shelf_small_dec: { n: 'Prateleira Enfeitada', m: 'f_shelf_B_small_decorated', w: 1, h: 1, price: 120, solid: 1 }, fireplace: { n: 'Lareira Aconchegante', m: 'qi_fireplace', w: 2, h: 1, price: 480, solid: 1, light: 1 },
+  plant_tall: { n: 'Planta Alta', m: 'qi_plant1', w: 1, h: 1, price: 70, solid: 1 }, plant_round: { n: 'Planta Redonda', m: 'qi_plant4', w: 1, h: 1, price: 75, solid: 1 }, bookshelf: { n: 'Estante de Livros', m: 'qi_bookshelf', w: 2, h: 1, price: 260, solid: 1 },
+});
+Object.assign(FD, {
+  barraca: { n: 'Barraquinha de Feira', price: 260, m: 'kn_stall_red', solid: 1 }, barraca2: { n: 'Barraquinha Verde', price: 260, m: 'kn_stall_green', solid: 1 }, carrinho_feira: { n: 'Carrinho de Feira', price: 160, m: 'kn_cart', solid: 1 },
+  lanterna: { n: 'Lanterna de Ferro', price: 110, m: 'kn_lantern', solid: 1, light: 1 }, toco: { n: 'Toco de Árvore', price: 30, m: 'kn_stump', solid: 1 }, lenha: { n: 'Pilha de Lenha', price: 45, m: 'kn_logs', solid: 1 },
+  cogumelos: { n: 'Cogumelos Vermelhos', price: 35, m: 'kn_mushgrp' }, fogueira: { n: 'Fogueira de Pedras', price: 150, m: 'qv_bonfire', solid: 1, light: 1 }, feno: { n: 'Fardo de Feno', price: 40, m: 'qv_hay', solid: 1 },
+  banco_madeira: { n: 'Banco de Madeira', price: 90, m: 'qv_bench', solid: 1 }, guarda_sol: { n: 'Guarda-sol Rosa', price: 120, m: 'kk_umb_pink', solid: 1 }, guarda_sol2: { n: 'Guarda-sol Amarelo', price: 120, m: 'kk_umb_yellow', solid: 1 },
+  guarda_sol3: { n: 'Guarda-sol Azul', price: 120, m: 'kk_umb_blue', solid: 1 }, flores_altas: { n: 'Flores do Campo', price: 25, m: 'qn_flower3' }, flores_lilas: { n: 'Flores Lilás', price: 25, m: 'qn_flower4' },
+  samambaia: { n: 'Samambaia', price: 30, m: 'qn_fern' }, arbusto_flor: { n: 'Arbusto de Flores', price: 70, m: 'qn_bushfl', solid: 1 }, banca_frutas: { n: 'Banca de Frutas', price: 200, m: 'kn_disp_fruit', solid: 1 },
+});
+// Enfeita o mundo: vegetação miúda instanciada (não bloqueia nada) e objetos maiores só em "ilhas" de chão livre,
+// para nunca fechar uma passagem. Roda antes do buildWorld original, que finaliza todos os instanciadores.
+const DRESS = { props: 0, flora: 0 };
+function dressFree(x, y, r) { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const X = x + dx, Y = y + dy; if (!inb(X, Y) || solidAt(X, Y) || obj[I(X, Y)]) return false; } return true; }
+function dressBlocked(x, y) { if (x >= 21 && x <= 42 && y >= 34 && y <= 52) return true; if (zoneAt(x, y, 2)) return true; for (const t of TOTEMS) if (Math.hypot(t.x - x, t.y - y) < 3) return true; for (const L of Object.values(LM)) if (Math.hypot((L.x + (L.w || 0) / 2) - x, (L.y + (L.h || 0) / 2) - y) < 3.5) return true; return false; }
+function dressProps(cx, cy, R, keys, count, minD, tiles, size = 1) {
+  const R3 = rng(cx * 131 + cy * 17), cand = [], placed = [];
+  for (let y = Math.floor(cy - R); y <= cy + R; y++) for (let x = Math.floor(cx - R); x <= cx + R; x++) { if (!inb(x, y) || Math.hypot(x - cx, y - cy) > R || !tiles.includes(tAt(x, y)) || dressBlocked(x, y)) continue; cand.push([x, y, R3()]); }
+  cand.sort((a, b) => a[2] - b[2]); const half = (size - 1) / 2;
+  for (const [x, y] of cand) { if (placed.length >= count) break; if (placed.some(([a, b]) => Math.hypot(a - x, b - y) < minD)) continue; if (!dressFree(x, y, half + 1)) continue; for (let dy = -half; dy <= half; dy++) for (let dx = -half; dx <= half; dx++) put(x + dx, y + dy, { t: 'part', prop: 1 });
+    const k = keys[placed.length % keys.length], o = cloneM(k); if (!o.children.length && !o.isMesh) continue; o.position.set(x + 0.5, 0, y + 0.5); o.rotation.y = Math.atan2(cx - x, cy - y) + (R3() - 0.5) * 0.6; o.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); world.add(o); placed.push([x, y]); DRESS.props++; }
+}
+function dressFlora() {
+  for (const k of ['qn_flower3', 'qn_flower4', 'qn_fern', 'qn_mush', 'qn_pebble', 'kn_mushgrp']) if (MODELS[k] && !INST[k]) INST[k] = new Instancer(k);
+  for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) { const t = tAt(x, y); if ((t !== GR && t !== SA) || obj[I(x, y)] || dressBlocked(x, y)) continue; let nearPath = false, nearTree = 0, nearWater = false;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) { const tt = tAt(x + dx, y + dy), o = obj[I(x + dx, y + dy)]; if (tt === PA) nearPath = true; if (tt === WA) nearWater = true; if (o && (o.t === 'tree' || o.t === 'pine')) nearTree++; }
+    const h = hash2(x, y, 77), j = hash2(x, y, 78), ox = 0.2 + hash2(x, y, 79) * 0.6, oz = 0.2 + hash2(x, y, 80) * 0.6, ry = j * 6.28, sc = 0.8 + hash2(x, y, 81) * 0.45; let k = null;
+    if (t === SA) { if (h < 0.02) k = 'qn_pebble'; }
+    else if (nearTree >= 2) { if (h < 0.09) k = 'qn_fern'; else if (h < 0.13) k = 'qn_mush'; else if (h < 0.145) k = 'kn_mushgrp'; }
+    else if (nearWater) { if (h < 0.05) k = 'qn_pebble'; }
+    else if (!nearPath || inTown(x, y)) { if (h < 0.028) k = 'qn_flower3'; else if (h < 0.05) k = 'qn_flower4'; }
+    if (k && INST[k]) { INST[k].add(mat4(x + ox, 0, y + oz, ry, sc)); DRESS.flora++; } }
+}
+function dressWorld() {
+  if (!MODELS.kn_stall) return;
+  dressFlora();
+  dressProps(42.5, 33, 9, ['qv_market1', 'kn_stall_red', 'kn_disp_fruit', 'kn_stall_green', 'kn_disp_bread', 'qv_bench'], 6, 3.2, [GR, PA]);
+  dressProps(98.5, 31, 10, ['qv_market2', 'kn_stall', 'kn_cart', 'qv_bench', 'kn_lantern'], 5, 3.2, [GR, PA]);
+  dressProps(98.5, 31, 12, ['kn_fountain'], 1, 4, [GR, PA], 3);
+  dressProps(66, BEACHY + 2, 18, ['kk_umb_pink', 'kk_umb_yellow', 'kk_umb_blue', 'kn_canoe'], 6, 4, [SA]);
+  dressProps(141, 30, 13, ['kn_stump', 'kn_logs', 'kn_tent', 'kn_stump', 'kn_campfire'], 6, 3, [GR]);
+  dressProps(60, 75, 11, ['qv_hay', 'qv_hay', 'kn_cart', 'qv_hay'], 5, 3, [GR]);
+  dressProps(LAKE.x, LAKE.y, 16, ['qv_gazebo'], 1, 6, [GR], 3);
+  dressProps(LAKE.x, LAKE.y, 15, ['kn_stump', 'kn_logs', 'qv_bench'], 4, 4, [GR]);
+}
+{ const base = buildWorld; buildWorld = function () { try { dressWorld(); } catch (e) { console.error(e); } const r = base(); try { lightenWorld(); } catch (e) { console.error(e); } return r; }; }
+// ---------- mundo mais leve: frutas low-poly, sem sombra em coisas miúdas e recorte por distância ----------
+const CULL = { list: [], t: 0, far: 52 }; // = FOG.far: além disso tudo já é só cor de névoa
+const NO_SHADOW = /^(q_apple_item|q_berry_item|q_flower_|qn_|kn_mushgrp|q_clover|q_mush|q_grass|q_lily)/;
+function lightenWorld() {
+  const geoKey = {}; for (const [k, m] of Object.entries(MODELS)) if (m && m.root) m.root.traverse((o) => { if (o.isMesh) geoKey[o.geometry.uuid] = k; });
+  const fruitGeo = new THREE.IcosahedronGeometry(1, 0);
+  world.traverse((o) => { if (!o.isInstancedMesh) return; const k = geoKey[o.geometry.uuid] || ''; o.userData.k = k; CULL.list.push(o);
+    if (NO_SHADOW.test(k)) o.castShadow = false;
+    if (k === 'q_apple_item') { // a maçã do pomar tinha 256 triângulos por fruta (quase 10 mil frutas): vira um icosaedro de 20
+      const g = o.geometry; g.computeBoundingBox(); const bb = g.boundingBox, sz = bb.getSize(new THREE.Vector3()), c = bb.getCenter(new THREE.Vector3());
+      const leaf = o.material && o.material.color && o.material.color.g > o.material.color.r; if (!leaf && sz.x > 0) { const ng = fruitGeo.clone(); ng.scale(sz.x * 0.5, sz.y * 0.5, sz.z * 0.5); ng.translate(c.x, c.y, c.z); o.geometry = ng; } else { o.userData.hideLeaf = true; o.visible = false; } // folhinha some
+    } });
+}
+function cullUpdate(dt) {
+  CULL.t -= dt; if (CULL.t > 0 || !CULL.list.length) return; CULL.t = 0.2;
+  const cx = camera.position.x, cz = camera.position.z, far = mode === 'out' ? CULL.far : 0;
+  for (const im of CULL.list) { const bs = im.boundingSphere; if (!bs) continue; const d = Math.hypot(bs.center.x - cx, bs.center.z - cz) - bs.radius; const v = d < far; if (im.userData.cullV !== v) { im.userData.cullV = v; im.visible = v && !im.userData.hideLeaf; } }
+}
+{ const base = v14Update; v14Update = function (dt) { base(dt); cullUpdate(dt); }; }
+
+// ---------- chão pintado: sem xadrez, bordas arredondadas entre grama, caminho, areia e terra ----------
+// Cada material vira um campo suave (interpolação bilinear entre centros de tile) e cada pixel fica com o mais forte:
+// as bordas saem orgânicas, como num jogo desenhado à mão, em vez de degraus de 1 tile.
+const GPX = matchMedia('(pointer: coarse)').matches ? 6 : 8, GCV = { cv: null, ctx: null, tex: null, img: null, mesh: null, dirty: null };
+const GPAL = { [GR]: [143, 201, 87], [PA]: [222, 184, 128], [SO]: [138, 92, 60], [SA]: [243, 224, 168] };
+const gType = (x, y) => { const t = tAt(Math.max(0, Math.min(W - 1, x)), Math.max(0, Math.min(H - 1, y))); return t === WA || t === DK ? SA : GPAL[t] ? t : GR; };
+function paintGroundRect(x0, y0, x1, y1) {
+  const { img } = GCV, d = img.data, CW2 = W * GPX, types = [GR, PA, SO, SA];
+  for (let py = Math.max(0, y0 * GPX); py < Math.min(H * GPX, (y1 + 1) * GPX); py++) for (let px = Math.max(0, x0 * GPX); px < Math.min(W * GPX, (x1 + 1) * GPX); px++) {
+    const fx = (px + 0.5) / GPX - 0.5, fy = (py + 0.5) / GPX - 0.5, tx = Math.floor(fx), ty = Math.floor(fy), ax = fx - tx, ay = fy - ty;
+    const w = [0, 0, 0, 0, 0, 0, 0]; const wob = (vn(px * 0.09, py * 0.09, 31) - 0.5) * 0.35; // borda levemente ondulada
+    for (const [dx, dy, k] of [[0, 0, (1 - ax) * (1 - ay)], [1, 0, ax * (1 - ay)], [0, 1, (1 - ax) * ay], [1, 1, ax * ay]]) w[gType(tx + dx, ty + dy)] += k;
+    let best = GR, bw = -1, second = -1; for (const t of types) { const v = w[t] + (t === GR ? wob : 0); if (v > bw) { second = bw; bw = v; best = t; } else if (v > second) second = v; }
+    const c = GPAL[best], n = fbm(px / GPX * 0.18, py / GPX * 0.18, 8) - 0.5, sp = hash2(px, py, 5);
+    let r = c[0], g = c[1], b = c[2], lf = 1 + n * (best === GR ? 0.16 : 0.07);
+    if (best === GR) { const p2 = fbm(px / GPX * 0.05, py / GPX * 0.05, 3); lf += (p2 - 0.5) * 0.12; if (sp > 0.985) lf *= 1.12; }
+    if ((best === PA || best === SA) && sp > 0.975) lf *= 0.9;
+    const edge = bw - second < 0.12 && best !== GR ? 0.9 : 1; // contorno suave e mais escuro na borda do caminho/terra
+    const i = (py * CW2 + px) * 4; d[i] = Math.min(255, r * lf * edge); d[i + 1] = Math.min(255, g * lf * edge); d[i + 2] = Math.min(255, b * lf * edge); d[i + 3] = 255; }
+  GCV.ctx.putImageData(img, 0, 0, Math.max(0, x0 * GPX), Math.max(0, y0 * GPX), (x1 - x0 + 1) * GPX, (y1 - y0 + 1) * GPX); if (GCV.tex) GCV.tex.needsUpdate = true;
+}
+function paintGround() {
+  let mesh = null; world.traverse((o) => { if (o.isMesh && o.geometry && o.geometry.attributes.color === TERR.col) mesh = o; }); if (!mesh) return;
+  const cv = document.createElement('canvas'); cv.width = W * GPX; cv.height = H * GPX; GCV.cv = cv; GCV.ctx = cv.getContext('2d'); GCV.img = GCV.ctx.createImageData(cv.width, cv.height); const t0 = performance.now(); paintGroundRect(0, 0, W - 1, H - 1); GCV.ms = Math.round(performance.now() - t0);
+  const pos = mesh.geometry.attributes.position, uv = new Float32Array(pos.count * 2); for (let i = 0; i < pos.count; i++) { uv[i * 2] = pos.getX(i) / W; uv[i * 2 + 1] = 1 - pos.getZ(i) / H; }
+  mesh.geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; GCV.tex = t;
+  mesh.material = new THREE.MeshLambertMaterial({ map: t, flatShading: true }); GCV.mesh = mesh;
+}
+// trocas de tile durante o jogo (arar a terra etc.) repintam só a vizinhança, no máximo 4×/s
+{ const base = setTileColor; setTileColor = function (x, y) { base(x, y); if (!GCV.img) return; const D = GCV.dirty; GCV.dirty = D ? [Math.min(D[0], x - 1), Math.min(D[1], y - 1), Math.max(D[2], x + 1), Math.max(D[3], y + 1)] : [x - 1, y - 1, x + 1, y + 1]; }; }
+let groundT = 0;
+function groundUpdate(dt) { groundT -= dt; if (groundT > 0 || !GCV.dirty) return; groundT = 0.25; const [a, b, c, d] = GCV.dirty; GCV.dirty = null; paintGroundRect(a, b, c, d); }
+{ const base = v14Update; v14Update = function (dt) { base(dt); groundUpdate(dt); }; }
+{ const base = buildWorld; buildWorld = function () { const r = base(); try { paintGround(); } catch (e) { console.error(e); } return r; }; }
+
+// ---------- áudio v17: WebAudio de verdade (baixa latência, funciona no iPhone), ambiência e passos por terreno ----------
+// Efeitos: buffers decodificados uma vez, com variação de tom, limite de repetição e pan estéreo por posição.
+// Música: cada faixa passa por um GainNode (no iOS o audio.volume é ignorado, então o crossfade não funcionava).
+const AE = { buf: {}, ready: false, loading: false, bus: null, mus: null, musG: {}, musV: {}, last: {}, amb: {}, ambV: {} };
+const AMB_KEYS = ['amb_day', 'amb_night', 'amb_waves', 'amb_water', 'amb_cave', 'amb_rain', 'amb_wind'];
+const STEP_SETS = { grass: [], dirt: [], sand: [], wood: [], stone: [], water: [] };
+const EXTRA_SFX = []; // preenchido pela lista de sons novos (abaixo)
+function aeLoadOne(k) { return fetch('assets/sfx/' + k + '.ogg').then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status))).then((ab) => new Promise((res, rej) => AC.decodeAudioData(ab, res, rej))).then((b) => { AE.buf[k] = b; }).catch(() => {}); }
+function aeInit() {
+  if (!AC || AE.loading) return; AE.loading = true;
+  AE.bus = AC.createGain(); AE.bus.gain.value = 1; AE.bus.connect(AC.destination);
+  AE.mus = AC.createGain(); AE.mus.gain.value = 1; AE.mus.connect(AC.destination);
+  for (const k of MUSN) { try { const src = AC.createMediaElementSource(MUS[k]), g = AC.createGain(); g.gain.value = 0; src.connect(g); g.connect(AE.mus); MUS[k].volume = 1; AE.musG[k] = g; AE.musV[k] = 0; } catch (e) {} }
+  const keys = [...new Set([...SFXN, ...EXTRA_SFX])]; // só arquivos que existem (EXTRA_SFX lista ambiência, passos e sons novos)
+  Promise.all(keys.map(aeLoadOne)).then(() => { AE.ready = true; });
+  document.addEventListener('visibilitychange', () => { try { document.hidden ? AC.suspend() : AC.resume(); } catch (e) {} });
+}
+{ const base = audioInit; audioInit = function () { base(); try { if (AC && AC.state === 'suspended') AC.resume(); aeInit(); } catch (e) {} }; }
+// destrava o áudio no primeiro toque/tecla (Safari exige gesto)
+for (const ev of ['pointerdown', 'keydown', 'touchend']) addEventListener(ev, () => { try { audioInit(); } catch (e) {} }, { once: true, passive: true });
+const SFX_VAR = /hit|pick|chop|swing|pop|step|jump|impact|sword|coin|dig|splash|squish|cluck|moo|baa|quack/;
+function aePlay(k, vol, x, z) {
+  const b = AE.buf[k]; if (!b) return false; const now = AC.currentTime; if (AE.last[k] && now - AE.last[k] < 0.035) return true; AE.last[k] = now;
+  const src = AC.createBufferSource(); src.buffer = b; if (SFX_VAR.test(k)) src.playbackRate.value = 0.9 + rand() * 0.2;
+  const g = AC.createGain(); let v = vol, node = g;
+  if (x !== undefined) { const dx = x - camLook.x, dz = z - camLook.z, d = Math.hypot(dx, dz); v *= 1 / (1 + d / 9); if (d > 30) return true; if (AC.createStereoPanner) { const pn = AC.createStereoPanner(); pn.pan.value = clamp(dx / 12, -0.85, 0.85); g.connect(pn); node = pn; } }
+  g.gain.value = clamp(v, 0, 1.5); src.connect(g); node.connect(AE.bus); src.start(); return true;
+}
+function stepSet() { if (P.boat) return null; if (mode === 'in' || mode === 'shop') return 'wood'; if (mode === 'cave') return 'stone'; const t = tAt(Math.floor(P.x), Math.floor(P.z)); return t === SA ? 'sand' : t === PA ? 'dirt' : t === DK ? 'wood' : t === WA ? 'water' : 'grass'; }
+{ const base = sfx; sfx = function (k, x, z) {
+    if (!AE.ready || SET.sfxVol <= 0) return base(k);
+    if (k === 'step') { const st = stepSet(), set = st && STEP_SETS[st]; if (set && set.length) { const kk = pick(set); return void aePlay(kk, 0.32 * SET.sfxVol); } }
+    let kk = k; if (kk === 'water') { tone(700, 0.18, 'triangle', 0.06, -450); kk = AE.buf.pour ? 'pour' : 'metalPot1'; } if (kk === 'plant') { tone(440, 0.09, 'triangle', 0.08, 160); kk = AE.buf.dig ? 'dig' : 'cloth2'; } if (kk === 'flip') kk = 'switch'; if (SFXALT[kk]) kk = pick(SFXALT[kk]);
+    if (!aePlay(kk, (SFXV[kk] || 0.9) * SET.sfxVol, x, z)) base(k); }; }
+// música com GainNode (mesma lógica de escolha da faixa)
+{ const base = updateMusic; updateMusic = function (dt) {
+    if (!AE.mus || !Object.keys(AE.musG).length) return base(dt);
+    const tg = musicTarget(), mv = SET.musVol;
+    for (const k of MUSN) { const a = MUS[k], g = AE.musG[k]; if (!g) continue; const want = k === tg ? mv : 0; if (want > 0 && a.paused) { const pr = a.play(); if (pr) pr.catch(() => {}); }
+      let v = AE.musV[k] + Math.sign(want - AE.musV[k]) * dt * 0.6; v = clamp(v, 0, 1); if (Math.abs(v - want) < 0.02) v = want; AE.musV[k] = v; g.gain.value = v * v; if (v === 0 && !a.paused && want === 0) a.pause(); } }; }
+// ambiência em camadas, cada uma com volume-alvo pelo lugar, hora e clima
+function ambTargets() {
+  const T = {}; if (titleOn || !AE.ready) return T; const h = hourNow(), night = h >= 19.5 || h < 6.3, out = mode === 'out';
+  if (out) { const nearBeach = clamp(1 - (BEACHY - P.z) / 10, 0, 1), lake = clamp(1 - (Math.hypot((P.x - LAKE.x) / 1.25, P.z - LAKE.y) - 9) / 8, 0, 1);
+    T.amb_day = night ? 0 : 0.22 * (1 - nearBeach * 0.6); T.amb_night = night ? 0.22 : 0; T.amb_waves = 0.35 * nearBeach + (P.boat ? 0.3 : 0); T.amb_water = 0.22 * lake; T.amb_wind = P.boat || P.z > H - 12 ? 0.18 : 0.05; T.amb_rain = 0.4 * (WX.k || 0); }
+  if (mode === 'cave') T.amb_cave = 0.32;
+  return T;
+}
+let ambT = 0;
+function ambUpdate(dt) {
+  if (!AE.ready || !AC) return; ambT -= dt; if (ambT > 0) return; ambT = 0.1; const T = ambTargets(), sv = SET.sfxVol;
+  for (const k of AMB_KEYS) { const b = AE.buf[k]; if (!b) continue; const want = (T[k] || 0) * sv; let a = AE.amb[k];
+    if (!a && want > 0.005) { const src = AC.createBufferSource(); src.buffer = b; src.loop = true; const g = AC.createGain(); g.gain.value = 0; src.connect(g); g.connect(AE.bus); src.start(0, rand() * b.duration); a = AE.amb[k] = { src, g, v: 0 }; }
+    if (!a) continue; a.v += (want - a.v) * 0.12; a.g.gain.value = a.v; if (a.v < 0.002 && want === 0) { try { a.src.stop(); } catch (e) {} delete AE.amb[k]; } }
+}
+{ const base = updateMusic; updateMusic = function (dt) { base(dt); ambUpdate(dt); }; } // roda mesmo com o jogo pausado (janelas abertas)
+// sons novos (CC0, OpenGameArt + Kenney; créditos em game/assets/CREDITS-v17-sons.md)
+const NEW_SFX = { step_grass: 5, step_wood: 5, step_sand: 6, step_stone: 6, step_water: 3, hit_soft_: 3, mine_: 3, swish_: 4, page_: 3, pluck_: 2, pop_b: 2, splash_: 2 };
+for (const [pre, n] of Object.entries(NEW_SFX)) for (let i = 0; i < n; i++) { const st = /^(step_|hit_soft_|mine_)/.test(pre) ? 0 : 1; EXTRA_SFX.push((pre.endsWith('_') || /\d$/.test(pre) ? pre : pre + '_') + (i + st)); }
+EXTRA_SFX.push('dig', 'pour', 'sow', 'woodcut', 'chime', 'newthing', 'fanfare', 'coin_drop', 'squish_01', 'squish_03', 'squish_05', 'squish_07', 'ani_moo', 'ani_baa', 'ani_squeal', 'ani_peeps', 'ani_meow', 'ani_bark', 'ani_whinny', ...AMB_KEYS);
+for (const st of ['grass', 'wood', 'stone', 'sand', 'water']) STEP_SETS[st] = EXTRA_SFX.filter((k) => k.startsWith('step_' + st + '_'));
+STEP_SETS.dirt = ['step00', 'step02', 'step04', 'step06', 'step08'];
+// variações extras só no caminho WebAudio (o caminho antigo só conhece os arquivos originais)
+const ALT2 = { pop: ['pop', 'pluck_1', 'pluck_2', 'pop_b_1', 'pop_b_2'], hit: ['hit', 'hit2', 'impact', 'hit_soft_0', 'hit_soft_1', 'hit_soft_2'], swing: ['swing', 'swish_1', 'swish_2', 'swish_3', 'swish_4'], bookFlip2: ['bookFlip2', 'page_1', 'page_2', 'page_3'], coin: ['coin', 'handleCoins', 'coin_drop'], quest: ['quest', 'success', 'chime'], chop: ['chop', 'woodcut'], secret: ['secret', 'newthing'], mine: ['mine_0', 'mine_1', 'mine_2'], squish: ['squish_01', 'squish_03', 'squish_05', 'squish_07'], splash: ['splash_1', 'splash_2'], plant: ['dig', 'sow'] };
+Object.assign(SFXV, { dig: 0.75, pour: 0.6, sow: 0.7, pluck_1: 0.7, pluck_2: 0.7, pop_b_1: 0.55, pop_b_2: 0.55, hit_soft_0: 0.8, hit_soft_1: 0.8, hit_soft_2: 0.8, mine_0: 0.7, mine_1: 0.7, mine_2: 0.7, swish_1: 0.5, swish_2: 0.5, swish_3: 0.5, swish_4: 0.5, page_1: 0.7, page_2: 0.7, page_3: 0.7, ani_moo: 0.5, ani_baa: 0.5, ani_squeal: 0.45, ani_peeps: 0.5, squish_01: 0.65, squish_03: 0.65, squish_05: 0.65, squish_07: 0.65, splash_1: 0.6, splash_2: 0.6, woodcut: 0.6, chime: 0.55, newthing: 0.7, fanfare: 0.75, coin_drop: 0.55 });
+{ const base = sfx; sfx = function (k, x, z) { if (AE.ready && ALT2[k]) { const kk = pick(ALT2[k].filter((q) => AE.buf[q] || SFXA[q])); if (kk) { if (k === 'plant') tone(440, 0.09, 'triangle', 0.08, 160); if (!aePlay(kk, (SFXV[kk] || 0.9) * SET.sfxVol, x, z)) base(k, x, z); return; } } return base(k, x, z); }; }
+// gatilhos novos: bichos ao fazer carinho, slime amassando, picareta na pedra, linha caindo na água
+{ const base = petCritter; petCritter = function (c) { base(c); const k = { cow: 'ani_moo', sheep: 'ani_baa', pig: 'ani_squeal', chicken: 'ani_peeps', duck: 'ani_peeps', alpaca: 'ani_baa' }[c.kind]; if (k) setTimeout(() => sfx(k, c.x, c.z), 120); }; }
+{ const base = damageSlime; damageSlime = function (s2, ...a) { const r = base(s2, ...a); try { if (s2) sfx('squish', s2.x, s2.z); } catch (e) {} return r; }; }
+{ const base = mineAt; mineAt = function (tx, ty) { const r = base(tx, ty); if (r) sfx('mine'); return r; }; }
+{ const base = startFishing; startFishing = function (x, y) { base(x, y); setTimeout(() => sfx('splash', x + 0.5, y + 0.5), 520); }; }
+{ const base = sfxP; sfxP = function (k, vol = 1, rate) { if (!AE.ready || SET.sfxVol <= 0 || !AE.buf[k]) return base(k, vol, rate); const b = AE.buf[k], src = AC.createBufferSource(), g = AC.createGain(); src.buffer = b; src.playbackRate.value = rate || 0.88 + rand() * 0.24; g.gain.value = clamp((SFXV[k] || 0.9) * SET.sfxVol * vol, 0, 1.5); src.connect(g); g.connect(AE.bus); src.start(); }; }
+
+// ---------- pré-compila os shaders de todas as áreas no carregamento (sem engasgo na primeira visita) ----------
+function precompileAll() {
+  const hidden = []; scene.traverse((o) => { if (!o.visible && !o.isLight) { hidden.push(o); o.visible = true; } });
+  try { renderer.compile(scene, camera); } finally { for (const o of hidden) o.visible = false; }
+}
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -4355,7 +4659,7 @@ function applyState(d) {
   mode = 'out'; const pos = S.pos; P.x = pos && S.mode !== 'in' ? pos.x : 34.5; P.z = pos && S.mode !== 'in' ? pos.z : 29.5; P.hp = maxHp(); endFish();
   world.visible = true; room.visible = false; cave.group.visible = false; scene.fog = FOG; if (decor) closeDecor(); if (farmEd) closeFarm(); toggleBike(false);
   resetWorldState();
-  if (S.mode === 'in') { mode = 'in'; world.visible = false; room.visible = true; scene.fog = null; P.x = pos ? pos.x : RX + DOOR + 0.5; P.z = pos ? pos.z : RZ + IH - 0.6; updateHand(); }
+  if (S.mode === 'in') { mode = 'in'; world.visible = false; room.visible = true; scene.fog = NOFOG; P.x = pos ? pos.x : RX + DOOR + 0.5; P.z = pos ? pos.z : RZ + IH - 0.6; updateHand(); }
   camera.position.set(P.x, mode === 'in' ? 7.4 : 9.5, P.z + (mode === 'in' ? 6.6 : 8.6)); camLook.set(P.x, 0.6, P.z); lastHud = ''; hud();
 }
 function startFrom(d) { applyState(d); titleOn = false; audioInit(); musicUnlocked = true; $('title').classList.add('off'); document.body.classList.remove('ttl'); hudIntro(); sfx('accept'); if (S.tstep < TUT.length) toast('Siga a <b>seta amarela</b> e o objetivo no topo da tela. <span class="key">M</span> abre o mapa e <span class="key">Esc</span> o menu.'); else toast(`Bem-vindo de volta! Dia ${S.day}. 🌸`); }
@@ -4373,7 +4677,7 @@ let last = performance.now();
 function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; update(dt); if (!$('wish').classList.contains('on')) { if (SET.quality === 'baixa') renderer.render(scene, camera); else composer.render(dt); } drawOverlay(); drawBubbles(); pvpBars(); requestAnimationFrame(frame); }
 applyQuality();
 const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.round(p * 100) + '%'; $('loadtxt').textContent = `Carregando o vale... ${Math.round(p * 100)}%`; }).then(() => {
-  alignAll(); buildWorld(); buildRoom(); buildThumbs(); try { ico3d(); } catch (e) {} applyIcons(); buildSkillBar(); layoutUI(); iconsP.then(() => { if (titleOn && ready) renderTitle(); applyIcons(); buildHotbar(); buildSkillBar(); startPxify(); });
+  alignAll(); openPockets(); buildWorld(); buildRoom(); buildThumbs(); try { ico3d(); } catch (e) {} applyIcons(); buildSkillBar(); layoutUI(); iconsP.then(() => { if (titleOn && ready) renderTitle(); applyIcons(); buildHotbar(); buildSkillBar(); startPxify(); });
   setOutfit(); player.obj.position.set(P.x, 0, P.z);
   rosaC = new Char('mage'); rosaC.obj.position.set(rosa.x, 0, rosa.z); rosaC.obj.traverse((m) => { if (m.isMesh && m.material && m.material.color) { m.material = m.material.clone(); m.material.color.offsetHSL(0.85, 0.1, 0.08); } });
   ticoC = new Char('barbarian'); ticoC.obj.position.set(SHOP.x + 1.5, 0, SHOP.y + 3.4); ticoC.obj.traverse((m) => { if (m.isMesh && m.material && m.material.color) { m.material = m.material.clone(); m.material.color.offsetHSL(0.12, 0.05, 0.05); } }); if (ticoC.nodes.Mug) ticoC.nodes.Mug.visible = true;
@@ -4382,7 +4686,7 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   emoBang = emoteSprite('!', '#ffe18d'); emoHeart = emoteSprite('♥', '#ef9597'); emoShop = emoteSprite('🛍', '#fff4dd');
   applyState(null); applyQuality();
   $('tpets').innerHTML = PETS.map((p) => `<img src="${THUMB['p_' + p.id]}">`).join('');
-  $('loading').classList.add('off'); ready = true; renderTitle();
+  try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };

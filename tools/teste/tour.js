@@ -1,0 +1,36 @@
+// Tour visual + métricas: tira fotos de cada área e mede draw calls, triângulos, luzes e tempo de frame.
+const { chromium } = require('playwright');
+(async () => {
+  const tag = process.argv[3] || 'antes';
+  const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  const p = await b.newPage({ viewport: { width: 960, height: 600 } });
+  const errs = []; p.on('pageerror', (e) => errs.push('PAGEERROR ' + e.message)); p.on('console', (m) => { if (m.type() === 'error') errs.push('error ' + m.text()); });
+  const t0 = Date.now(); await p.goto(process.argv[2], { timeout: 180000 }); await p.waitForSelector('#loading.off', { state: 'attached', timeout: 400000 }); const loadS = (Date.now() - t0) / 1000;
+  await p.screenshot({ path: `${process.env.OUT || '.'}/${tag}_00_titulo.png`, timeout: 300000 });
+  await p.evaluate(() => { const g = window.__g; g.S.tstep = 999; g.S.lv = 8; g.startFrom(null); });
+  await p.waitForTimeout(3000);
+  const clean = () => p.evaluate(() => { const g = window.__g; try { g.closeModal(); } catch (e) {} for (let i = 0; i < 12 && g.dlg; i++) try { g.advDlg(); } catch (e) { break; } document.querySelectorAll('#toast').forEach((t) => t.classList.remove('on')); });
+  const metrics = () => p.evaluate(async () => { const g = window.__g, r = g.renderer, raf = () => new Promise((res) => requestAnimationFrame(res)); await raf(); r.info.autoReset = false; r.info.reset(); await raf(); const info = { calls: r.info.render.calls, tris: r.info.render.triangles, geo: r.info.memory.geometries, tex: r.info.memory.textures, progs: r.info.programs ? r.info.programs.length : -1 }; r.info.autoReset = true;
+    let pl = 0, plOn = 0; g.scene.traverse((o) => { if (o.isPointLight) { pl++; if (o.layers.test(g.camera.layers)) { let v = true; for (let n = o; n; n = n.parent) if (!n.visible) v = false; if (v) plOn++; } } });
+    const ts = []; let last = performance.now(); for (let i = 0; i < 20; i++) { await raf(); const n = performance.now(); ts.push(n - last); last = n; } ts.sort((a, b) => a - b);
+    return { ...info, pointLights: pl, litForCamera: plOn, frameMed: +ts[10].toFixed(1), frameMax: +ts[19].toFixed(1) }; });
+  const out = { loadS };
+  const go = async (name, fn, hour) => { await p.evaluate(({ fn, hour }) => { const g = window.__g; if (hour !== undefined) g.S.time = ((hour - 6) / 18) * g.DAYLEN; new Function('g', fn)(g); }, { fn, hour }); await p.waitForTimeout(2600); await clean(); await p.waitForTimeout(600);
+    const m = await metrics(); out[name] = m; await p.screenshot({ path: `${process.env.OUT || '.'}/${tag}_${name}.png`, timeout: 300000 }); console.log(name, JSON.stringify(m)); };
+  const tp = (x, z) => `g.P.x=${x}; g.P.z=${z}; g.camera.position.set(${x}, 10, ${z} + 9);`;
+  await go('01_praca', tp(41, 37), 10);
+  await go('02_vila_girassol', tp(92, 32), 11);
+  await go('03_fazenda', `const f = g.FARM || { x: 20, y: 40 }; g.P.x = (f.x || 20) + 4; g.P.z = (f.y || 40) + 4;`, 9);
+  await go('04_praia', 'g.P.x = 55; g.P.z = g.BEACHY + 2;', 12);
+  await go('05_sul_campos', tp(60, 75), 15);
+  await go('06_bosque_fadas', tp(141, 32), 17);
+  await go('07_farol', tp(146, 6), 18.5);
+  await go('08_praca_noite', tp(41, 37), 22);
+  await go('09_casa', 'g.enterHouse();', 20);
+  await go('10_saida_casa', 'g.exitHouse();', 20);
+  await go('11_loja', "g.enterShop('tico');", 12);
+  await go('12_saida_loja', 'g.exitShop();', 12);
+  await go('13_caverna', 'g.enterCave();', 12);
+  console.log('SUMMARY', JSON.stringify(out));
+  console.log('ERRORS\n' + errs.slice(0, 30).join('\n')); await b.close();
+})().catch((e) => { console.error('FAIL', e); process.exit(1); });
