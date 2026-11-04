@@ -58,3 +58,12 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Efeitos: `sfx(nome, x?, z?)` (com posição = pan e distância). Sons novos: arquivo em `game/assets/sfx/<nome>.ogg` e o nome em `EXTRA_SFX`. Variações aleatórias de um mesmo evento ficam em `ALT2`; volumes em `SFXV`.
 - Ambiência: camadas `amb_*` com volume-alvo em `ambTargets()`. Passos por terreno: `STEP_SETS` + `stepSet()`.
 - Converta com ffmpeg para OGG mono normalizado (veja o commit da v17). Só use sons CC0 e registre o crédito em `game/assets/CREDITS-v17-sons.md`.
+
+## Economia, craft, casa e PvP (v18)
+
+- Duas moedas: `S.coins` (🪙 Moedas, comércio) e `S.stars` (⭐ Desejos, só o Poço). Preço de loja, Ateliê, Forja, sementes, reforma e armas: sempre `S.coins`. Ganhos de "sorte" (estrelas caídas, tarefas do dia, presentes, chefes): `S.stars`. Na interface, use 🪙 para Moedas e ⭐ para Desejos (o `EMO` troca pelos ícones).
+- Receitas da bancada em `RECIPES` (`give: { fd | f | snack | item, q }`, `need`, `lv`). Itens só de craft levam `hidden: 1` no `FD`/`FURN`.
+- Reforma da casa em `HOME_LV` (`size`, `coins`, `need`, `perk`). `IW`/`IH` são variáveis: `applyHomeLv()` reconstrói o cômodo.
+- Árvores e pedras: `S.cut[tile] = dia do corte` (estágios em `TREE_GROW`) e `S.rocks[tile] = dia`.
+- PvP: armas em `PVPW` (níveis em `S.pw`, escolhida em `S.pwSel`). Duelos pela presença: `dq` (pedido), `da` (resposta), `du` (estado: id, derrotas, centro). Teste com `tools/teste/` e uma sala simulada.
+- Sobreposição: `fixOverlaps()` roda ao montar o mundo e de novo depois de carregar o save. Enfeites colocados por código devem levar `userData.dress = 1` (removíveis); os que não podem sair levam `userData.keep = 1`.
