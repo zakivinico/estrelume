@@ -2,6 +2,29 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v20: correções visuais e placas novas
+**Interface**
+- Cartão da personagem: as barras de vida, fôlego e fome ficam dentro do cartão (vazavam para fora desde o HUD enxuto da v18) e o texto "100 / 100" não quebra mais em duas linhas.
+- O mapa mantém a proporção certa (antes ficava achatado em telas mais baixas).
+
+**Criador de personagem**
+- Penteados completos (os cabelos 3D e os curtos, como bob, topete e black power) escondem o cabelo que vem modelado na cabeça, em vez de sair por cima dele. Os cabelos 3D se encaixam pela "touca" (antes os longos ficavam enormes e flutuando).
+- A lista de penteados mostra só os do gênero escolhido, mais os unissex.
+- A "Cor livre" virou a **Paleta mágica** do Ateliê da Fifi (450🪙), coerente com as outras cores pagas. Quem já usava uma cor livre continua com ela.
+
+**Moradores**
+- Cada morador tem visual próprio: cabelo, roupa, chapéu, óculos, mochila, cinto, tamanho e rosto. Antes quatro deles eram o mesmo mago e três o mesmo bárbaro. Os retratos, os lojistas e os moradores dentro de casa usam o mesmo visual.
+
+**Mundo**
+- Placas novas: um poste com braço e a tábua pendurada por cordinhas, que balança e dá um "boing" quando você passa, com um passarinho que pula, uma estrela que gira ou uma flor em cima. Dentro das lojas, a placa fica só na parede.
+- As placas saem de dentro das construções e da frente das portas (7 mudaram de lugar), e só o poste é sólido.
+- O píer do lago encosta na margem.
+- Nada de abóbora, caixote, árvore, pedra ou arbusto no meio do caminho. Os canteiros que encostavam nas casas saem.
+- Caixa de correio nova (antes era um cubo num pau) e o gazebo do lago saiu (escondia o Seu Bento).
+
+**Chão**
+- Mais resolução (12 px por tile no computador e 8 no celular), normais suaves (acabaram os triângulos claros e escuros do sombreamento facetado) e detalhes pintados: tufos de grama, florzinhas, pedrinhas no caminho, sulcos na terra arada e brilho na areia. O caminho não "vaza" mais para baixo das árvores.
+
 ## v19: pendências da v18
 - **Arco com cara de arco:** ícone novo em pixel art no atlas (antes usava o da varinha) e, durante o PvP e os duelos, a personagem segura um arco 3D (ou o machado, conforme a arma escolhida).
 - **Sem engasgo ao baixar a qualidade:** ligar ou desligar o mapa de sombras recompilava todos os shaders. Agora, quando o jogo baixa para a qualidade Baixa no meio da partida, as sombras continuam ligadas, só que baratas (mapa 512 atualizado no máximo 10×/s). Ao abrir o jogo já em Baixa, elas começam desligadas. Ligar as sombras pelo menu compila tudo de uma vez, com o menu aberto.

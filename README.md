@@ -2,7 +2,7 @@
 
 Um jogo cozy em 3D no navegador: plante, pesque, faça amizades, deseje bichinhos mágicos no Poço dos Desejos, enfrente a Vovó Rosa, navegue até o Mar Estrelado e encare o Kraken.
 
-**Versão atual: v19** (pendências da v18: arco, qualidade sem engasgo, sons de galinha, pato e vila). A v18 trouxe duas moedas, bancadas de craft, reforma da casa, natureza que volta, interiores vivos, duelos com três armas e HUD enxuto. Histórico completo em [`CHANGELOG.md`](CHANGELOG.md).
+**Versão atual: v20** (correções visuais: HUD, mapa, criador, moradores com visual próprio, placas novas, píer e chão). A v19 corrigiu as pendências da v18 e a v18 trouxe duas moedas, bancadas de craft, reforma da casa, natureza que volta, interiores vivos, duelos com três armas e HUD enxuto. Histórico completo em [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Jogar
 
