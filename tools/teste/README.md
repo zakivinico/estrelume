@@ -7,6 +7,7 @@ node tools/teste/serve.mjs "$PWD/game" 8765 &     # servidor estático (aguenta 
 node tools/teste/tour.js http://localhost:8765/ depois   # fotos de cada área + draw calls, triângulos, luzes, shaders
 node tools/teste/mp.js http://localhost:8765/            # multiplayer com duas abas e uma sala simulada (roomstub.js)
 node tools/teste/audit.js http://localhost:8765/         # alcançabilidade: marcos, totens, portas e bolsões fechados
+node tools/teste/duel.js http://localhost:8765/          # duelo entre duas abas (convite, arco, placar)
 ```
 
 - `roomstub.js` imita a capacidade `room` do claude.ai (contrato 0.2.96: `join`, `presence`, `onPeers` com `{peers, joined, left, updated}`) usando BroadcastChannel, para testar o multiplayer fora do claude.ai.

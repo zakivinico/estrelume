@@ -94,7 +94,7 @@ const petById = (id) => PETS.find((p) => p.id === id), outById = (id) => OUTFITS
 const WISH = 100;
 
 /* =================== estado + saves =================== */
-const DEF = () => ({ stars: 1000, inv: {}, crops: {}, pets: {}, outfits: {}, pet: null, outfit: null, pity5: 0, pity4: 0, guar: false, banner: 0, day: 1, time: 60, quests: null, tstep: 0, slot: 0, gift: 0, lastPlant: null, wishes: 0,
+const DEF = () => ({ stars: 100, coins: 120, inv: {}, crops: {}, pets: {}, outfits: {}, pet: null, outfit: null, pity5: 0, pity4: 0, guar: false, banner: 0, day: 1, time: 60, quests: null, tstep: 0, slot: 0, gift: 0, lastPlant: null, wishes: 0,
   furn: { chair: 1, cactus_small: 1 }, home: { items: [{ id: 'bed_single', x: 0, y: 0, r: 0 }, { id: 'table_small', x: 2, y: 0, r: 0 }, { id: 'lamp_table', x: 8, y: 0, r: 0 }, { id: 'rug_oval', x: 3, y: 3, r: 0 }], floor: 'madeira', wall: 'creme' },
   floorsOwned: { madeira: 1 }, wallsOwned: { creme: 1 }, up: {}, snacks: {}, pos: null, mode: 'out', name: 'Estrela', look: { tint: 'orig', acc: 'none', trail: 'none' }, petLook: {}, farm: null, fd: { flores: 2, cerca: 6, pedra: 1 }, npc: {}, lv: 1, xp: 0, wishLog: [], gear: { sword: 0, pick: 0 } });
 const S = DEF();
@@ -209,7 +209,7 @@ const HUT = { x: 57, y: BEACHY - 2 }; for (let y = HUT.y - 1; y <= HUT.y + 3; y+
 const solidAt = (tx, ty) => { if (!inb(tx, ty)) return true; const t = tile[I(tx, ty)]; if (t === WA) return true; const o = obj[I(tx, ty)]; if (o && o.t === 'fdecor') return !!(FD[o.id] && FD[o.id].solid); return !!(o && SOLID.has(o.t)); };
 
 /* =================== interior da casa =================== */
-const RX = 300, RZ = 300, IW = 9, IH = 7, DOOR = 4;
+const RX = 300, RZ = 300, DOOR = 4; let IW = 9, IH = 7; // v18: IW/IH mudam com a reforma da casa
 let mode = 'out';
 let occ = new Array(IW * IH).fill(null), rugOcc = new Array(IW * IH).fill(null);
 const footprint = (f, r) => (r % 2 ? [f.h, f.w] : [f.w, f.h]);
@@ -666,7 +666,7 @@ const TUT = [
 ];
 function ev(name) {
   const st = TUT[S.tstep]; if (!st || st.ev !== name) return;
-  S.tstep++; grantTools(S.tstep); S.stars += 50; gainXp(12); sfx('quest'); floatText(P.x, 1.8, P.z, '+50⭐', C.yellow); hud(); goalUI();
+  S.tstep++; grantTools(S.tstep); S.coins += 30; S.stars += 10; gainXp(12); sfx('quest'); floatText(P.x, 1.8, P.z, '+30🪙 +10⭐', C.yellow); hud(); goalUI();
   if (S.tstep >= TUT.length) toast('🎉 Tutorial completo! Agora siga as <b>Tarefas do dia</b> no canto direito.'); else toast(`✅ Feito! Próximo: ${TUT[S.tstep].txt}`);
 }
 function goalUI() { const g = $('goal'), st = TUT[S.tstep]; if (!st) { const qg = typeof questGoal === 'function' ? questGoal() : null; if (qg) { g.classList.add('on'); g.innerHTML = `<div class="gstep">📜 ${qg.q.n}</div><div class="gtxt">${qg.txt}</div><div class="gkeys"><span class="key">J</span> diário</div>`; } else g.classList.remove('on'); return; } g.classList.add('on'); g.innerHTML = `<div class="gstep">Primeiros passos ${S.tstep + 1}/${TUT.length}</div><div class="gtxt">${st.txt}</div><div class="gkeys">${st.keys.map((k) => `<span class="key">${k}</span>`).join(' ')}</div>`; }
@@ -755,7 +755,7 @@ function spaceHint() {
   const c = CROPS[tool.id];
   if (!onSoil) return { ok: false, t: `${c.n} · plante nos canteiros da fazenda` };
   if (cr && !cr.empty) return { ok: false, t: `${CROPS[cr.c].n} crescendo: ${Math.round(((cr.s + cr.t / (CROPS[cr.c].time / 3)) / 3) * 100)}%${cr.w ? ' · regado 💧' : ' · regue para acelerar'}` };
-  return { ok: S.stars >= c.cost, t: `Plantar ${c.n} (${c.cost}⭐)` };
+  return { ok: S.coins >= c.cost, t: `Plantar ${c.n} (${c.cost}🪙)` };
 }
 function useTool() { if (CUT) return; if (P.boat) return boatFire();
   if (P.dead || modalOpen()) return; if (P.bike) { toast('🚲 Desça da bicicleta com <span class="key">Z</span> para usar ferramentas.'); return; } if (P.useT > 0) { if (TOOLS[S.slot].id === 'espada' && mode === 'out' && !farmEd) P.buf = 0.3; return; }
@@ -778,8 +778,8 @@ function useTool() { if (CUT) return; if (P.boat) return boatFire();
   } else if (tool.seed) {
     if (tAt(tx, ty) !== SO) { toast('🌱 Sementes só crescem nos <b>canteiros de terra</b> dentro da cerca da fazenda.'); return; }
     const k = tx + ',' + ty, ex = S.crops[k]; if (ex && !ex.empty) { toast('Já tem algo crescendo aqui!'); return; }
-    const c = CROPS[tool.id]; if (S.stars < c.cost) { toast(`Precisa de ${c.cost}⭐ para essa semente.`); return; }
-    S.stars -= c.cost; S.crops[k] = { c: tool.id, s: 0, t: 0, w: !!(ex && ex.w) }; S.lastPlant = [tx, ty]; sfx('plant'); anim('Interact'); burst(tx + 0.5, 0.2, ty + 0.5, ['#8a5a3b', '#6b4a33'], 8, 1); floatText(tx + 0.5, 1, ty + 0.5, `-${c.cost}⭐`, C.pink); syncCrop(k); ev('plant'); hud();
+    const c = CROPS[tool.id]; if (S.coins < c.cost) { toast(`Precisa de ${c.cost}🪙 para essa semente.`); return; }
+    S.coins -= c.cost; S.crops[k] = { c: tool.id, s: 0, t: 0, w: !!(ex && ex.w) }; S.lastPlant = [tx, ty]; sfx('plant'); anim('Interact'); burst(tx + 0.5, 0.2, ty + 0.5, ['#8a5a3b', '#6b4a33'], 8, 1); floatText(tx + 0.5, 1, ty + 0.5, `-${c.cost}🪙`, C.pink); syncCrop(k); ev('plant'); hud();
   }
 }
 function interact() {
@@ -870,8 +870,8 @@ function nearestSpecial() {
 function sellAll() {
   let tot = 0, n = 0; for (const [k, c] of Object.entries(S.inv)) { if (!c) continue; tot += ITEMS[k].price * c; n += c; }
   if (!n) { toast('A mochila está vazia! Colha, pesque e colete coisas para vender. 🧺'); return; }
-  tot = Math.round(tot * PERK.sell()); S.inv = {}; S.stars += tot; sfx('coin'); anim('Cheer', 1.4); burst(BOX.x + 1, 1.5, BOX.y + 1, ['#ffe18d', '#ffcb8d'], 24, 3, true, true);
-  floatText(BOX.x + 1, 2.4, BOX.y + 1, `+${tot}⭐`, C.yellow, true); toast(`🧺 Vendeu ${n} ${n > 1 ? 'itens' : 'item'} por <b>${tot}⭐</b>${has('nova') ? ' (bônus da Nova!)' : ''}`); qProg('sell', tot); ev('sell'); hud();
+  tot = Math.round(tot * PERK.sell()); S.inv = {}; S.coins += tot; sfx('coin'); anim('Cheer', 1.4); burst(BOX.x + 1, 1.5, BOX.y + 1, ['#ffe18d', '#ffcb8d'], 24, 3, true, true);
+  floatText(BOX.x + 1, 2.4, BOX.y + 1, `+${tot}🪙`, C.yellow, true); toast(`🧺 Vendeu ${n} ${n > 1 ? 'itens' : 'item'} por <b>${tot}🪙</b>${has('nova') ? ' (bônus da Nova!)' : ''}`); qProg('sell', tot); ev('sell'); hud();
 }
 function sleep_v12() { if (hourNow() < 18) { toast('Ainda está cedo para dormir! Volte depois das 18h. 🌙'); return; } fade(() => { newDay(true); P.hp = maxHp(); hud(); }); }
 function newDay(slept) {
@@ -942,7 +942,7 @@ function talkRosa_v12() {
   ], () => ev('talk'));
   const tips = ['Árvores com maçãs vermelhas podem ser sacudidas! Aperte E de frente pra elas.', 'Seu bichinho luta sozinho contra os slimes. Cada um tem um ataque diferente!', 'À noite os vaga-lumes saem para dançar perto do lago.', 'Depois das 18h você pode dormir na sua cama para começar um novo dia.', 'O Tico vende móveis lindos. Sua casa merece!', 'A cada 10 desejos no Poço, um bichinho 4★ ou melhor é garantido!', 'O Tomate cresce de novo depois de colhido. Muito prático!', 'Não esqueça de salvar no menu (Esc). Eu também salvo sozinha de vez em quando!'];
   const lines = [pick(tips)];
-  if (S.gift !== S.day) { S.gift = S.day; lines.push('Ah, e tome um presentinho do dia! 🍪 (+40⭐)'); return say('Vovó Rosa', face, lines, () => { S.stars += 40; sfx('coin'); floatText(P.x, 2, P.z, '+40⭐', C.yellow); hud(); }); }
+  if (S.gift !== S.day) { S.gift = S.day; lines.push('Ah, e tome um presentinho do dia! 🍪 (+25🪙)'); return say('Vovó Rosa', face, lines, () => { S.coins += 25; sfx('coin'); floatText(P.x, 2, P.z, '+25🪙', C.yellow); hud(); }); }
   say('Vovó Rosa', face, lines);
 }
 
@@ -992,13 +992,13 @@ function roll(b) {
   return { type: 'out', id: pick(OUTFITS).id };
 }
 function grant(o) {
-  if (o.type === 'pet') { if (S.pets[o.id] === undefined) { S.pets[o.id] = 0; if (!S.pet) S.pet = o.id; return 'NOVO!'; } if (S.pets[o.id] < 5) { S.pets[o.id]++; return '♥ +1'; } S.stars += 50; return '+50⭐'; }
-  if (!S.outfits[o.id]) { S.outfits[o.id] = true; return 'NOVO!'; } S.stars += 15; return '+15⭐';
+  if (o.type === 'pet') { if (S.pets[o.id] === undefined) { S.pets[o.id] = 0; if (!S.pet) S.pet = o.id; return 'NOVO!'; } if (S.pets[o.id] < 5) { S.pets[o.id]++; return '♥ +1'; } S.stars += 20; return '+20⭐'; }
+  if (!S.outfits[o.id]) { S.outfits[o.id] = true; return 'NOVO!'; } S.stars += 8; return '+8⭐';
 }
 const itemInfo = (o) => (o.type === 'pet' ? petById(o.id) : outById(o.id));
 const itemImg = (o) => (o.type === 'pet' ? THUMB['p_' + o.id] : THUMB['o_' + o.id]);
 function doWish_v12(n) {
-  if (S.stars < WISH * n) { toast('Estrelinhas insuficientes! Venda itens e complete tarefas. ⭐'); return; }
+  if (S.stars < WISH * n) { toast('Desejos insuficientes! Venda itens e complete tarefas. ⭐'); return; }
   S.stars -= WISH * n; S.wishes += n; const b = BANNERS[S.banner]; const res = [];
   for (let i = 0; i < n; i++) { const o = roll(b); o.tag = grant(o); res.push(o); }
   S.wishLog = (S.wishLog || []).concat(res.map((o) => ({ t: o.type, id: o.id, d: S.day }))).slice(-60);
@@ -1100,9 +1100,9 @@ function openAlbum() {
 function openBag_v9() {
   const ent = Object.entries(S.inv).filter(([, c]) => c > 0); let tot = 0; ent.forEach(([k, c]) => (tot += ITEMS[k].price * c));
   const sn = Object.entries(S.snacks).filter(([, c]) => c > 0);
-  openModal(`<h2>🎒 Mochila</h2>${ent.length ? `<div class="inv">${ent.map(([k, c]) => `<div class="it"><img src="${THUMB['i_' + k]}"><b>${ITEMS[k].n} ×${c}</b><span>${ITEMS[k].price}⭐ cada</span></div>`).join('')}</div><p class="note">Valor total: <b>${Math.round(tot * PERK.sell())}⭐</b>. Venda tudo na <b>Barraca de Venda</b> ao lado da fazenda.</p>` : '<p>Vazia por enquanto! Colha plantações, pesque, sacuda árvores e derrote slimes.</p>'}
+  openModal(`<h2>🎒 Mochila</h2>${ent.length ? `<div class="inv">${ent.map(([k, c]) => `<div class="it"><img src="${THUMB['i_' + k]}"><b>${ITEMS[k].n} ×${c}</b><span>${ITEMS[k].price}🪙 cada</span></div>`).join('')}</div><p class="note">Valor total: <b>${Math.round(tot * PERK.sell())}⭐</b>. Venda tudo na <b>Barraca de Venda</b> ao lado da fazenda.</p>` : '<p>Vazia por enquanto! Colha plantações, pesque, sacuda árvores e derrote slimes.</p>'}
   ${sn.length ? `<h3 style="margin-top:14px">Lanches</h3><div class="inv" style="margin-top:8px">${sn.map(([k, c]) => `<div class="it"><img src="${THUMB['s_' + k]}"><b>${SNACKS[k].n} ×${c}</b><span>${SNACKS[k].desc}</span><button class="btn green sm" data-use="${k}">Usar</button></div>`).join('')}</div>` : ''}
-  <h3 style="margin-top:14px">Sementes</h3><div class="inv" style="margin-top:8px">${Object.entries(CROPS).map(([k, c]) => `<div class="it"><img src="${THUMB['i_' + k]}"><b>${c.n}</b><span>custa ${c.cost}⭐ · vende ${ITEMS[k].price}⭐<br>${c.time}s${c.regrow ? ' · rebrota' : ''}</span></div>`).join('')}</div>`);
+  <h3 style="margin-top:14px">Sementes</h3><div class="inv" style="margin-top:8px">${Object.entries(CROPS).map(([k, c]) => `<div class="it"><img src="${THUMB['i_' + k]}"><b>${c.n}</b><span>custa ${c.cost}🪙 · vende ${ITEMS[k].price}🪙<br>${c.time}s${c.regrow ? ' · rebrota' : ''}</span></div>`).join('')}</div>`);
   document.querySelectorAll('[data-use]').forEach((el) => (el.onclick = () => useSnack(el.dataset.use)));
 }
 function useSnack(k) { if (!S.snacks[k]) return; S.snacks[k]--; if (k === 'bolinho') { P.hp = Math.min(maxHp(), P.hp + 60); floatText(P.x, 1.8, P.z, '+60 ❤', '#ff9db0', true); burst(P.x, 1, P.z, ['#ff9db0', '#ffffff'], 16, 1.5, true, true); } if (k === 'suco') { P.boost = 60; floatText(P.x, 1.8, P.z, 'Corrida turbo!', C.yellow, true); burst(P.x, 1, P.z, ['#ffe18d', '#ffffff'], 16, 1.5, true, true); } sfx('powerup'); hud(); openBag(); }
@@ -1112,21 +1112,21 @@ let shopTab = 'moveis';
 function openShop() {
   const tabs = { moveis: 'Móveis', deco: 'Piso e parede', fazenda: 'Fazenda', melhorias: 'Melhorias', lanches: 'Lanches' };
   let items = '';
-  const card = (img, n, d, price, owned, act) => `<div class="sitem ${owned ? 'own' : ''}"><img src="${img}"><b>${n}</b><span>${d}</span><button class="btn ${owned ? '' : 'gold'} sm" ${owned || S.stars < price ? 'disabled' : ''} data-buy="${act}">${owned ? 'Comprado' : price + '⭐'}</button></div>`;
-  if (shopTab === 'moveis') items = Object.entries(FURN).map(([k, f]) => card(THUMB['f_' + k], f.n, `${f.w}×${f.h}${f.rug ? ' · tapete' : ''}${f.light ? ' · acende' : ''}${S.furn[k] ? ` · tem ${S.furn[k]}` : ''}`, f.price, false, 'f:' + k)).join('');
+  const card = (img, n, d, price, owned, act) => `<div class="sitem ${owned ? 'own' : ''}"><img src="${img}"><b>${n}</b><span>${d}</span><button class="btn ${owned ? '' : 'gold'} sm" ${owned || S.coins < price ? 'disabled' : ''} data-buy="${act}">${owned ? 'Comprado' : price + '🪙'}</button></div>`;
+  if (shopTab === 'moveis') items = Object.entries(FURN).filter(([, f]) => !f.hidden).map(([k, f]) => card(THUMB['f_' + k], f.n, `${f.w}×${f.h}${f.rug ? ' · tapete' : ''}${f.light ? ' · acende' : ''}${S.furn[k] ? ` · tem ${S.furn[k]}` : ''}`, f.price, false, 'f:' + k)).join('');
   if (shopTab === 'deco') items = Object.entries(FLOORS).map(([k, f]) => card(THUMB['fl_' + k], f.n, 'Piso', f.price, !!S.floorsOwned[k], 'fl:' + k)).join('') + Object.entries(WALLS).map(([k, f]) => card(THUMB['wl_' + k], f.n, 'Papel de parede', f.price, !!S.wallsOwned[k], 'wl:' + k)).join('');
-  if (shopTab === 'fazenda') items = ((S.farmLv || 0) < 2 ? `<div class="sitem big"><img src="${icon('wheat', 64)}"><b>Ampliar fazenda (${(S.farmLv || 0) === 0 ? 'sul' : 'oeste'})</b><span>${(S.farmLv || 0) === 0 ? '+4 fileiras ao sul da cerca' : '+4 colunas a oeste da cerca'}</span><button class="btn candy gold sm" ${S.stars < [1500, 3000][S.farmLv || 0] ? 'disabled' : ''} data-buy="xp:farm">${[1500, 3000][S.farmLv || 0]}⭐</button></div>` : '') + Object.entries(FD).filter(([, f]) => !f.hidden).map(([k, f]) => card(THUMB['fd_' + k], f.n, `Enfeite de fazenda${f.light ? ' · acende' : ''}${S.fd[k] ? ` · tem ${S.fd[k]}` : ''}`, f.price, false, 'fd:' + k)).join('');
+  if (shopTab === 'fazenda') items = ((S.farmLv || 0) < 2 ? `<div class="sitem big"><img src="${icon('wheat', 64)}"><b>Ampliar fazenda (${(S.farmLv || 0) === 0 ? 'sul' : 'oeste'})</b><span>${(S.farmLv || 0) === 0 ? '+4 fileiras ao sul da cerca' : '+4 colunas a oeste da cerca'}</span><button class="btn candy gold sm" ${S.coins < [1500, 3000][S.farmLv || 0] ? 'disabled' : ''} data-buy="xp:farm">${[1500, 3000][S.farmLv || 0]}🪙</button></div>` : '') + Object.entries(FD).filter(([, f]) => !f.hidden).map(([k, f]) => card(THUMB['fd_' + k], f.n, `Enfeite de fazenda${f.light ? ' · acende' : ''}${S.fd[k] ? ` · tem ${S.fd[k]}` : ''}`, f.price, false, 'fd:' + k)).join('');
   if (shopTab === 'melhorias') items = Object.entries(UPGRADES).map(([k, u]) => card(THUMB['up_' + k], u.n, u.desc, u.price, !!S.up[k], 'up:' + k)).join('');
   if (shopTab === 'lanches') items = Object.entries(SNACKS).map(([k, s]) => card(THUMB['s_' + k], s.n, s.desc + (S.snacks[k] ? ` · tem ${S.snacks[k]}` : ''), s.price, false, 's:' + k)).join('');
-  openModal(`<div class="shophead"><img src="${THUMB.tico}"><div><h2 style="margin:0">🛍️ Lojinha do Tico</h2><p class="lead" style="margin:2px 0 0">"Opa! Tudo fresquinho, direto da carroça. Você tem <b>${S.stars}⭐</b>."</p></div></div>
+  openModal(`<div class="shophead"><img src="${THUMB.tico}"><div><h2 style="margin:0">🛍️ Lojinha do Tico</h2><p class="lead" style="margin:2px 0 0">"Opa! Tudo fresquinho, direto da carroça. Você tem <b>${S.coins}🪙</b>."</p></div></div>
    <div class="tabs">${Object.entries(tabs).map(([k, n]) => `<button class="btn tab ${shopTab === k ? 'on' : ''}" data-st="${k}">${n}</button>`).join('')}</div><div class="sgrid">${items}</div>
    <p class="note">Móveis vão para a decoração da casa (<span class="key">V</span> dentro de casa). Enfeites de fazenda: entre na cerca da fazenda e aperte <span class="key">B</span>.</p>`, 'wide');
   document.querySelectorAll('[data-st]').forEach((el) => (el.onclick = () => { shopTab = el.dataset.st; openShop(); }));
   document.querySelectorAll('[data-buy]').forEach((el) => (el.onclick = () => buy(el.dataset.buy)));
 }
 function buy(code) {
-  const [t, k] = code.split(':'); if (t === 'xp') { const pr = [1500, 3000][S.farmLv || 0]; if (S.stars < pr) return sfx('cancel'); S.stars -= pr; expandFarm(); hud(); openShop(); return; } const price = t === 'fd' ? FD[k].price : t === 'f' ? FURN[k].price : t === 'fl' ? FLOORS[k].price : t === 'wl' ? WALLS[k].price : t === 'up' ? UPGRADES[k].price : SNACKS[k].price;
-  if (S.stars < price) { sfx('cancel'); return; } S.stars -= price;
+  const [t, k] = code.split(':'); if (t === 'xp') { const pr = [1500, 3000][S.farmLv || 0]; if (S.coins < pr) return sfx('cancel'); S.coins -= pr; expandFarm(); hud(); openShop(); return; } const price = t === 'fd' ? FD[k].price : t === 'f' ? FURN[k].price : t === 'fl' ? FLOORS[k].price : t === 'wl' ? WALLS[k].price : t === 'up' ? UPGRADES[k].price : SNACKS[k].price;
+  if (S.coins < price) { sfx('cancel'); return; } S.coins -= price;
   if (t === 'f') S.furn[k] = (S.furn[k] || 0) + 1; if (t === 'fl') S.floorsOwned[k] = 1; if (t === 'wl') S.wallsOwned[k] = 1; if (t === 'up') S.up[k] = 1; if (t === 's') S.snacks[k] = (S.snacks[k] || 0) + 1; if (t === 'fd') S.fd[k] = (S.fd[k] || 0) + 1;
   sfx('coin'); ticoC && ticoC.play('Cheer', true, 1.3); hud(); ev('shop'); openShop(); toast(`🛍️ Comprou! <b>-${price}⭐</b>`);
 }
@@ -1185,7 +1185,7 @@ function openHelp() {
    <div class="hc"><h4>${ic(THUMB.well)} Explorar o vale</h4><p>O vale ficou muito maior! A leste ficam o <b>Bosque das Fadas</b>, as <b>Ruínas Estelares</b>, o <b>Observatório</b> e o <b>Farol das Estrelas</b>; ao sul, os <b>Campos de Lavanda</b> e o <b>Pomar</b>. Toque nas <b>Pedras do Vento</b> 🪨 para despertá-las e depois viajar entre elas. As histórias do vale são contadas pelos moradores e pelos lugares que você visita.</p></div>
    <div class="hc"><h4>${ic(THUMB.slime)} Slimes e bichinhos</h4><p>Golpeie slimes com a espada (1). Seu bichinho luta junto: cada um tem um ataque, como bola de fogo, esporos, estrelas, arranhão, espinhos e latido.</p></div>
    <div class="hc"><h4>${ic(THUMB.well)} Desejos</h4><p>No Poço da praça (ou <span class="key">G</span>), troque ⭐ por bichinhos e roupas. Equipe no Álbum (<span class="key">C</span>).</p></div>
-   <div class="hc"><h4>👑 Rei Slime</h4><p>No fim da trilha ao norte, na floresta, mora o Rei Slime. Ele pula em círculos vermelhos, chama ajudantes e, com raiva, cospe bolhas em roda. Vença para ganhar 300⭐, XP e uma estátua para a fazenda. Ele volta todo dia!</p></div>
+   <div class="hc"><h4>👑 Rei Slime</h4><p>No fim da trilha ao norte, na floresta, mora o Rei Slime. Ele pula em círculos vermelhos, chama ajudantes e, com raiva, cospe bolhas em roda. Vença para ganhar 180🪙, 100⭐, XP e uma estátua para a fazenda. Ele volta todo dia!</p></div>
    <div class="hc"><h4>🌾 Minha fazenda</h4><p>Dentro da cerca, aperte <span class="key">B</span>: are a grama para criar canteiros novos, desfaça canteiros e coloque enfeites (espantalho, postes, flores, cercas...). Compre enfeites na aba Fazenda da Lojinha.</p></div>
    <div class="hc"><h4>🧑‍🤝‍🧑 Moradores</h4><p>Seu Bento (píer), Pipo (praça), Mestra Íris (lagoinha), Duda e Prefeito Otto (Vila Girassol, a leste) e Lia (Praia do Sol, ao sul). Cada um faz um pedido por dia: entregue com <span class="key">E</span> e ganhe ⭐ e amizade. Com 3 ♥ eles te dão um presente!</p></div>
    <div class="hc"><h4>👤 Visual</h4><p>Mude nome, cor da roupa, acessório e rastro em Menu → Personagem. Bichinhos ★5 têm cor, acessório e aura no Álbum.</p></div>
@@ -1196,7 +1196,7 @@ function openHelp() {
 
 /* =================== HUD =================== */
 function buildHotbar_v9() {
-  $('hotbar').innerHTML = TOOLS.map((t, i) => `<div class="slot ${i === S.slot ? 'on' : ''} ${t.id === 'picareta' && !gear().pick ? 'lock' : ''}" data-s="${i}" title="${t.n} (tecla ${t.key})"><span class="n">${t.key}</span><img src="${THUMB['t_' + t.id]}">${t.seed ? `<span class="c">🌱${CROPS[t.id].cost}⭐</span>` : ''}</div>`).join('');
+  $('hotbar').innerHTML = TOOLS.map((t, i) => `<div class="slot ${i === S.slot ? 'on' : ''} ${t.id === 'picareta' && !gear().pick ? 'lock' : ''}" data-s="${i}" title="${t.n} (tecla ${t.key})"><span class="n">${t.key}</span><img src="${THUMB['t_' + t.id]}">${t.seed ? `<span class="c">🌱${CROPS[t.id].cost}🪙</span>` : ''}</div>`).join('');
   $('hotbar').querySelectorAll('.slot').forEach((el) => el.addEventListener('pointerdown', (e) => { e.stopPropagation(); setSlot(+el.dataset.s); }));
 }
 function setSlot_v9(i) { S.slot = (i + TOOLS.length) % TOOLS.length; sfx('menu'); buildHotbar(); updateHand(); }
@@ -1589,15 +1589,15 @@ function talkNpc_v11(n) { if (n.hidden) return findPipo(n); npcMenu(n); }
 function talkNpc_v9(n) {
   if (n.hidden) return findPipo(n); if (questTalk(n.d.id, n)) return;
   const st = npcSt(n.d.id), rq = npcReq(n); n.wait = 4; sayWho = n.c; const lines = [pick(n.d.lines)];
-  if (st.d === S.day) lines.push(`${n.d.g === 'f' ? 'Obrigada' : 'Obrigado'} pela ajuda de hoje, ${S.name}! 💛 Volte amanhã!`); else lines.push(`Hoje eu queria ${rq.q}× ${ITEMS[rq.item].n}. Se você me trouxer, te dou ${rq.rw}⭐!`);
+  if (st.d === S.day) lines.push(`${n.d.g === 'f' ? 'Obrigada' : 'Obrigado'} pela ajuda de hoje, ${S.name}! 💛 Volte amanhã!`); else lines.push(`Hoje eu queria ${rq.q}× ${ITEMS[rq.item].n}. Se você me trouxer, te dou ${rq.rw}🪙!`);
   if (st.h) lines[lines.length - 1] += ` (amizade: ${'♥'.repeat(st.h)})`;
   say(`${n.d.n} · ${n.d.role}`, THUMB['npc_' + n.d.id], lines); dlg.name = n.d.n;
 }
 function deliverNpc(n) {
   const st = npcSt(n.d.id), rq = npcReq(n); if ((S.inv[rq.item] || 0) < rq.q || st.d === S.day) return talkNpc(n);
-  S.inv[rq.item] -= rq.q; S.stars += rq.rw; st.d = S.day; st.h = Math.min(10, st.h + 1); n.c.play('Cheer', true, 1.2); sfx('jingle_a');
-  burst(n.x, 1.6, n.z, ['#ff7aa8', '#ffb3c8', '#ffffff'], 18, 2, true, true); floatText(n.x, 2.3, n.z, `+${rq.rw}⭐  +1♥`, C.yellow, true); qProg('npc');
-  const lines = [`Uau, ${rq.q}× ${ITEMS[rq.item].n}! ${n.d.g === 'f' ? 'Obrigada' : 'Obrigado'}, ${S.name}! Aqui estão ${rq.rw}⭐.`];
+  S.inv[rq.item] -= rq.q; S.coins += rq.rw; st.d = S.day; st.h = Math.min(10, st.h + 1); n.c.play('Cheer', true, 1.2); sfx('jingle_a');
+  burst(n.x, 1.6, n.z, ['#ff7aa8', '#ffb3c8', '#ffffff'], 18, 2, true, true); floatText(n.x, 2.3, n.z, `+${rq.rw}🪙  +1♥`, C.yellow, true); qProg('npc');
+  const lines = [`Uau, ${rq.q}× ${ITEMS[rq.item].n}! ${n.d.g === 'f' ? 'Obrigada' : 'Obrigado'}, ${S.name}! Aqui estão ${rq.rw}🪙.`];
   if (st.h >= 3 && !st.gift) { st.gift = 1; const gf = n.d.gift; if (gf.t === 'fd') S.fd[gf.k] = (S.fd[gf.k] || 0) + gf.q; else S.furn[gf.k] = (S.furn[gf.k] || 0) + gf.q; const nm = gf.t === 'fd' ? FD[gf.k].n : FURN[gf.k].n; lines.push(`Já somos amigos de verdade! Tome um presente: ${gf.q}× ${nm}! 🎁`); toast(`🎁 Presente de ${n.d.n}: <b>${gf.q}× ${nm}</b>`); }
   hud(); sayWho = n.c; say(`${n.d.n} · ${n.d.role}`, THUMB['npc_' + n.d.id], lines); dlg.name = n.d.n; setTimeout(() => n.c.play('Cheer', true, 1.2), 50);
 }
@@ -1679,7 +1679,7 @@ const farmBad = (m) => { sfx('cancel'); toast(m); };
 function farmOk_old(x, y) { const o = obj[I(x, y)], pt = Math.floor(P.x) === x && Math.floor(P.z) === y; if (farmEd.tool === 'arar') return tAt(x, y) === GR && !o; if (farmEd.tool === 'grama') return tAt(x, y) === SO && !(S.crops[x + ',' + y] && !S.crops[x + ',' + y].empty); if (farmEd.sel) return tAt(x, y) === GR && !o && !pt; return !!(o && o.t === 'fdecor'); }
 function farmAction_old() {
   if (!farmEd || !farmEd.cell) return; const [x, y] = farmEd.cell, k = x + ',' + y, o = obj[I(x, y)];
-  if (farmEd.tool === 'arar') { if (!farmOk(x, y)) return farmBad('Só dá para arar grama livre dentro da cerca.'); if (S.stars < 20) return farmBad('Precisa de 20⭐ para arar.'); S.stars -= 20; tile[I(x, y)] = SO; S.farm.soil.push([x, y]); setTileColor(x, y); syncPlots(); burst(x + 0.5, 0.2, y + 0.5, ['#8a5a3b', '#6b4a33'], 12, 1.5); floatText(x + 0.5, 1, y + 0.5, '-20⭐', C.pink); sfx('plant'); hud(); return; }
+  if (farmEd.tool === 'arar') { if (!farmOk(x, y)) return farmBad('Só dá para arar grama livre dentro da cerca.'); if (S.coins < 20) return farmBad('Precisa de 20🪙 para arar.'); S.coins -= 20; tile[I(x, y)] = SO; S.farm.soil.push([x, y]); setTileColor(x, y); syncPlots(); burst(x + 0.5, 0.2, y + 0.5, ['#8a5a3b', '#6b4a33'], 12, 1.5); floatText(x + 0.5, 1, y + 0.5, '-20⭐', C.pink); sfx('plant'); hud(); return; }
   if (farmEd.tool === 'grama') { if (!farmOk(x, y)) return farmBad(tAt(x, y) === SO ? 'Colha a planta antes de desfazer o canteiro.' : 'Aqui já é grama.'); tile[I(x, y)] = GR; S.farm.soil = S.farm.soil.filter(([a, b]) => a !== x || b !== y); delete S.crops[k]; setTileColor(x, y); syncPlots(); burst(x + 0.5, 0.2, y + 0.5, LEAF, 10, 1.5); sfx('pop'); return; }
   if (farmEd.sel) { const id = farmEd.sel; if (!farmOk(x, y)) return farmBad('Não cabe aí! Escolha uma grama livre.'); S.farm.decor.push({ id, x, y, r: farmEd.r }); S.fd[id]--; if (S.fd[id] <= 0) { delete S.fd[id]; farmEd.sel = null; } rebuildFarmDecor(); burst(x + 0.5, 0.6, y + 0.5, ['#fff3c4', '#ffe18d'], 12, 1.5, true, true); sfx('plant'); renderFarmPanel(); if (ghost) { scene.remove(ghost); ghost = null; } return; }
   if (o && o.t === 'fdecor') { const d = S.farm.decor[o.i]; S.farm.decor.splice(o.i, 1); S.fd[d.id] = (S.fd[d.id] || 0) + 1; farmEd.sel = d.id; farmEd.r = d.r; rebuildFarmDecor(); sfx('pop'); renderFarmPanel(); }
@@ -1751,14 +1751,14 @@ function die() {
   shake = 0.4; sfx('hurt'); setTimeout(() => sfx('boom'), 200); deathSlow = 1.4;
   if (player) { const a = player.actions['Death_A']; if (a) { player.play('Death_A', true, 0.8); a.clampWhenFinished = true; player.once = 1e9; } }
   burst(P.x, 0.8, P.z, ['#ff9db0', '#ffffff', '#c79bff'], 30, 2.5, true, true);
-  const lost = Math.min(150, Math.floor(S.stars * 0.1)); S.stars -= lost; lastHud = ''; hud();
+  const lost = Math.min(150, Math.floor(S.coins * 0.1)); S.coins -= lost; lastHud = ''; hud();
   setTimeout(() => showDeath(lost), 1600);
 }
 function showDeath(lost) {
   const tips = ['Aperte Q para dar uma esquiva: você fica invencível por um instante!', 'Quando um slime pisca vermelho e se encolhe, ele vai pular em você. Esquive!', 'Os slimes azuis gigantes fazem um círculo vermelho no chão antes de esmagar. Saia de dentro!', 'Segure Espaço para carregar um golpe giratório.', 'O terceiro golpe seguido (combo) causa muito mais dano.', 'Bolinhos da Lojinha do Tico recuperam vida.', 'Subir de nível aumenta sua vida máxima e seu dano.', 'Depois de pular, o slime fica tontinho: é a hora de atacar!'];
   const p = S.pet ? petById(S.pet) : null;
   $('death').innerHTML = `${floaters(10)}<div class="dcard panel"><div class="dz">💫</div><h2>Você desmaiou...</h2><p class="dsub">${p ? `<img src="${THUMB['p_' + p.id]}"> ${p.n} ficou do seu lado o tempo todo.` : 'Um passarinho foi voando chamar a Vovó Rosa.'}</p>
-   <div class="dstats"><div><b>-${lost}⭐</b><span>estrelinhas perdidas</span></div><div><b>Nv ${S.lv}</b><span>seu nível</span></div><div><b>Dia ${S.day}</b><span>no vale</span></div></div>
+   <div class="dstats"><div><b>-${lost}🪙</b><span>estrelinhas perdidas</span></div><div><b>Nv ${S.lv}</b><span>seu nível</span></div><div><b>Dia ${S.day}</b><span>no vale</span></div></div>
    <div class="dtip">💡 ${pick(tips)}</div><div class="dbtns"><button class="btn green big" id="dWake">🏠 Acordar em casa</button><button class="btn big" id="dLoad">📂 Carregar save</button></div></div>`;
   $('death').classList.add('on'); sfx('voice');
   $('dWake').onclick = respawn; $('dLoad').onclick = () => { $('death').classList.remove('on'); openMenu('load'); };
@@ -1813,15 +1813,15 @@ function spawnBoss() {
   cave.group.add(g); boss = { isBoss: true, big: true, o: g, mats, x: BOSSPOS.x, z: BOSSPOS.z, y: 0, hp: 160, max: 160, sc: 3.2, state: 'idle', t: 0, cd: 2.2, air: 0, airMax: 0.9, vx: 0, vz: 0, tx: 0, tz: 0, flash: 0, kx: 0, kz: 0, dead: false, awake: false, c: 1 };
   g.scale.setScalar(boss.sc); g.position.set(boss.x, 0, boss.z); $('bossbar').classList.remove('on');
 }
-function bossHit(hx, hz, r, mult, col) { if (PVP.on) pvpAtk(hx, hz, r, mult); if (RB.on) return rosaHit(hx, hz, r, mult, col); if (!boss || boss.dead || !boss.awake || mode !== 'cave') return false; const d = Math.hypot(boss.x - hx, boss.z - hz); if (d > r + 1.15) return false; const dx = boss.x - P.x, dz = boss.z - P.z, l = Math.hypot(dx, dz) || 1; hitSlime(boss, mult, dx / l, dz / l, col, 2); return true; }
+function bossHit(hx, hz, r, mult, col) { if (PVP.on || DUEL.on) pvpAtk(hx, hz, r, mult); if (RB.on) return rosaHit(hx, hz, r, mult, col); if (!boss || boss.dead || !boss.awake || mode !== 'cave') return false; const d = Math.hypot(boss.x - hx, boss.z - hz); if (d > r + 1.15) return false; const dx = boss.x - P.x, dz = boss.z - P.z, l = Math.hypot(dx, dz) || 1; hitSlime(boss, mult, dx / l, dz / l, col, 2); return true; }
 function bossDamage(b, dmg, opt, col) {
   if (b.dead) return; b.hp -= dmg; b.flash = 0.12; sfx('hit'); comboHit(); shake = Math.max(shake, opt.crit ? 0.25 : 0.1); hitStop = Math.max(hitStop, opt.crit ? 0.09 : 0.05);
   floatText(b.x + (rand() - 0.5), 2.6 + rand() * 0.4, b.z, (opt.crit ? 'CRÍTICO! ' : '') + '-' + (Math.round(dmg * 10) / 10), opt.crit ? '#ffcb2a' : '#ffe18d', true); burst(b.x, 1.2, b.z, ['#c79bff', '#ffffff'], 10, 3); fxFlash(b.x, 1.2, b.z, col || '#ffffff', 2.4);
   updBossBar();
   if (b.hp <= 0) { b.dead = true; b.awake = false; b.o.visible = false; $('bossbar').classList.remove('on'); sfx('boom'); setTimeout(() => sfx('jingle_5'), 500); shake = 0.6; deathSlow = 0.8;
     fxRing(b.x, 0.1, b.z, '#ffffff', 5, 0.7); fxRing(b.x, 0.1, b.z, '#c79bff', 4, 0.6); burst(b.x, 1, b.z, ['#c79bff', '#ffffff', '#ffe18d', '#9fe8ff'], 70, 6, true, true);
-    drop(b.x, b.z, 'star', null, 14); drop(b.x, b.z, 'item', 'gosma', 5); S.stars += 300; S.fd.estatua = (S.fd.estatua || 0) + 1; S.bossWins = (S.bossWins || 0) + 1; gainXp(60); S.flags = S.flags || {}; const first = !S.flags.bossWin; S.flags.bossWin = 1; questEvent('boss'); if (first) setTimeout(() => { openModal(`${floaters(16)}<div class="story"><div class="sart"><span>👑</span><span>🌠</span><span>✨</span></div><h2>A Coroa voltou ao céu!</h2><p>Quando o Rei Slime caiu, a Coroa Estelar subiu brilhando pela caverna e voltou para o céu. Hoje à noite, o Vale Estrelinha tem uma estrela nova... e o Rei, agora um slime pequenininho e feliz, promete nunca mais comer coroas.</p><div class="sbtns"><button class="btn candy pink" id="endOk">💗 Que lindo!</button></div></div>`, 'storyp wishp'); $('endOk').onclick = closeModal; }, 2200);
-    floatText(b.x, 3.4, b.z, 'VITÓRIA!', '#ffe18d', true); toast('👑 Você derrotou o <b>Rei Slime</b>! +300⭐, 60 XP e uma <b>Estátua do Rei Slime</b> para a fazenda. Ele volta amanhã!'); anim('Cheer', 1.2);
+    drop(b.x, b.z, 'star', null, 14); drop(b.x, b.z, 'item', 'gosma', 5); S.coins += 180; S.stars += 100; S.fd.estatua = (S.fd.estatua || 0) + 1; S.bossWins = (S.bossWins || 0) + 1; gainXp(60); S.flags = S.flags || {}; const first = !S.flags.bossWin; S.flags.bossWin = 1; questEvent('boss'); if (first) setTimeout(() => { openModal(`${floaters(16)}<div class="story"><div class="sart"><span>👑</span><span>🌠</span><span>✨</span></div><h2>A Coroa voltou ao céu!</h2><p>Quando o Rei Slime caiu, a Coroa Estelar subiu brilhando pela caverna e voltou para o céu. Hoje à noite, o Vale Estrelinha tem uma estrela nova... e o Rei, agora um slime pequenininho e feliz, promete nunca mais comer coroas.</p><div class="sbtns"><button class="btn candy pink" id="endOk">💗 Que lindo!</button></div></div>`, 'storyp wishp'); $('endOk').onclick = closeModal; }, 2200);
+    floatText(b.x, 3.4, b.z, 'VITÓRIA!', '#ffe18d', true); toast('👑 Você derrotou o <b>Rei Slime</b>! +180🪙, +100⭐, 60 XP e uma <b>Estátua do Rei Slime</b> para a fazenda. Ele volta amanhã!'); anim('Cheer', 1.2);
     for (const s of slimes) if (s.minion && !s.dead) { s.dead = true; s.o.visible = false; burst(s.x, 0.4, s.z, ['#c79bff'], 10, 2); } }
 }
 function updBossBar() { if (!boss) return; $('bossfill').style.width = Math.max(0, (boss.hp / boss.max) * 100) + '%'; $('bossph').textContent = boss.hp / boss.max < 0.4 ? '💢 Fúria!' : boss.hp / boss.max < 0.7 ? 'Fase 2' : 'Fase 1'; }
@@ -2045,31 +2045,31 @@ let crTab = 'corpo', crGender = 'f';
 let atTab = 'roupas';
 function openAtelie() {
   const tabs = { roupas: '👗 Roupas', acess: '🎀 Acessórios', cabelo: '💇 Cabelo', cores: '🎨 Cores', rastros: '✨ Rastros' };
-  const card = (img, n, d, price, owned, code) => `<div class="sitem ${owned ? 'own' : ''}"><img src="${img}"><b>${n}</b><span>${d}</span><button class="btn ${owned ? '' : 'candy pink'} sm" ${owned || S.stars < price ? 'disabled' : ''} data-wb="${code}">${owned ? 'Já é seu ✓' : price + '⭐'}</button></div>`;
+  const card = (img, n, d, price, owned, code) => `<div class="sitem ${owned ? 'own' : ''}"><img src="${img}"><b>${n}</b><span>${d}</span><button class="btn ${owned ? '' : 'candy pink'} sm" ${owned || S.coins < price ? 'disabled' : ''} data-wb="${code}">${owned ? 'Já é seu ✓' : price + '🪙'}</button></div>`;
   let items = '';
   if (atTab === 'roupas') items = OUTFITS.map((o) => card(THUMB['o_' + o.id], o.n, o.lore, OUT_PRICE[o.id], !!S.outfits[o.id], 'out:' + o.id)).join('');
   if (atTab === 'acess') items = Object.entries(WARD_PRICE.ac).map(([k, p]) => card(accThumb(k), ACCS[k].n, 'Acessório para a cabeça', p, owns('ac', k), 'ac:' + k)).join('');
   if (atTab === 'cabelo') items = Object.entries(WARD_PRICE.hs).map(([k, p]) => card(hairThumb(k), HSTYLE[k].n, 'Penteado', p, owns('hs', k), 'hs:' + k)).join('') + Object.entries(WARD_PRICE.hc).map(([k, p]) => card(swatchThumb(HAIRC[k].c), 'Tinta ' + HAIRC[k].n, 'Cor de cabelo', p, owns('hc', k), 'hc:' + k)).join('');
   if (atTab === 'cores') items = Object.entries(WARD_PRICE.cl).map(([k, p]) => card(swatchThumb(CLOTH[k].c), 'Tecido ' + CLOTH[k].n, 'Cor de roupa', p, owns('cl', k), 'cl:' + k)).join('');
   if (atTab === 'rastros') items = Object.entries(WARD_PRICE.tr).map(([k, p]) => card(emojiThumb(TRAILS[k].e), TRAILS[k].n, 'Rastro mágico ao andar', p, owns('tr', k), 'tr:' + k)).join('');
-  openModal(`<div class="shophead"><img src="${THUMB.npc_fifi || THUMB.rosa}"><div><h2 style="margin:0">👗 Ateliê da Fifi</h2><p class="lead" style="margin:2px 0 0">"Querida, a moda é uma forma de magia! Você tem <b>${S.stars}⭐</b>."</p></div></div>
+  openModal(`<div class="shophead"><img src="${THUMB.npc_fifi || THUMB.rosa}"><div><h2 style="margin:0">👗 Ateliê da Fifi</h2><p class="lead" style="margin:2px 0 0">"Querida, a moda é uma forma de magia! Você tem <b>${S.coins}🪙</b>."</p></div></div>
    <div class="wtabs">${Object.entries(tabs).map(([k, n]) => `<button class="btn ctab ${atTab === k ? 'on' : ''}" data-at="${k}">${n}</button>`).join('')}</div><div class="sgrid">${items}</div>
    <p class="note">Depois de comprar, vista em <b>Menu → Personagem</b>. <button class="btn sm" id="atCr">👤 Abrir espelho</button></p>`, 'wide wishp');
   document.querySelectorAll('[data-at]').forEach((el) => (el.onclick = () => { atTab = el.dataset.at; sfx('switch'); openAtelie(); }));
-  document.querySelectorAll('[data-wb]').forEach((el) => (el.onclick = () => { const [cat, k] = el.dataset.wb.split(':'); const price = cat === 'out' ? OUT_PRICE[k] : WARD_PRICE[cat][k]; if (S.stars < price) return sfx('cancel'); S.stars -= price; if (cat === 'out') S.outfits[k] = true; else giveWard(cat, k); sfx('coin'); setTimeout(() => sfx('jingle_a'), 150); confetti(innerWidth / 2, innerHeight / 2, 18, false); hud(); toast('🛍️ Comprado! Vista no espelho (Menu → Personagem).'); questEvent('buyward'); openAtelie(); }));
+  document.querySelectorAll('[data-wb]').forEach((el) => (el.onclick = () => { const [cat, k] = el.dataset.wb.split(':'); const price = cat === 'out' ? OUT_PRICE[k] : WARD_PRICE[cat][k]; if (S.coins < price) return sfx('cancel'); S.coins -= price; if (cat === 'out') S.outfits[k] = true; else giveWard(cat, k); sfx('coin'); setTimeout(() => sfx('jingle_a'), 150); confetti(innerWidth / 2, innerHeight / 2, 18, false); hud(); toast('🛍️ Comprado! Vista no espelho (Menu → Personagem).'); questEvent('buyward'); openAtelie(); }));
   $('atCr').onclick = () => openCreator(false);
 }
 function swatchThumb(c) { const k = 'sw' + c; if (ICONC[k]) return ICONC[k]; const cv = document.createElement('canvas'); cv.width = cv.height = 64; const x = cv.getContext('2d'); x.fillStyle = '#14141b'; x.beginPath(); x.arc(32, 32, 26, 0, 7); x.fill(); x.fillStyle = c || '#7a4a30'; x.beginPath(); x.arc(32, 32, 22, 0, 7); x.fill(); x.fillStyle = 'rgba(255,255,255,.5)'; x.beginPath(); x.arc(24, 24, 7, 0, 7); x.fill(); return (ICONC[k] = cv.toDataURL()); }
 /* =================== Forja da Duda (equipamentos) =================== */
 function oreTxt(ore) { return Object.entries(ore || {}).map(([k, n]) => `<span class="oreq ${(S.inv[k] || 0) >= n ? 'ok' : ''}"><img src="${THUMB['i_' + k]}">${S.inv[k] || 0}/${n}</span>`).join(''); }
-const canPay = (price, ore) => S.stars >= price && Object.entries(ore || {}).every(([k, n]) => (S.inv[k] || 0) >= n);
-function pay(price, ore) { S.stars -= price; for (const [k, n] of Object.entries(ore || {})) S.inv[k] -= n; }
+const canPay = (price, ore) => S.coins >= price && Object.entries(ore || {}).every(([k, n]) => (S.inv[k] || 0) >= n);
+function pay(price, ore) { S.coins -= price; for (const [k, n] of Object.entries(ore || {})) S.inv[k] -= n; }
 function openForge() {
   const g = gear(), rows = [];
-  const nextS = SWORDS[(g.sword || 0) + 1]; rows.push(`<div class="fcard"><img src="${icon(SWORDS[g.sword || 0].ic, 64)}"><div class="grow"><b>Espada atual: ${SWORDS[g.sword || 0].n}</b><span>Dano extra +${SWORDS[g.sword || 0].dmg}</span>${nextS ? `<div class="fnext">Próxima: <b>${nextS.n}</b> (+${nextS.dmg} de dano${nextS.crit ? `, +${Math.round(nextS.crit * 100)}% crítico` : ''})<br>${nextS.price}⭐ ${oreTxt(nextS.ore)}</div>` : '<div class="fnext">✨ Você tem a melhor espada do vale!</div>'}</div>${nextS ? `<button class="btn candy gold" data-fg="sword" ${canPay(nextS.price, nextS.ore) ? '' : 'disabled'}>⚒ Forjar</button>` : ''}</div>`);
-  const nextP = PICKS[(g.pick || 0) + 1]; rows.push(`<div class="fcard"><img src="${icon('pick', 64)}"><div class="grow"><b>${g.pick ? 'Picareta: ' + PICKS[g.pick].n : 'Você ainda não tem picareta'}</b><span>Para minerar na Caverna Cintilante e quebrar pedras.</span>${nextP ? `<div class="fnext">${g.pick ? 'Melhorar para' : 'Comprar'}: <b>${nextP.n}</b> (força ${nextP.dmg})<br>${nextP.price}⭐ ${oreTxt(nextP.ore)}</div>` : '<div class="fnext">✨ Picareta máxima!</div>'}</div>${nextP ? `<button class="btn candy gold" data-fg="pick" ${canPay(nextP.price, nextP.ore) ? '' : 'disabled'}>⚒ ${g.pick ? 'Forjar' : 'Comprar'}</button>` : ''}</div>`);
-  for (const [k, it] of Object.entries(GEAR)) rows.push(`<div class="fcard ${g[k] ? 'own' : ''}"><img src="${icon(it.ic, 64)}"><div class="grow"><b>${it.n}</b><span>${it.desc}</span>${g[k] ? '<div class="fnext">✓ Já é seu</div>' : `<div class="fnext">${it.price}⭐ ${oreTxt(it.ore)}</div>`}</div>${g[k] ? '' : `<button class="btn candy gold" data-fg="${k}" ${canPay(it.price, it.ore) ? '' : 'disabled'}>⚒ Forjar</button>`}</div>`);
-  openModal(`<div class="shophead"><img src="${THUMB.npc_duda || THUMB.tico}"><div><h2 style="margin:0">⚒️ Forja da Duda</h2><p class="lead" style="margin:2px 0 0">"Me traga minérios da caverna que eu faço maravilhas! Você tem <b>${S.stars}⭐</b>."</p></div></div><div class="forge">${rows.join('')}</div><p class="note">Minérios vêm da <b>Caverna Cintilante</b>, ao norte da floresta. Pedras do vale também soltam minério com a picareta.</p>`, 'wide');
+  const nextS = SWORDS[(g.sword || 0) + 1]; rows.push(`<div class="fcard"><img src="${icon(SWORDS[g.sword || 0].ic, 64)}"><div class="grow"><b>Espada atual: ${SWORDS[g.sword || 0].n}</b><span>Dano extra +${SWORDS[g.sword || 0].dmg}</span>${nextS ? `<div class="fnext">Próxima: <b>${nextS.n}</b> (+${nextS.dmg} de dano${nextS.crit ? `, +${Math.round(nextS.crit * 100)}% crítico` : ''})<br>${nextS.price}🪙 ${oreTxt(nextS.ore)}</div>` : '<div class="fnext">✨ Você tem a melhor espada do vale!</div>'}</div>${nextS ? `<button class="btn candy gold" data-fg="sword" ${canPay(nextS.price, nextS.ore) ? '' : 'disabled'}>⚒ Forjar</button>` : ''}</div>`);
+  const nextP = PICKS[(g.pick || 0) + 1]; rows.push(`<div class="fcard"><img src="${icon('pick', 64)}"><div class="grow"><b>${g.pick ? 'Picareta: ' + PICKS[g.pick].n : 'Você ainda não tem picareta'}</b><span>Para minerar na Caverna Cintilante e quebrar pedras.</span>${nextP ? `<div class="fnext">${g.pick ? 'Melhorar para' : 'Comprar'}: <b>${nextP.n}</b> (força ${nextP.dmg})<br>${nextP.price}🪙 ${oreTxt(nextP.ore)}</div>` : '<div class="fnext">✨ Picareta máxima!</div>'}</div>${nextP ? `<button class="btn candy gold" data-fg="pick" ${canPay(nextP.price, nextP.ore) ? '' : 'disabled'}>⚒ ${g.pick ? 'Forjar' : 'Comprar'}</button>` : ''}</div>`);
+  for (const [k, it] of Object.entries(GEAR)) rows.push(`<div class="fcard ${g[k] ? 'own' : ''}"><img src="${icon(it.ic, 64)}"><div class="grow"><b>${it.n}</b><span>${it.desc}</span>${g[k] ? '<div class="fnext">✓ Já é seu</div>' : `<div class="fnext">${it.price}🪙 ${oreTxt(it.ore)}</div>`}</div>${g[k] ? '' : `<button class="btn candy gold" data-fg="${k}" ${canPay(it.price, it.ore) ? '' : 'disabled'}>⚒ Forjar</button>`}</div>`);
+  openModal(`<div class="shophead"><img src="${THUMB.npc_duda || THUMB.tico}"><div><h2 style="margin:0">⚒️ Forja da Duda</h2><p class="lead" style="margin:2px 0 0">"Me traga minérios da caverna que eu faço maravilhas! Você tem <b>${S.coins}🪙</b>."</p></div></div><div class="forge">${rows.join('')}</div><p class="note">Minérios vêm da <b>Caverna Cintilante</b>, ao norte da floresta. Pedras do vale também soltam minério com a picareta.</p>`, 'wide');
   document.querySelectorAll('[data-fg]').forEach((el) => (el.onclick = () => { const k = el.dataset.fg; let price, ore, label;
     if (k === 'sword') { const n = SWORDS[(g.sword || 0) + 1]; price = n.price; ore = n.ore; label = n.n; } else if (k === 'pick') { const n = PICKS[(g.pick || 0) + 1]; price = n.price; ore = n.ore; label = n.n; } else { price = GEAR[k].price; ore = GEAR[k].ore; label = GEAR[k].n; }
     if (!canPay(price, ore)) return sfx('cancel'); pay(price, ore); if (k === 'sword') g.sword = (g.sword || 0) + 1; else if (k === 'pick') g.pick = (g.pick || 0) + 1; else g[k] = 1;
@@ -2215,7 +2215,7 @@ function farmOk(x, y) { const z = farmEd.zone, o = obj[I(x, y)], pt = Math.floor
   if (farmEd.sel) return ZONES[z].tiles.includes(tAt(x, y)) && !o && !pt; return !!(o && o.t === 'fdecor'); }
 function farmAction() {
   if (!farmEd || !farmEd.cell) return; const [x, y] = farmEd.cell, k = x + ',' + y, o = obj[I(x, y)], z = farmEd.zone;
-  if (farmEd.tool === 'arar') { if (!farmOk(x, y)) return farmBad('Só dá para arar grama livre dentro da cerca.'); if (S.stars < 20) return farmBad('Precisa de 20⭐ para arar.'); S.stars -= 20; tile[I(x, y)] = SO; S.farm.soil.push([x, y]); setTileColor(x, y); syncPlots(); burst(x + 0.5, 0.2, y + 0.5, ['#8a5a3b', '#6b4a33'], 12, 1.5); floatText(x + 0.5, 1, y + 0.5, '-20⭐', C.pink); sfx('plant'); hud(); return; }
+  if (farmEd.tool === 'arar') { if (!farmOk(x, y)) return farmBad('Só dá para arar grama livre dentro da cerca.'); if (S.coins < 20) return farmBad('Precisa de 20🪙 para arar.'); S.coins -= 20; tile[I(x, y)] = SO; S.farm.soil.push([x, y]); setTileColor(x, y); syncPlots(); burst(x + 0.5, 0.2, y + 0.5, ['#8a5a3b', '#6b4a33'], 12, 1.5); floatText(x + 0.5, 1, y + 0.5, '-20⭐', C.pink); sfx('plant'); hud(); return; }
   if (farmEd.tool === 'grama') { if (!farmOk(x, y)) return farmBad(tAt(x, y) === SO ? 'Colha a planta antes de desfazer o canteiro.' : 'Aqui já é grama.'); tile[I(x, y)] = GR; S.farm.soil = S.farm.soil.filter(([a, b]) => a !== x || b !== y); delete S.crops[k]; setTileColor(x, y); syncPlots(); burst(x + 0.5, 0.2, y + 0.5, LEAF, 10, 1.5); sfx('pop'); return; }
   if (farmEd.sel) { const id = farmEd.sel; if (!farmOk(x, y)) return farmBad('Não cabe aí! Escolha um lugar livre da área.'); zoneDecor(z).push({ id, x, y, r: farmEd.r }); S.fd[id]--; if (S.fd[id] <= 0) { delete S.fd[id]; farmEd.sel = null; } rebuildFarmDecor(); burst(x + 0.5, 0.6, y + 0.5, ['#fff3c4', '#ffe18d'], 12, 1.5, true, true); sfx('plant'); renderFarmPanel(); if (ghost) { scene.remove(ghost); ghost = null; } questEvent('decorzone', z); return; }
   if (o && o.t === 'fdecor') { const list = zoneDecor(o.z), d = list[o.i]; list.splice(o.i, 1); S.fd[d.id] = (S.fd[d.id] || 0) + 1; farmEd.sel = d.id; farmEd.r = d.r; rebuildFarmDecor(); sfx('pop'); renderFarmPanel(); }
@@ -2343,7 +2343,7 @@ let lorePick = [];
 function sqState(id) { S.sq = S.sq || {}; return S.sq[id]; }
 function questText(q) { const st = S.sq[q.id]; if (!st || st.done) return ''; const s = q.steps[st.s]; if (!s) return ''; if (s.t === 'lore') return `${s.txt} (${Math.min(s.q, Object.keys(S.lore || {}).length)}/${s.q})`; if (s.t === 'item') return `${s.txt} (${Math.min(s.q, S.inv[s.item] || 0)}/${s.q})`; if (s.t === 'hide') return `${s.txt} (${st.found || 0}/${s.q})`; return s.txt; }
 function grantReward(q) {
-  if (q.onDone) q.onDone(); const r = q.reward; if (r.stars) S.stars += r.stars; if (r.xp) gainXp(r.xp); if (r.flag) { S.flags = S.flags || {}; S.flags[r.flag] = 1; } if (r.items) for (const [k, n] of Object.entries(r.items)) S.inv[k] = (S.inv[k] || 0) + n; if (r.fd) for (const [k, n] of Object.entries(r.fd)) S.fd[k] = (S.fd[k] || 0) + n;
+  if (q.onDone) q.onDone(); const r = q.reward; if (r.stars) { S.coins += Math.round(r.stars * 0.6); S.stars += Math.round(r.stars * 0.3); } if (r.xp) gainXp(r.xp); if (r.flag) { S.flags = S.flags || {}; S.flags[r.flag] = 1; } if (r.items) for (const [k, n] of Object.entries(r.items)) S.inv[k] = (S.inv[k] || 0) + n; if (r.fd) for (const [k, n] of Object.entries(r.fd)) S.fd[k] = (S.fd[k] || 0) + n;
   if (r.ward) giveWard(r.ward[0], r.ward[1]); if (r.up) S.up[r.up] = 1; if (r.farm && (S.farmLv || 0) < 2) expandFarm(); if (r.sword && (gear().sword || 0) < SWORDS.length - 1) { gear().sword++; applyIcons(); buildHotbar(); updateHand(); }
   sfx('jingle_5'); confetti(innerWidth / 2, innerHeight * 0.4, 30, true); toast(`📜 Missão concluída: <b>${q.n}</b>! ${r.stars ? `+${r.stars}⭐` : ''}${r.flag === 'ckey' ? ' · 🔑 Chave Cintilante' : ''}`); hud(); goalUI();
 }
@@ -2907,7 +2907,7 @@ const gA = (f, m) => (S.gender === 'm' ? m : f);
 /* ---------- inventário em grade ---------- */
 function openBag() {
   const ent = Object.entries(S.inv).filter(([, c]) => c > 0), sn = Object.entries(S.snacks).filter(([, c]) => c > 0); let tot = 0; ent.forEach(([k, c]) => (tot += ITEMS[k].price * c));
-  const cells = [...ent.map(([k, c]) => ({ k, c, img: THUMB['i_' + k], n: ITEMS[k].n, d: `${ITEMS[k].price}⭐ cada` })), ...sn.map(([k, c]) => ({ k, c, img: THUMB['s_' + k], n: SNACKS[k].n, d: SNACKS[k].desc, use: true }))];
+  const cells = [...ent.map(([k, c]) => ({ k, c, img: THUMB['i_' + k], n: ITEMS[k].n, d: `${ITEMS[k].price}🪙 cada` })), ...sn.map(([k, c]) => ({ k, c, img: THUMB['s_' + k], n: SNACKS[k].n, d: SNACKS[k].desc, use: true }))];
   const N = Math.max(30, Math.ceil(cells.length / 6) * 6);
   openModal(`<h2>${icon('bag') ? `<img class="ei" src="${icon('bag', 32)}">` : ''} Mochila</h2><div class="bagwrap"><div class="ggrid">${Array.from({ length: N }, (_, i) => { const c = cells[i]; return c ? `<div class="gs ${c.use ? 'use' : ''}" data-i="${i}" title="${c.n}"><img src="${c.img}"><b>${c.c}</b></div>` : '<div class="gs empty"></div>'; }).join('')}</div>
   <div class="bagside" id="bagside"><p class="note">Toque num item para ver os detalhes.</p><p class="note">Valor de venda total: <b>${Math.round(tot * PERK.sell())}⭐</b></p></div></div>`, 'wide bagp');
@@ -2921,7 +2921,7 @@ function grantTools(step, quiet) { S.tools = S.tools || {}; const got = []; for 
 function fixHot() { if (!S.hot || S.hot.length !== TOOLS.length) S.hot = TOOLS.map((t) => t.id); if (!ownsTool(TOOLS[S.slot].id)) { const f = S.hot.find((id) => ownsTool(id)); S.slot = f ? TOOLS.findIndex((t) => t.id === f) : 0; } }
 function buildHotbar() {
   fixHot();
-  $('hotbar').innerHTML = S.hot.map((id, pos) => { const i = TOOLS.findIndex((t) => t.id === id), t = TOOLS[i], own = ownsTool(id); return `<div class="slot ${i === S.slot ? 'on' : ''} ${own ? '' : 'empty'}" data-s="${i}" data-pos="${pos}" draggable="${own}" title="${own ? t.n + ' (tecla ' + (pos + 1) + ')' : 'Vazio'}"><span class="n">${pos + 1}</span>${own ? `<img src="${THUMB['t_' + t.id]}">${t.seed ? `<span class="c">${CROPS[t.id].cost}⭐</span>` : ''}` : ''}</div>`; }).join('');
+  $('hotbar').innerHTML = S.hot.map((id, pos) => { const i = TOOLS.findIndex((t) => t.id === id), t = TOOLS[i], own = ownsTool(id); return `<div class="slot ${i === S.slot ? 'on' : ''} ${own ? '' : 'empty'}" data-s="${i}" data-pos="${pos}" draggable="${own}" title="${own ? t.n + ' (tecla ' + (pos + 1) + ')' : 'Vazio'}"><span class="n">${pos + 1}</span>${own ? `<img src="${THUMB['t_' + t.id]}">${t.seed ? `<span class="c">${CROPS[t.id].cost}🪙</span>` : ''}` : ''}</div>`; }).join('');
   let dragPos = null;
   $('hotbar').querySelectorAll('.slot').forEach((el) => {
     el.addEventListener('pointerdown', (e) => { e.stopPropagation(); if (el.classList.contains('empty')) return; setSlot(+el.dataset.s); });
@@ -2966,7 +2966,7 @@ function openFeedback() {
 }
 /* ---------- multiplayer: ver outros jogadores no vale ---------- */
 const MP = { room: null, peers: {}, chars: {}, t: 0, on: false };
-(async () => { try { if (window.claude && claude.use) { const r = await claude.use('room'); if (!r) return; MP.R = r; MP.onPeersFn = ((ch) => { const list = (ch && ch.peers) || (Array.isArray(ch) ? ch : []); const seen = {}; for (const p of list) { if (!p || p.isMe || p.kind === 'agent') continue; const id = p.peer; const st = p.presence; if (!id || !st || typeof st.x !== 'number' || typeof st.z !== 'number') continue; seen[id] = 1; MP.peers[id] = Object.assign({}, st, { t: performance.now() }); } for (const id of Object.keys(MP.peers)) if (!seen[id]) removePeer(id); }); } } catch (e) { MP.on = false; } })();
+(async () => { try { if (window.claude && claude.use) { const r = await claude.use('room'); if (!r) return; MP.R = r; MP.onPeersFn = ((ch) => { const list = (ch && ch.peers) || (Array.isArray(ch) ? ch : []); const seen = {}; for (const p of list) { if (p && p.isMe && p.sameTab) MP.me = p.peer; if (!p || p.isMe || p.kind === 'agent') continue; const id = p.peer; const st = p.presence; if (!id || !st || typeof st.x !== 'number' || typeof st.z !== 'number') continue; seen[id] = 1; MP.peers[id] = Object.assign({}, st, { t: performance.now() }); } for (const id of Object.keys(MP.peers)) if (!seen[id]) removePeer(id); }); } } catch (e) { MP.on = false; } })();
 function removePeer(id) { const c = MP.chars[id]; if (c) { scene.remove(c.obj); if (c.lbl) { scene.remove(c.lbl); c.lbl.material.map.dispose(); c.lbl.material.dispose(); } try { disposeSlots(c.obj); } catch (e) {} } delete MP.chars[id]; delete MP.peers[id]; }
 function mpUpdate(dt) {
   if (!MP.on || !MP.room || titleOn) return; MP.t -= dt;
@@ -3486,7 +3486,7 @@ function nevUpdate(dt) {
     if (rand() < dt * 0.7) floatText(FIRE.x + (rand() - 0.5) * 2.5, 2, FIRE.z - 1, '♪', pick(['#ffe18d', '#ffb3c8', '#b8e8ff']));
     const d = Math.hypot(P.x - FIRE.x, P.z - FIRE.z); if (d < 3.2 && !P.dead) { P.hp = Math.min(maxHp(), P.hp + dt * 3); P.st = Math.min(maxSt(), P.st + dt * 10); } }
   // ginástica: ficar perto dá fôlego e carinho dos vizinhos
-  if (NEV.cur === 'ginastica' && mode === 'out' && Math.hypot(P.x - 42, P.z - 34.3) < 4.5 && (S.nev || {}).gin !== S.day) { NEV.gin += dt; if (!P.moving && player && rand() < dt * 0.8) anim(pick(['Cheer', 'Jump_Full_Short', 'Spellcast_Raise']), 1); if (NEV.gin > 9) { S.nev = S.nev || {}; S.nev.gin = S.day; P.st = maxSt(); P.boost = Math.max(P.boost || 0, 60); S.stars += 30; for (const n of npcs) { const st = npcSt(n.d.id); st.p = (st.p || 0) + 1; if (st.p >= 3) { st.p = 0; st.h = Math.min(10, (st.h || 0) + 1); } } sfx('quest'); confetti(innerWidth / 2, innerHeight / 2, 24, true); toast('Ginástica concluída! <b>+30</b> estrelinhas, fôlego cheio e os vizinhos gostaram de você.'); hud(); } }
+  if (NEV.cur === 'ginastica' && mode === 'out' && Math.hypot(P.x - 42, P.z - 34.3) < 4.5 && (S.nev || {}).gin !== S.day) { NEV.gin += dt; if (!P.moving && player && rand() < dt * 0.8) anim(pick(['Cheer', 'Jump_Full_Short', 'Spellcast_Raise']), 1); if (NEV.gin > 9) { S.nev = S.nev || {}; S.nev.gin = S.day; P.st = maxSt(); P.boost = Math.max(P.boost || 0, 60); S.coins += 20; for (const n of npcs) { const st = npcSt(n.d.id); st.p = (st.p || 0) + 1; if (st.p >= 3) { st.p = 0; st.h = Math.min(10, (st.h || 0) + 1); } } sfx('quest'); confetti(innerWidth / 2, innerHeight / 2, 24, true); toast('Ginástica concluída! <b>+30</b> estrelinhas, fôlego cheio e os vizinhos gostaram de você.'); hud(); } }
   // papo entre pares
   if (NEV.cur === 'papo') { NEV.chatT -= dt; if (NEV.chatT <= 0) { NEV.chatT = 3.2; for (const p of NEV.pairs) { if (!p.a || !p.b || p.a.moving || p.b.moving || Math.hypot(p.a.x - p.b.x, p.a.z - p.b.z) > 1.8) continue; const ln = NCHAT[(p.k + Math.floor(p.i / 2)) % NCHAT.length]; bubble(p.i % 2 ? p.b : p.a, ln[p.i % 2], 3); p.i++; } } }
   // aniversário: balões seguem o aniversariante
@@ -3496,11 +3496,11 @@ function nevUpdate(dt) {
   // dois vizinhos se encontrando se cumprimentam
   for (let i = 0; i < npcs.length; i++) for (let j = i + 1; j < npcs.length; j++) { const a = npcs[i], b = npcs[j]; if (a.hidden || b.hidden || Math.hypot(a.x - b.x, a.z - b.z) > 1.6) continue; const k = a.d.id + b.d.id; if ((NEV.greet[k] || -99) > gtime - 60 || NEV.cur === 'papo' || NEV.cur === 'ginastica') continue; NEV.greet[k] = gtime; bubble(a, `Oi, ${b.d.n.split(' ').pop()}!`, 2.4); setTimeout(() => bubble(b, pick(['Oiê!', 'Tudo bem?', 'Olá, vizinho!', 'Que bom te ver!']), 2.4), 900); }
 }
-function nevLetter() { const pool = npcs.filter((n) => (npcSt(n.d.id).h || 0) >= 1); if (!pool.length || rand() > 0.5) return; const n = pick(pool), msgs = ['Obrigado por ser uma vizinha tão querida!', 'Deixei umas estrelinhas pra você comprar algo bonito.', 'Passa lá em casa qualquer dia!', 'Vi você correndo pelo vale e fiquei feliz.']; S.stars += 20; setTimeout(() => { toast(`<img class="ti" src="${icon('letter', 24)}"> Carta de <b>${n.d.n}</b>: “${pick(msgs)}” <b>+20</b> estrelinhas`); sfx('pop'); hud(); }, 2500); }
+function nevLetter() { const pool = npcs.filter((n) => (npcSt(n.d.id).h || 0) >= 1); if (!pool.length || rand() > 0.5) return; const n = pick(pool), msgs = ['Obrigado por ser uma vizinha tão querida!', 'Deixei umas estrelinhas pra você comprar algo bonito.', 'Passa lá em casa qualquer dia!', 'Vi você correndo pelo vale e fiquei feliz.']; S.stars += 10; setTimeout(() => { toast(`<img class="ti" src="${icon('letter', 24)}"> Carta de <b>${n.d.n}</b>: “${pick(msgs)}” <b>+10⭐</b> desejos`); sfx('pop'); hud(); }, 2500); }
 function talkNpc(n) {
   if (n.hidden) return findPipo(n);
   if (NEV.bday === n && (S.nev || {}).bd !== S.day) { S.nev = S.nev || {}; S.nev.bd = S.day; const st = npcSt(n.d.id); st.h = Math.min(10, (st.h || 0) + 1); sayWho = n.c;
-    say(n.d.n, THUMB['npc_' + n.d.id], ['Você lembrou do meu aniversário?!', 'Ninguém tinha vindo me dar parabéns ainda...', 'Toma, um presentinho pra você também!'], () => { S.stars += 80; confetti(innerWidth / 2, innerHeight / 2, 40, true); sfx('jingle_a'); toast(`Você deu parabéns para <b>${n.d.n}</b>! +1 coração e <b>+80</b> estrelinhas.`); hud(); }); return; }
+    say(n.d.n, THUMB['npc_' + n.d.id], ['Você lembrou do meu aniversário?!', 'Ninguém tinha vindo me dar parabéns ainda...', 'Toma, um presentinho pra você também!'], () => { S.coins += 40; S.stars += 20; confetti(innerWidth / 2, innerHeight / 2, 40, true); sfx('jingle_a'); toast(`Você deu parabéns para <b>${n.d.n}</b>! +1 coração e <b>+80</b> estrelinhas.`); hud(); }); return; }
   npcMenu(n);
 }
 function drawBubbles() {
@@ -3715,7 +3715,7 @@ function openAdmin() {
   <div class="adg"><h4>Mundo e câmera</h4>${b('fly', ADM.fly ? 'Vista aérea: ON' : 'Vista aérea: OFF', ADM.fly ? 'on' : '')}${b('slimes', 'Criar 4 slimes aqui')}${b('ev_g', 'Ginástica agora')}${b('ev_f', 'Fogueira agora')}${b('bday', 'Aniversário hoje')}</div></div><p class="note">Atalho: <span class="key">F9</span> abre este painel quando o modo admin está ligado.</p>`, 'wide');
   const setH = (hh) => { S.time = ((hh - 6) / 18) * DAYLEN; };
   document.querySelectorAll('[data-ad]').forEach((el) => (el.onclick = () => { const a = el.dataset.ad; sfx('accept');
-    if (a === 'stars') S.stars += 1000; if (a === 'lv') gainXp(xpNeed()); if (a === 'lv10') { S.lv = 10; S.xp = 0; } if (a === 'heal') { P.hp = maxHp(); P.st = maxSt(); S.food = 100; } if (a === 'god') ADM.god = !ADM.god; if (a === 'fast') ADM.fast = !ADM.fast;
+    if (a === 'stars') { S.stars += 1000; S.coins += 1000; } if (a === 'lv') gainXp(xpNeed()); if (a === 'lv10') { S.lv = 10; S.xp = 0; } if (a === 'heal') { P.hp = maxHp(); P.st = maxSt(); S.food = 100; } if (a === 'god') ADM.god = !ADM.god; if (a === 'fast') ADM.fast = !ADM.fast;
     if (a === 'items') for (const k of Object.keys(ITEMS)) S.inv[k] = (S.inv[k] || 0) + 10; if (a === 'pets') for (const p of PETS) if (S.pets[p.id] === undefined) S.pets[p.id] = 0; if (a === 'food0') S.food = 0;
     if (a === 'tut') { S.tstep = TUT.length; grantTools(99, true); } if (a === 'tutboss') { S.tstep = TUT.length - 1; grantTools(S.tstep, true); goalUI(); } if (a === 'rosa') { closeModal(); S.tstep = TUT.length - 1; rosaStart(); return; } if (a === 'all') { S.tstep = TUT.length; S.lv = Math.max(S.lv, 6); grantTools(99, true); } if (a === 'fog') FOGR.key = '';
     if (a === 'h6') setH(6.05); if (a === 'h12') setH(12); if (a === 'h18') setH(18); if (a === 'h22') setH(22); if (a === 'day') { closeModal(); newDay(true); return; } if (a === 'month') { S.day += 10; refreshBanners(); }
@@ -3775,7 +3775,7 @@ function rosaHit(hx, hz, r, mult, col) { if (!RB.on) return false; const d = Mat
   if (RB.hits % 4 === 0) RB.cd = Math.min(RB.cd, 0.3);
   if (RB.hp <= 0) rosaWin(); return true; }
 function rosaWin() { rosaCleanup(); sfx('jingle_5'); confetti(innerWidth / 2, innerHeight / 2, 60, true); shake = 0.4; burst(rosa.x, 1.2, rosa.z, ['#ffb3e6', '#ffe18d', '#ffffff'], 50, 5, true, true); anim('Cheer', 1.2);
-  setTimeout(() => { sayWho = rosaC; say('Vovó Rosa', THUMB.rosa, ['Ufa! Que neta mais corajosa eu tenho!', 'Você aprendeu a plantar, pescar, cuidar da casa... e agora sabe se defender também.', 'A Névoa Sonolenta vai se afastar do seu brilho. O vale inteiro está esperando por você.', 'Vá com cuidado, e volte para tomar chá comigo!'], () => { S.stars += 200; gainXp(40); ev('rosaboss'); hud(); }); }, 900); }
+  setTimeout(() => { sayWho = rosaC; say('Vovó Rosa', THUMB.rosa, ['Ufa! Que neta mais corajosa eu tenho!', 'Você aprendeu a plantar, pescar, cuidar da casa... e agora sabe se defender também.', 'A Névoa Sonolenta vai se afastar do seu brilho. O vale inteiro está esperando por você.', 'Vá com cuidado, e volte para tomar chá comigo!'], () => { S.coins += 120; S.stars += 60; gainXp(40); ev('rosaboss'); hud(); }); }, 900); }
 function rosaLose() { rosaCleanup(); P.dead = false; P.hp = maxHp(); P.st = maxSt(); P.hurt = 1.5; fade(() => { P.x = RB.cx; P.z = RB.cz + 4.2; rosa.x = RB.cx; rosa.z = RB.cz + 2.6; }); setTimeout(() => { sayWho = rosaC; say('Vovó Rosa', THUMB.rosa, ['Opa, opa! Calma, querida, eu te seguro.', 'Lembre: aperte Q para esquivar das minhas estrelinhas e golpeie quando eu parar para lançar magia.', 'Quando estiver pronta, fale comigo de novo.']); }, 700); }
 function rosaUpdate(dt) {
   if (!RB.on) return; if (mode !== 'out') { rosaCleanup(); return; } RB.t += dt; rosa.wait = 99; rosa.moving = false;
@@ -4033,7 +4033,7 @@ function krakenStart() { if (KR.on || KR.dead && KR.deadDay === S.day) return; i
   KR.g.visible = true; const bb = $('bossbar'); bb.classList.add('on'); const nm = bb.querySelector('.bbn'); if (nm) nm.innerHTML = 'Kraken do Mar Estrelado <span id="bossph">Fase 1</span>'; krBar(); sfx('alert'); shake = 0.5; toast('O <b>Kraken</b> surgiu das ondas! Desvie dos círculos e dispare estrelas com <span class="key">Espaço</span>. Mire nos tentáculos e nos olhos!'); }
 function krBar_v15() { $('bossfill').style.width = Math.max(0, (KR.hp / KR.max) * 100) + '%'; const ph = $('bossph'); if (ph) ph.textContent = 'Fase ' + KR.phase; }
 function krakenEnd(win) { if (!KR.on && !win) return; KR.on = false; for (const m of KR.marks) world.remove(m.m); for (const i of KR.ink) world.remove(i.m); KR.marks = []; KR.ink = []; $('bossbar').classList.remove('on'); const nm = document.querySelector('#bossbar .bbn'); if (nm) nm.innerHTML = 'Rei Slime Gelatinoso <span id="bossph">Fase 1</span>'; if (!win && KR.g) KR.rise = Math.min(KR.rise, 1); }
-function krakenWin() { KR.dead = true; KR.deadDay = S.day; krakenEnd(true); sfx('jingle_5'); setTimeout(() => sfx('secret'), 600); confetti(innerWidth / 2, innerHeight / 2, 70, true); shake = 0.7; burst(KR.x, 3, KR.z, ['#c99bff', '#ffe18d', '#9fe8ff', '#ffffff'], 80, 7, true, true); S.stars += 500; gainXp(80); S.flags = S.flags || {}; const first = !S.flags.kraken; S.flags.kraken = 1; drop(P.x, P.z, 'star', null, 16);
+function krakenWin() { KR.dead = true; KR.deadDay = S.day; krakenEnd(true); sfx('jingle_5'); setTimeout(() => sfx('secret'), 600); confetti(innerWidth / 2, innerHeight / 2, 70, true); shake = 0.7; burst(KR.x, 3, KR.z, ['#c99bff', '#ffe18d', '#9fe8ff', '#ffffff'], 80, 7, true, true); S.coins += 250; S.stars += 200; gainXp(80); S.flags = S.flags || {}; const first = !S.flags.kraken; S.flags.kraken = 1; drop(P.x, P.z, 'star', null, 16);
   setTimeout(() => { openModal(`${floaters(16)}<div class="story"><div class="sart"><span>🐙</span><span>🫧</span><span>✨</span></div><h2>A Pérola do Mar Estrelado</h2><p>O Kraken afundou devagarinho, soprou bolhas de alegria e deixou uma <b>Pérola de Luz</b> flutuando ao lado do seu barco. ${first ? 'Uma nova página foi adicionada ao diário!' : 'Ele promete brincar de novo amanhã.'}</p><p class="note">+500 estrelinhas e 80 XP</p><div class="sbtns"><button class="btn candy pink" id="krOk">Que aventura!</button></div></div>`, 'storyp wishp'); $('krOk').onclick = closeModal; if (first) unlockLore(KRAKEN_LORE); }, 1800); }
 function krHit_v15(x, z, dmg) {
   for (const t of KR.tent) { if (!t.visible || t.userData.down > 0) continue; const tip = t.userData.segs[3].getWorldPosition(new THREE.Vector3()); if (Math.hypot(tip.x - x, tip.z - z) < 1.1) { t.userData.hp -= dmg; burst(tip.x, 1, tip.z, ['#c99bff', '#ffffff'], 10, 2.5); floatText(tip.x, 2.2, tip.z, '-' + dmg, '#ffe18d', true); sfx('hit'); if (t.userData.hp <= 0) { t.userData.down = 9; t.visible = false; KR.hp -= 30; floatText(tip.x, 2.8, tip.z, 'Tentáculo recolhido!', '#9fe8ff', true); sfx('boom'); shake = 0.3; } KR.hp -= dmg * 0.4; krBar(); return true; } }
@@ -4479,13 +4479,13 @@ Object.assign(FD, {
 // para nunca fechar uma passagem. Roda antes do buildWorld original, que finaliza todos os instanciadores.
 const DRESS = { props: 0, flora: 0 };
 function dressFree(x, y, r) { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const X = x + dx, Y = y + dy; if (!inb(X, Y) || solidAt(X, Y) || obj[I(X, Y)]) return false; } return true; }
-function dressBlocked(x, y) { if (x >= 21 && x <= 42 && y >= 34 && y <= 52) return true; if (zoneAt(x, y, 2)) return true; for (const t of TOTEMS) if (Math.hypot(t.x - x, t.y - y) < 3) return true; for (const L of Object.values(LM)) if (Math.hypot((L.x + (L.w || 0) / 2) - x, (L.y + (L.h || 0) / 2) - y) < 3.5) return true; return false; }
+function dressBlocked(x, y) { if (x >= 21 && x <= 42 && y >= 34 && y <= 52) return true; for (const H of [H1, H2]) if (x >= H.x - 1 && x <= H.x + 4 && y >= H.y - 1 && y <= H.y + 6) return true; /* v18: nada na frente das casas */ if (Math.abs(x - (SHOP.x + 1.5)) < 3.5 && y >= SHOP.y && y <= SHOP.y + 6) return true; try { for (const D of doorList()) if (Math.hypot(D.ex - x, D.ez - y) < 3) return true; } catch (e) {} if (zoneAt(x, y, 2)) return true; for (const t of TOTEMS) if (Math.hypot(t.x - x, t.y - y) < 3) return true; for (const L of Object.values(LM)) if (Math.hypot((L.x + (L.w || 0) / 2) - x, (L.y + (L.h || 0) / 2) - y) < 3.5) return true; return false; }
 function dressProps(cx, cy, R, keys, count, minD, tiles, size = 1) {
   const R3 = rng(cx * 131 + cy * 17), cand = [], placed = [];
   for (let y = Math.floor(cy - R); y <= cy + R; y++) for (let x = Math.floor(cx - R); x <= cx + R; x++) { if (!inb(x, y) || Math.hypot(x - cx, y - cy) > R || !tiles.includes(tAt(x, y)) || dressBlocked(x, y)) continue; cand.push([x, y, R3()]); }
   cand.sort((a, b) => a[2] - b[2]); const half = (size - 1) / 2;
   for (const [x, y] of cand) { if (placed.length >= count) break; if (placed.some(([a, b]) => Math.hypot(a - x, b - y) < minD)) continue; if (!dressFree(x, y, half + 1)) continue; for (let dy = -half; dy <= half; dy++) for (let dx = -half; dx <= half; dx++) put(x + dx, y + dy, { t: 'part', prop: 1 });
-    const k = keys[placed.length % keys.length], o = cloneM(k); if (!o.children.length && !o.isMesh) continue; o.position.set(x + 0.5, 0, y + 0.5); o.rotation.y = Math.atan2(cx - x, cy - y) + (R3() - 0.5) * 0.6; o.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); world.add(o); placed.push([x, y]); DRESS.props++; }
+    const k = keys[placed.length % keys.length], o = cloneM(k); if (!o.children.length && !o.isMesh) continue; o.position.set(x + 0.5, 0, y + 0.5); o.rotation.y = Math.atan2(cx - x, cy - y) + (R3() - 0.5) * 0.6; o.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); o.userData.dress = 1; o.userData.tiles = []; for (let dy = -half; dy <= half; dy++) for (let dx = -half; dx <= half; dx++) o.userData.tiles.push(I(x + dx, y + dy)); world.add(o); placed.push([x, y]); DRESS.props++; }
 }
 function dressFlora() {
   for (const k of ['qn_flower3', 'qn_flower4', 'qn_fern', 'qn_mush', 'qn_pebble', 'kn_mushgrp']) if (MODELS[k] && !INST[k]) INST[k] = new Instancer(k);
@@ -4646,6 +4646,296 @@ function precompileAll() {
   try { renderer.compile(scene, camera); } finally { for (const o of hidden) o.visible = false; }
 }
 
+/* =================== v18: duas moedas, economia mais justa, craft, casa com upgrades, árvores que voltam, HUD enxuto =================== */
+// Moedas (🪙): comércio — vender, comprar, Ateliê, Forja, sementes, arar, expansões, upgrades da casa.
+// Desejos (⭐): só para o Poço dos Desejos — vêm de estrelas caídas, tarefas do dia, presentes, eventos e chefes.
+EMO['🪙'] = 'na_coin'; // moeda redonda (o ícone 'coin' parece estrela)
+for (const it of Object.values(ITEMS)) if (it.price) it.price = Math.max(1, Math.round(it.price * 0.65)); // vender rende 35% menos
+for (const q of QPOOL) { q.rw = Math.max(15, Math.round(q.rw * 0.4)); if (q.k === 'sell') { q.n = 'Venda {g}🪙 em itens'; q.g = [90, 180]; } } // tarefas do dia pagam em Desejos
+{ const base = applyState; applyState = function (d) { base(d); const old = d && d.S; if (old && old.coins === undefined) { const v = old.stars || 0; S.coins = v; S.stars = Math.min(v, 300); S.ecoV = 18; setTimeout(() => toast(`💰 O vale agora tem <b>duas moedas</b>: suas <b>${v}🪙 Moedas</b> servem para comprar, e os <b>⭐ Desejos</b> são só para o Poço. Você ficou com ${S.stars}⭐.`), 2500); } if (typeof S.coins !== 'number' || !isFinite(S.coins)) S.coins = 0; lastHud = ''; try { hud(); } catch (e) {} }; }
+{ const base = hud; hud = function () { base(); const c = $('coins'); if (c && c.textContent !== String(S.coins)) c.textContent = S.coins; }; }
+
+// ---------- bancadas de craft: fazer móveis, enfeites e lanches com o que você coleta ----------
+const V18M = { kn_workbench: { s: 1.5 }, kn_anvil: { s: 1.3 } };
+for (const [k, v] of Object.entries(V18M)) { MODEL_LIST.push(k); FIT[k] = v; }
+FD.bancada = { n: 'Bancada de Trabalho', price: 0, m: 'kn_workbench', solid: 1, craft: 1, hidden: 1 }; // só se faz na bancada
+FURN.workbench = { n: 'Bancada de Trabalho', m: 'kn_workbench', w: 2, h: 1, price: 0, solid: 1, craft: 1, hidden: 1 };
+FIT.kn_workbench = { s: 1.5 };
+// give: fd (enfeite), f (móvel), snack (lanche) ou item; need: itens da mochila; lv: nível mínimo
+const RECIPES = [
+  { give: { fd: 'cerca', q: 4 }, need: { madeira: 4 } }, { give: { fd: 'caixote' }, need: { madeira: 5 } }, { give: { fd: 'lenha' }, need: { madeira: 8 } },
+  { give: { fd: 'banco_madeira' }, need: { madeira: 10 } }, { give: { fd: 'barril' }, need: { madeira: 6, ferro: 1 } }, { give: { fd: 'feno' }, need: { trevo: 4 } },
+  { give: { fd: 'flores' }, need: { flor: 5, pedra: 2 } }, { give: { fd: 'fogueira' }, need: { pedra: 8, madeira: 4 }, lv: 2 }, { give: { fd: 'lanterna' }, need: { ferro: 2, cristal: 1, madeira: 2 }, lv: 3 },
+  { give: { fd: 'bancada' }, need: { madeira: 12, pedra: 4 } },
+  { give: { f: 'chair' }, need: { madeira: 6 } }, { give: { f: 'table_small' }, need: { madeira: 8, pedra: 2 } }, { give: { f: 'bookshelf' }, need: { madeira: 14, ferro: 2 }, lv: 2 },
+  { give: { f: 'rug_rect_b' }, need: { la: 3, flor: 2 } }, { give: { f: 'plant_round' }, need: { flor: 3, trevo: 2, pedra: 2 } }, { give: { f: 'fireplace' }, need: { pedra: 20, ferro: 4, cristal: 1 }, lv: 4 },
+  { give: { f: 'workbench' }, need: { madeira: 12, pedra: 4 } },
+  { give: { snack: 'bolinho' }, need: { maca: 3, mel: 1 } }, { give: { snack: 'suco' }, need: { frutinha: 6 } },
+];
+const recName = (g) => (g.fd ? FD[g.fd] && FD[g.fd].n : g.f ? FURN[g.f] && FURN[g.f].n : g.snack ? SNACKS[g.snack].n : ITEMS[g.item] && ITEMS[g.item].n) || '?';
+const recImg = (g) => (g.fd ? THUMB['fd_' + g.fd] : g.f ? THUMB['f_' + g.f] : g.snack ? THUMB['s_' + g.snack] : THUMB['i_' + g.item]) || '';
+const recOk = (r) => Object.entries(r.need).every(([k, n]) => (S.inv[k] || 0) >= n) && (S.lv || 1) >= (r.lv || 0);
+const CRAFT = { spots: [] };
+let craftTab = 'tudo';
+function openCraft() {
+  const tabs = { tudo: 'Tudo', fd: 'Enfeites', f: 'Móveis', snack: 'Lanches' };
+  const list = RECIPES.map((r, i) => ({ r, i })).filter(({ r }) => craftTab === 'tudo' || r.give[craftTab]);
+  const rows = list.map(({ r, i }) => { const ok = recOk(r), lock = (S.lv || 1) < (r.lv || 0);
+    const req = Object.entries(r.need).map(([k, n]) => `<span class="oreq ${(S.inv[k] || 0) >= n ? 'ok' : ''}"><img src="${THUMB['i_' + k] || ''}">${S.inv[k] || 0}/${n} ${ITEMS[k] ? ITEMS[k].n : k}</span>`).join('');
+    return `<div class="fcard ${ok ? '' : 'dim'}"><img src="${recImg(r.give)}"><div class="grow"><b>${recName(r.give)}${r.give.q > 1 ? ' ×' + r.give.q : ''}</b><span>${req}</span>${lock ? `<span class="fnext">🔒 Nível ${r.lv}</span>` : ''}</div><button class="btn ${ok ? 'candy mint' : ''} sm" data-craft="${i}" ${ok ? '' : 'disabled'}>Fazer</button></div>`; });
+  openModal(`<div class="shophead"><img src="${THUMB['fd_bancada'] || icon('anvil', 64)}"><div><h2 style="margin:0">🔨 Bancada de Trabalho</h2><p class="lead" style="margin:2px 0 0">Junte madeira, pedras, flores e o que achar pelo vale e faça você mesma, sem gastar 🪙.</p></div></div>
+    <div class="wtabs">${Object.entries(tabs).map(([k, n]) => `<button class="btn ctab ${craftTab === k ? 'on' : ''}" data-ctab="${k}">${n}</button>`).join('')}</div>
+    <div class="forge">${rows.join('')}</div><p class="note">Enfeites vão para <b>Personalizar Fazenda</b>; móveis, para <b>Decorar a casa</b>; lanches, para a mochila. Madeira vem de árvores (machado), pedra e minérios das rochas (picareta).</p>`, 'wide');
+  document.querySelectorAll('[data-ctab]').forEach((el) => (el.onclick = () => { craftTab = el.dataset.ctab; sfx('switch'); openCraft(); }));
+  document.querySelectorAll('[data-craft]').forEach((el) => (el.onclick = () => { const r = RECIPES[+el.dataset.craft]; if (!recOk(r)) return sfx('cancel');
+    for (const [k, n] of Object.entries(r.need)) { S.inv[k] -= n; if (S.inv[k] <= 0) delete S.inv[k]; }
+    const g = r.give, q = g.q || 1; if (g.fd) S.fd[g.fd] = (S.fd[g.fd] || 0) + q; if (g.f) S.furn[g.f] = (S.furn[g.f] || 0) + q; if (g.snack) S.snacks[g.snack] = (S.snacks[g.snack] || 0) + q; if (g.item) S.inv[g.item] = (S.inv[g.item] || 0) + q;
+    S.crafted = (S.crafted || 0) + 1; sfx('woodcut'); setTimeout(() => sfx('quest'), 250); gainXp(3); toast(`🔨 Você fez <b>${recName(g)}${q > 1 ? ' ×' + q : ''}</b>!`); lastHud = ''; hud(); openCraft(); }));
+}
+function placeCraftBench() {
+  CRAFT.spots.length = 0; if (!MODELS.kn_workbench) return;
+  for (const [cx, cy] of [[37, 28], [38, 30], [30, 30], [41, 27]]) { let done = false;
+    for (let r = 0; r <= 3 && !done; r++) for (let dy = -r; dy <= r && !done; dy++) for (let dx = -r; dx <= r && !done; dx++) { const x = cx + dx, y = cy + dy; if (!inb(x, y) || tAt(x, y) === WA || !dressFree(x, y, 1) || inFarm(x, y, 1)) continue;
+      put(x, y, { t: 'part', prop: 1, craft: 1 }); const o = cloneM('kn_workbench'); o.position.set(x + 0.5, 0, y + 0.5); o.rotation.y = Math.PI; o.userData.keep = 1; o.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); world.add(o); CRAFT.spots.push([x, y]); done = true; }
+    if (done) break; }
+}
+{ const base = buildWorld; buildWorld = function () { try { placeCraftBench(); } catch (e) { console.error(e); } return base(); }; }
+function craftSpecials(list) {
+  if (mode === 'out') { for (const [x, y] of CRAFT.spots) list.push({ d: distRect(P.x, P.z, x, y, 1, 1), label: '🔨 Usar a bancada', act: openCraft });
+    for (const z of Object.keys(ZONES)) for (const d of zoneDecor(z) || []) if (d && FD[d.id] && FD[d.id].craft) list.push({ d: distRect(P.x, P.z, d.x, d.y, 1, 1), label: '🔨 Usar a bancada', act: openCraft }); }
+  if (mode === 'in') for (const it of S.home.items || []) if (FURN[it.id] && FURN[it.id].craft) { const [w, h] = footprint(FURN[it.id], it.r); list.push({ d: distRect(P.x, P.z, RX + it.x, RZ + it.y, w, h), label: '🔨 Usar a bancada', act: openCraft }); }
+}
+{ const base = seaSpecials; seaSpecials = function (list) { base(list); try { craftSpecials(list); } catch (e) {} }; }
+
+// ---------- natureza que volta: tocos viram mudas e árvores; pedras reaparecem depois de 2 dias ----------
+const TREE_GROW = [0, 0.38, 0.72]; // dia 0: toco · dia 1: muda · dia 2: árvore jovem · dia 3: adulta (regrowTrees)
+function stageTrees() {
+  S.cut = S.cut || {};
+  for (const s2 of stumps) { const i = I(s2.tx, s2.ty), o = obj[i], d = S.cut[i]; if (!o || !o.inst || d === undefined) continue; const age = S.day - d;
+    if (age >= 1 && age < 3) { const sc = TREE_GROW[age]; INST[o.inst[0]].set(o.inst[1], o.base.clone().multiply(new THREE.Matrix4().makeScale(sc, sc, sc))); s2.m.visible = false; if (!s2.sprout && mode === 'out' && Math.hypot(P.x - s2.tx, P.z - s2.ty) < 20) { s2.sprout = 1; burst(s2.tx + 0.5, 0.4, s2.ty + 0.5, ['#a8e08a', '#ffffff'], 8, 1.2, true, true); } }
+  }
+}
+{ const base = regrowTrees; regrowTrees = function () { base(); stageTrees(); }; }
+S.rocks = S.rocks || {};
+{ const base = mineRock; mineRock = function (tx, ty) { const i = I(tx, ty), was = obj[i] && obj[i].t === 'rock'; const r = base(tx, ty); if (was && !obj[i]) { S.rocks = S.rocks || {}; S.rocks[i] = S.day; } return r; }; }
+restoreRocks = function () { S.rocks = S.rocks || {}; for (let k = brokenRocks.length - 1; k >= 0; k--) { const [x, y, o] = brokenRocks[k], i = I(x, y), d = S.rocks[i]; if (d !== undefined && S.day - d < 2) continue; INST[o.v ? 'q_rockm' : 'q_rock'].set(o.ri, o.rm); o.rhp = 3; obj[i] = o; delete S.rocks[i]; brokenRocks.splice(k, 1); } };
+function applyRocks() { S.rocks = S.rocks || {}; for (const [k, d] of Object.entries(S.rocks)) { const i = +k, o = obj[i]; if (!o || o.t !== 'rock') { delete S.rocks[k]; continue; } if (S.day - d >= 2) { delete S.rocks[k]; continue; } INST[o.v ? 'q_rockm' : 'q_rock'].set(o.ri, ZERO); obj[i] = null; brokenRocks.push([i % W, Math.floor(i / W), o]); } }
+{ const base = applyCuts; applyCuts = function () { base(); try { stageTrees(); restoreRocks(); applyRocks(); } catch (e) { console.error(e); } }; }
+
+// ---------- reforma da casa: 3 níveis, casa maior por dentro e mais bonita por fora ----------
+const HOME_LV = [
+  { n: 'Casinha', size: [9, 7] },
+  { n: 'Casa com Varanda', size: [11, 8], coins: 600, need: { madeira: 30, pedra: 20 }, perk: 'Casa maior por dentro (11×8) e varanda com banco e flores. +5⭐ Desejos a cada noite dormida.' },
+  { n: 'Casa das Lanternas', size: [13, 9], coins: 1500, need: { madeira: 50, pedra: 40, ferro: 8 }, perk: 'Cômodo amplo (13×9) e lanternas na entrada que acendem à noite. +10⭐ por noite.' },
+  { n: 'Casa dos Sonhos', size: [15, 10], coins: 3500, need: { madeira: 80, pedra: 60, ferro: 15, cristal: 4 }, perk: 'Muito espaço (15×10), chaminé fumegando e um jardim. +15⭐ por noite.' },
+];
+const HOMEP = { objs: [], tiles: [], smoke: 0, sizeKey: '' };
+function applyHomeLv() {
+  const lv = clamp(S.homeLv || 0, 0, HOME_LV.length - 1), [w, h] = HOME_LV[lv].size, key = w + 'x' + h;
+  if (key !== HOMEP.sizeKey && room) { HOMEP.sizeKey = key; IW = w; IH = h; occ = new Array(IW * IH).fill(null); rugOcc = new Array(IW * IH).fill(null);
+    while (room.children.length) room.remove(room.children[0]); winMats.length = 0; wallMats = []; roomLights = []; buildRoom(); try { setFloorWall(); } catch (e) {} }
+  // por fora: enfeites em volta da casa (só em "ilhas" livres, nunca bloqueando a porta)
+  for (const o of HOMEP.objs) { o.parent && o.parent.remove(o); if (o.isLight) { const i = lampLights.indexOf(o); if (i >= 0) lampLights.splice(i, 1); } }
+  for (const i of HOMEP.tiles) if (obj[i] && obj[i].homeP) obj[i] = null; HOMEP.objs = []; HOMEP.tiles = [];
+  const spots = [[H1.x - 1, H1.y + 1], [H1.x + 4, H1.y + 1], [H1.x - 1, H1.y + 2], [H1.x + 4, H1.y + 2], [H1.x - 2, H1.y], [H1.x + 5, H1.y]];
+  const want = []; if (lv >= 1) want.push('qv_bench', 'fd:flores'); if (lv >= 2) want.push('kn_lantern', 'kn_lantern'); if (lv >= 3) want.push('fd:flores', 'qn_bushfl');
+  let si = 0; for (const k of want) { while (si < spots.length) { const [x, y] = spots[si++]; if (!inb(x, y) || solidAt(x, y) || obj[I(x, y)] || tAt(x, y) === WA) continue;
+      const o = k.startsWith('fd:') ? fdObj(k.slice(3)) : cloneM(k); if (!o) break; o.position.set(x + 0.5, 0, y + 0.5); o.rotation.y = x < H1.x ? Math.PI / 2 : -Math.PI / 2; o.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); world.add(o); HOMEP.objs.push(o);
+      put(x, y, { t: 'part', prop: 1, homeP: 1 }); HOMEP.tiles.push(I(x, y));
+      if (k === 'kn_lantern') { const l = new THREE.PointLight(0xffc477, 0, 7, 1.6); l.position.set(x + 0.5, 1.3, y + 0.5); world.add(l); lampLights.push(l); HOMEP.objs.push(l); }
+      break; } }
+  HOMEP.smoke = lv >= 3 ? 1 : 0;
+}
+function homeSmoke(dt) { if (!HOMEP.smoke || mode !== 'out' || rand() > dt * 4) return; if (Math.hypot(P.x - H1.x, P.z - H1.y) > 30) return; emit(PN, { x: H1.x + 3 + (rand() - 0.5) * 0.2, y: 3.6, z: H1.y + 0.8, vx: 0.15, vz: 0, vy: 0.7, g: -0.05, life: 2.4, max: 2.4, c: '#e8e4ee' }); }
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { homeSmoke(dt); } catch (e) {} }; }
+function openReform() {
+  const lv = S.homeLv || 0, nx = HOME_LV[lv + 1];
+  if (!nx) { openModal(`<h2>🏠 ${HOME_LV[lv].n}</h2><p class="lead">Sua casa já é a mais linda do vale! 💗</p>`); return; }
+  const ok = S.coins >= nx.coins && Object.entries(nx.need).every(([k, n]) => (S.inv[k] || 0) >= n);
+  const req = `<span class="oreq ${S.coins >= nx.coins ? 'ok' : ''}">${S.coins}/${nx.coins}🪙</span>` + Object.entries(nx.need).map(([k, n]) => `<span class="oreq ${(S.inv[k] || 0) >= n ? 'ok' : ''}"><img src="${THUMB['i_' + k] || ''}">${S.inv[k] || 0}/${n} ${ITEMS[k].n}</span>`).join('');
+  openModal(`<div class="shophead"><img src="${icon('house', 64)}"><div><h2 style="margin:0">🔨 Reformar a casa</h2><p class="lead" style="margin:2px 0 0">Agora: <b>${HOME_LV[lv].n}</b> (${HOME_LV[lv].size.join('×')})</p></div></div>
+    <div class="fcard"><img src="${icon('house2', 64)}"><div class="grow"><b>${nx.n}</b><span>${nx.perk}</span><span>${req}</span></div><button class="btn ${ok ? 'candy gold' : ''} sm" id="reformGo" ${ok ? '' : 'disabled'}>Reformar</button></div>
+    <p class="note">Os móveis continuam onde estão. Madeira vem das árvores, pedras e ferro das rochas e da Caverna Cintilante.</p>`);
+  const b = $('reformGo'); if (b) b.onclick = () => { if (!(S.coins >= nx.coins && Object.entries(nx.need).every(([k, n]) => (S.inv[k] || 0) >= n))) return sfx('cancel');
+    S.coins -= nx.coins; for (const [k, n] of Object.entries(nx.need)) { S.inv[k] -= n; if (S.inv[k] <= 0) delete S.inv[k]; } S.homeLv = lv + 1; closeModal();
+    fade(() => { applyHomeLv(); P.x = RX + DOOR + 0.5; P.z = RZ + IH - 0.6; }); sfx('fanfare'); setTimeout(() => { confetti(innerWidth / 2, innerHeight / 2, 50, true); toast(`🏠 Reforma pronta: <b>${nx.n}</b>!`); }, 700); gainXp(20); lastHud = ''; hud(); };
+}
+{ const base = craftSpecials; craftSpecials = function (list) { base(list); if (mode === 'in') list.push({ d: distRect(P.x, P.z, RX + IW / 2 - 1, RZ, 2, 0.8), label: '🔨 Reformar a casa', act: openReform }); }; }
+{ const base = newDay; newDay = function (slept) { base(slept); const lv = S.homeLv || 0; if (slept && lv) { const b = lv * 5; S.stars += b; setTimeout(() => toast(`🏠 Você dormiu tão bem na <b>${HOME_LV[lv].n}</b>: <b>+${b}⭐</b>`), 1600); } }; }
+{ const base = applyState; applyState = function (d) { base(d); try { if (room && floorMesh) applyHomeLv(); } catch (e) { console.error(e); } }; }
+
+// ---------- HUD 12% menor (o layout continua o mesmo, só ocupa menos tela) ----------
+{ const base = layoutUI; layoutUI = function () { base(); const v = Math.max(0.5, (base.s || 1) * 0.88); document.documentElement.style.setProperty('--hs', v.toFixed(3)); }; }
+
+// ---------- PvP v18: duelos por clique e três armas com upgrades ----------
+const PVPW = {
+  espada: { n: 'Espada', ic: 'sword', desc: 'Rápida e com combo de 3 golpes.', lv: [{ dmg: 7, cd: 0.3, r: 1.4 }, { dmg: 9, cd: 0.27, r: 1.5 }, { dmg: 11, cd: 0.24, r: 1.6 }], cost: [null, { coins: 300, ore: { ferro: 4 } }, { coins: 800, ore: { ferro: 8, cristal: 2 } }] },
+  machado: { n: 'Machado', ic: 'axe', desc: 'Lento, mas cada golpe empurra longe.', lv: [{ dmg: 12, cd: 0.8, r: 1.35, kb: 1.8 }, { dmg: 15, cd: 0.72, r: 1.45, kb: 2.2 }, { dmg: 18, cd: 0.64, r: 1.55, kb: 2.7 }], cost: [{ coins: 400, ore: { ferro: 6 } }, { coins: 700, ore: { ferro: 10, cobre: 6 } }, { coins: 1400, ore: { ferro: 14, ametista: 2 } }] },
+  arco: { n: 'Arco', ic: 'wand', desc: 'Flechas de longe; dá para desviar.', lv: [{ dmg: 6, cd: 0.6, spd: 13, range: 11 }, { dmg: 7, cd: 0.5, spd: 15, range: 13 }, { dmg: 8, cd: 0.45, spd: 16, range: 14, triple: 1 }], cost: [{ coins: 500, ore: { cobre: 8 } }, { coins: 900, ore: { cobre: 10, cristal: 2 } }, { coins: 1600, ore: { cristal: 4, ouro: 2 } }] },
+};
+const pwLv = (k) => (S.pw = S.pw || { espada: 1, machado: 0, arco: 0 })[k] || 0;
+const pwSel = () => { const k = S.pwSel || 'espada'; return pwLv(k) ? k : 'espada'; };
+const pwStat = (k = pwSel()) => PVPW[k].lv[Math.max(0, pwLv(k) - 1)];
+const fighting = () => PVP.on || DUEL.on;
+const DUEL = { on: false, id: null, opp: null, oppName: '', R: 4.6, cx: 0, cz: 0, loss: 0, oppLoss: 0, req: null, inc: null, seenInc: {}, freeze: 0, cd: 0, arrows: [], wall: null, seenAtk: -1 };
+function openArms() {
+  const rows = Object.entries(PVPW).map(([k, w]) => { const lv = pwLv(k), next = w.cost[lv], st = lv ? w.lv[lv - 1] : w.lv[0];
+    const req = next ? `<span class="oreq ${S.coins >= next.coins ? 'ok' : ''}">${S.coins}/${next.coins}🪙</span>` + Object.entries(next.ore).map(([o, n]) => `<span class="oreq ${(S.inv[o] || 0) >= n ? 'ok' : ''}"><img src="${THUMB['i_' + o] || ''}">${S.inv[o] || 0}/${n}</span>`).join('') : '<span class="fnext">Nível máximo ✨</span>';
+    const can = next && S.coins >= next.coins && Object.entries(next.ore).every(([o, n]) => (S.inv[o] || 0) >= n);
+    return `<div class="fcard ${pwSel() === k ? 'own' : ''}"><img src="${icon(w.ic, 64)}"><div class="grow"><b>${w.n} ${lv ? '· nível ' + lv : '· não tem'}</b><span>${w.desc} Dano ${st.dmg}${st.kb ? ' · empurrão forte' : ''}${st.triple ? ' · 3 flechas' : ''}</span><span>${req}</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px">${lv ? `<button class="btn sm ${pwSel() === k ? 'gold' : ''}" data-pwsel="${k}">${pwSel() === k ? 'Equipada' : 'Usar'}</button>` : ''}${next ? `<button class="btn sm ${can ? 'candy mint' : ''}" data-pwup="${k}" ${can ? '' : 'disabled'}>${lv ? 'Melhorar' : 'Comprar'}</button>` : ''}</div></div>`; });
+  openModal(`<h2>⚔️ Armas de duelo</h2><p class="lead">Escolha a arma que você usa na Arena Estelar e nos duelos. Melhorias custam 🪙 Moedas e minérios.</p><div class="forge">${rows.join('')}</div><p class="note">Nos duelos, clique numa amiga para desafiar. Ataque com <span class="key">Espaço</span> ou clique, esquive com <span class="key">Q</span>.</p>`, 'wide');
+  document.querySelectorAll('[data-pwsel]').forEach((el) => (el.onclick = () => { S.pwSel = el.dataset.pwsel; sfx('switch'); openArms(); }));
+  document.querySelectorAll('[data-pwup]').forEach((el) => (el.onclick = () => { const k = el.dataset.pwup, nx = PVPW[k].cost[pwLv(k)]; if (!nx || S.coins < nx.coins || !Object.entries(nx.ore).every(([o, n]) => (S.inv[o] || 0) >= n)) return sfx('cancel');
+    S.coins -= nx.coins; for (const [o, n] of Object.entries(nx.ore)) { S.inv[o] -= n; if (S.inv[o] <= 0) delete S.inv[o]; } S.pw[k] = pwLv(k) + 1; if (S.pw[k] === 1) S.pwSel = k; sfx('powerup'); setTimeout(() => sfx('jingle_a'), 200); toast(`⚔️ <b>${PVPW[k].n}</b> agora no nível ${S.pw[k]}!`); lastHud = ''; hud(); openArms(); }));
+}
+// ataques: o pacote vai na presença (atk) e cada cliente decide se foi atingido
+pvpAtk = function (hx, hz, r, mult) { if (!fighting()) return; const st = pwStat('espada'); PVP.atk = { s: ++PVP.seq, t: 'm', x: +hx.toFixed(2), z: +hz.toFixed(2), r: +(Math.max(r || 1.4, st.r)).toFixed(2), d: Math.round(st.dmg * Math.min(1.5, mult || 1)), kb: 1, du: DUEL.on ? DUEL.id : null }; };
+function weaponAttack() {
+  const k = pwSel(), st = pwStat(k); if (DUEL.freeze > 0 || P.dead || DUEL.cd > 0) return; DUEL.cd = st.cd; const n = Math.hypot(P.fx, P.fz) || 1, ux = P.fx / n, uz = P.fz / n;
+  if (k === 'machado') { anim('1H_Melee_Attack_Chop', 1.4); sfx('swing'); P.useT = 0.5; setTimeout(() => { const hx = P.x + ux * 0.9, hz = P.z + uz * 0.9; fxSlash(P.x, P.z, P.ang, '#ffcf8a', true); burst(hx, 0.4, hz, ['#a8693f', '#ffcf8a'], 10, 2.4); sfx('woodcut'); shake = Math.max(shake, 0.12);
+      PVP.atk = { s: ++PVP.seq, t: 'm', x: +hx.toFixed(2), z: +hz.toFixed(2), r: st.r, d: st.dmg, kb: st.kb, du: DUEL.on ? DUEL.id : null }; }, 260); return; }
+  if (k === 'arco') { anim('Throw', 1.6); sfx('swish_2'); P.useT = 0.35; const dirs = st.triple ? [-0.16, 0, 0.16] : [0];
+    const sh = dirs.map((da) => { const a = Math.atan2(ux, uz) + da; return { dx: +Math.sin(a).toFixed(3), dz: +Math.cos(a).toFixed(3) }; });
+    PVP.atk = { s: ++PVP.seq, t: 'a', x: +P.x.toFixed(2), z: +P.z.toFixed(2), sh, spd: st.spd, range: st.range, d: st.dmg, du: DUEL.on ? DUEL.id : null };
+    for (const d of sh) spawnArrow(P.x, P.z, d.dx, d.dz, st.spd, st.range, 0, true); return; }
+}
+const ARROWS = [], arrowGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.7, 5).rotateX(Math.PI / 2), arrowMat = new THREE.MeshLambertMaterial({ color: '#f4e4c8', emissive: '#ffe18d', emissiveIntensity: 0.4 });
+function spawnArrow(x, z, dx, dz, spd, range, dmg, mine) { const m = new THREE.Mesh(arrowGeo, arrowMat); m.position.set(x + dx * 0.6, 1.0, z + dz * 0.6); m.rotation.y = Math.atan2(dx, dz); scene.add(m); ARROWS.push({ m, x: x + dx * 0.6, z: z + dz * 0.6, dx, dz, spd, left: range, dmg, mine }); }
+function arrowsUpdate(dt) {
+  for (let i = ARROWS.length - 1; i >= 0; i--) { const a = ARROWS[i], st = a.spd * dt; a.x += a.dx * st; a.z += a.dz * st; a.left -= st; a.m.position.set(a.x, 1.0, a.z); if (rand() < 0.5) emit(PG, { x: a.x, y: 1, z: a.z, vx: 0, vy: 0, vz: 0, g: 0, life: 0.25, max: 0.25, c: '#ffe18d' });
+    let hit = false; if (!a.mine && !P.dead && Math.hypot(P.x - a.x, P.z - a.z) < 0.55) { hit = true; hurtPlayer(a.dmg, a.dx, a.dz); hitStop = 0.06; }
+    if (a.mine) for (const c of Object.values(MP.chars)) if (c && c.obj.visible && Math.hypot(c.x - a.x, c.z - a.z) < 0.55) { hit = true; burst(a.x, 1, a.z, ['#ffffff', '#ffe18d'], 8, 2); sfx('hit'); hitStop = 0.05; }
+    if (hit || a.left <= 0 || solidW(a.x, a.z)) { scene.remove(a.m); ARROWS.splice(i, 1); } }
+}
+{ const base = useTool; useTool = function () { if (fighting() && TOOLS[S.slot].id === 'espada' && pwSel() !== 'espada') return weaponAttack(); return base(); }; }
+// pacotes das outras jogadoras (arena ou o meu duelo)
+function peerAttacks() {
+  for (const [pid, p] of Object.entries(MP.peers)) { const a = p.atk; if (!a) continue; const inArena = PVP.on && p.pv, inDuel = DUEL.on && pid === DUEL.opp && a.du === DUEL.id; const key = 'w' + pid;
+    if (PVP.seen[key] === undefined) { PVP.seen[key] = a.s; continue; } if (a.s === PVP.seen[key]) continue; PVP.seen[key] = a.s; if (!inArena && !inDuel) continue;
+    const c = MP.chars[pid]; if (c) { c.play(a.t === 'a' ? 'Throw' : '1H_Melee_Attack_Slice_Diagonal', true, 1.6); if (a.t === 'm') fxSlash(c.x, c.z, Math.atan2(a.x - c.x, a.z - c.z), '#9fe8ff', false, false); }
+    if (a.t === 'a') { for (const d of a.sh || []) spawnArrow(a.x, a.z, d.dx, d.dz, a.spd || 13, a.range || 11, a.d || 6, false); sfx('swish_1', a.x, a.z); continue; }
+    if (DUEL.freeze <= 0 && !P.dead && Math.hypot(P.x - a.x, P.z - a.z) < (a.r || 1.4) + 0.45) { const dx = P.x - a.x, dz = P.z - a.z, l = Math.hypot(dx, dz) || 1; PVP.last = p.id || pid; hurtPlayer(clamp(a.d || 7, 1, 25), dx / l * (a.kb || 1), dz / l * (a.kb || 1)); hitStop = 0.07; } }
+}
+// a arena antiga passa a usar as armas novas: o processamento original de golpes fica desligado
+pvpUpdate = function (dt) { if (!PVP.on) return; if (mode !== 'out' || !MP.code) { pvpLeave(); return; } const dc = Math.hypot(P.x - PVP.cx, P.z - PVP.cz); if (dc > PVP.R - 0.35) { const k = (PVP.R - 0.35) / dc; P.x = PVP.cx + (P.x - PVP.cx) * k; P.z = PVP.cz + (P.z - PVP.cz) * k; } pvpT -= dt; if (pvpT <= 0) { pvpT = 0.5; pvpHud(); } };
+// ---- duelo 1×1 ----
+function duelAsk(pid) { const p = MP.peers[pid]; if (!p || DUEL.on || PVP.on) return; const nm = String(p.n || 'Amiga').slice(0, 14);
+  openModal(`<h2>⚔️ Duelo</h2><p class="lead">Desafiar <b>${escapeHtml(nm)}</b> para um duelo (melhor de 3)?</p><p class="note">Sua arma: <b>${PVPW[pwSel()].n}</b> nível ${pwLv(pwSel())}.</p><div class="sbtns"><button class="btn candy pink" id="duGo">Desafiar</button><button class="btn" id="duArms">Trocar arma</button></div>`);
+  $('duGo').onclick = () => { DUEL.req = { to: pid, id: Math.random().toString(36).slice(2, 8), t: gtime }; closeModal(); toast(`Desafio enviado para <b>${escapeHtml(nm)}</b>... esperando resposta.`); sfx('alert'); };
+  $('duArms').onclick = openArms; }
+function duelInvite(pid, p) { if ($('duinv')) return; const nm = String(p.n || 'Amiga').slice(0, 14); document.body.insertAdjacentHTML('beforeend', `<div class="panel" id="duinv" style="position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:60;padding:14px 18px;text-align:center"><b>⚔️ ${escapeHtml(nm)} te desafiou para um duelo!</b><div class="sbtns" style="margin-top:10px"><button class="btn candy mint sm" id="duYes">Aceitar</button><button class="btn sm" id="duNo">Recusar</button></div></div>`);
+  sfx('alert'); $('duYes').onclick = () => { $('duinv').remove(); DUEL.ans = { to: pid, id: p.dq.id, ok: 1 }; duelStart(pid, p.dq.id, false); }; $('duNo').onclick = () => { $('duinv').remove(); DUEL.ans = { to: pid, id: p.dq.id, ok: 0 }; setTimeout(() => (DUEL.ans = null), 3000); }; }
+function duelStart(pid, id, host) { const p = MP.peers[pid]; if (!p) return; DUEL.on = true; DUEL.id = id; DUEL.opp = pid; DUEL.oppName = String(p.n || 'Amiga').slice(0, 14); DUEL.loss = 0; DUEL.oppLoss = 0; DUEL.req = null; DUEL.host = host; DUEL.t0 = gtime; DUEL.gotC = 0; DUEL.seen = 0;
+  DUEL.cx = Math.round((P.x + p.x) / 2 * 2) / 2; DUEL.cz = Math.round((P.z + p.z) / 2 * 2) / 2; if (!DUEL.wall) { const g = new THREE.Group(), ring = new THREE.Mesh(new THREE.RingGeometry(DUEL.R - 0.12, DUEL.R, 64).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffd4e6', transparent: true, opacity: 0.85, depthWrite: false })); ring.position.y = 0.04; g.add(ring); const cyl = new THREE.Mesh(new THREE.CylinderGeometry(DUEL.R, DUEL.R, 1.4, 48, 1, true), new THREE.MeshBasicMaterial({ color: '#ff9ec9', transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })); cyl.position.y = 0.7; g.add(cyl); world.add(g); DUEL.wall = g; }
+  DUEL.wall.position.set(DUEL.cx, 0, DUEL.cz); DUEL.wall.visible = true; setSlot(TOOLS.findIndex((t) => t.id === 'espada')); duelRound(); sfx('fanfare'); duelHud(); }
+function duelRound() { P.hp = maxHp(); P.st = maxSt(); P.dead = false; const side = DUEL.host ? -1 : 1; P.x = DUEL.cx + side * 2.6; P.z = DUEL.cz; P.fx = -side; P.fz = 0; P.ang = Math.atan2(-side, 0); DUEL.freeze = 2.4; DUEL.cnt = 3; }
+function duelKO() { DUEL.loss++; P.hp = maxHp(); P.inv = 1.2; burst(P.x, 1, P.z, ['#ff9ec9', '#ffffff'], 24, 3, true, true); sfx('boom'); if (DUEL.loss >= 2) return duelEnd(false); toast(`Você caiu! Placar: <b>${DUEL.oppLoss} × ${DUEL.loss}</b>`); setTimeout(() => DUEL.on && duelRound(), 900); }
+function duelEnd(won, why) { if (!DUEL.on) return; DUEL.post = { id: DUEL.id, l: DUEL.loss, end: 1, until: gtime + 4 }; DUEL.on = false; DUEL.gotC = 0; if (DUEL.wall) DUEL.wall.visible = false; const h = $('duelhud'); if (h) h.remove(); DUEL.freeze = 0; P.hp = maxHp();
+  if (why) { toast(why); return; }
+  if (won) { sfx('fanfare'); confetti(innerWidth / 2, innerHeight / 2, 60, true); S.duelW = S.duelW || {}; const key = DUEL.oppName + ':' + S.day; let msg = ''; if (!S.duelW[key]) { S.duelW[key] = 1; S.stars += 15; S.coins += 30; msg = ' <b>+15⭐ +30🪙</b>'; } toast(`🏆 Você venceu o duelo contra <b>${escapeHtml(DUEL.oppName)}</b>!${msg}`); }
+  else { sfx('cancel'); toast(`Desta vez <b>${escapeHtml(DUEL.oppName)}</b> venceu. Revanche? Clique nela de novo!`); }
+  lastHud = ''; hud(); }
+function duelHud() { if (!DUEL.on) return; let h = $('duelhud'); if (!h) { document.body.insertAdjacentHTML('beforeend', '<div class="panel" id="duelhud"></div>'); h = $('duelhud'); } const op = MP.peers[DUEL.opp] || {};
+  h.innerHTML = `<h4>⚔️ Duelo · melhor de 3</h4><table><tr class="me"><td>${escapeHtml(S.name || 'Você')}</td><td>${DUEL.oppLoss}</td></tr><tr><td>${escapeHtml(DUEL.oppName)}</td><td>${DUEL.loss}</td></tr></table><small>${PVPW[pwSel()].n} nv ${pwLv(pwSel())} · vida dela ${Math.max(0, Math.round(op.hp || 0))}/${op.mh || 100}</small><button class="btn sm pink" id="duOut">Desistir</button>`; $('duOut').onclick = () => { DUEL.loss = 2; duelEnd(false); }; }
+let duelT = 0;
+function duelUpdate(dt) {
+  DUEL.cd = Math.max(0, DUEL.cd - dt); arrowsUpdate(dt); peerAttacks();
+  if (!MP.on) { if (DUEL.on) duelEnd(false, 'O duelo acabou: a partida foi encerrada.'); return; }
+  // pedidos e respostas que chegam pela presença
+  for (const [pid, p] of Object.entries(MP.peers)) {
+    if (p.dq && p.dq.to === MP.me && !DUEL.on && !PVP.on && !DUEL.seenInc[p.dq.id]) { DUEL.seenInc[p.dq.id] = 1; duelInvite(pid, p); }
+    if (DUEL.req && pid === DUEL.req.to && p.da && p.da.to === MP.me && p.da.id === DUEL.req.id) { const ok = p.da.ok; const id = DUEL.req.id; DUEL.req = null; if (ok) duelStart(pid, id, true); else toast(`<b>${escapeHtml(String(p.n || 'Ela'))}</b> recusou o duelo.`); }
+  }
+  if (DUEL.req && gtime - DUEL.req.t > 25) { DUEL.req = null; toast('Ninguém respondeu ao desafio.'); }
+  if (!DUEL.on) return;
+  const op = MP.peers[DUEL.opp]; if (!op) return duelEnd(false, 'O duelo acabou: ela saiu da partida.');
+  if (op.du && op.du.id === DUEL.id) { DUEL.t0 = gtime; DUEL.seen = 1; if (!DUEL.host && op.du.cx !== undefined && !DUEL.gotC) { DUEL.gotC = 1; DUEL.cx = op.du.cx; DUEL.cz = op.du.cz; if (DUEL.wall) DUEL.wall.position.set(DUEL.cx, 0, DUEL.cz); }
+    if (op.du.l > DUEL.oppLoss) { DUEL.oppLoss = op.du.l; sfx('kill'); if (DUEL.oppLoss >= 2) return duelEnd(true); toast(`Ponto seu! Placar: <b>${DUEL.oppLoss} × ${DUEL.loss}</b>`); setTimeout(() => DUEL.on && duelRound(), 900); } }
+  else if (gtime - (DUEL.t0 || gtime) > (DUEL.seen ? 6 : 15)) return duelEnd(false, DUEL.seen ? 'O duelo foi encerrado.' : 'Ela não entrou no duelo.');
+  if (DUEL.freeze > 0) { const before = Math.ceil(DUEL.freeze - 0.4); DUEL.freeze -= dt; const now = Math.ceil(DUEL.freeze - 0.4); if (now !== before) { if (now > 0) { floatText(P.x, 2.4, P.z, String(now), '#ffe18d', true); sfx('menu'); } else { floatText(P.x, 2.4, P.z, 'Já!', '#ff9ec9', true); sfx('jingle_a'); } } const side = DUEL.host ? -1 : 1; P.x = DUEL.cx + side * 2.6; P.z = DUEL.cz; P.kx = P.kz = 0; }
+  const dc = Math.hypot(P.x - DUEL.cx, P.z - DUEL.cz); if (dc > DUEL.R - 0.35) { const k = (DUEL.R - 0.35) / dc; P.x = DUEL.cx + (P.x - DUEL.cx) * k; P.z = DUEL.cz + (P.z - DUEL.cz) * k; }
+  duelT -= dt; if (duelT <= 0) { duelT = 0.4; duelHud(); }
+}
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { duelUpdate(dt); } catch (e) { console.error(e); } }; }
+{ const base = die; die = function () { if (DUEL.on) return duelKO(); return base(); }; }
+{ const base = mpExtra; mpExtra = function () { const o = base(); o.dq = DUEL.req ? { to: DUEL.req.to, id: DUEL.req.id } : null; o.da = DUEL.ans || null; o.du = DUEL.on ? { id: DUEL.id, l: DUEL.loss, cx: DUEL.host ? DUEL.cx : undefined, cz: DUEL.host ? DUEL.cz : undefined } : DUEL.post && gtime < DUEL.post.until ? DUEL.post : null; o.w = pwSel(); return o; }; }
+// clicar numa jogadora abre o pedido de duelo
+const duelRay = new THREE.Raycaster(), duelMv = new THREE.Vector2();
+canvas.addEventListener('pointerdown', (e) => {
+  if (!MP.on || titleOn || modalOpen() || mode !== 'out' || DUEL.on || PVP.on || farmEd || decor) return;
+  duelMv.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); duelRay.setFromCamera(duelMv, camera);
+  let best = null, bd = 1e9; for (const [pid, c] of Object.entries(MP.chars)) { if (!c || !c.obj.visible) continue; const h = duelRay.intersectObject(c.obj, true)[0]; if (h && h.distance < bd) { bd = h.distance; best = pid; } }
+  if (best) { e.stopImmediatePropagation(); duelAsk(best); }
+}, { capture: true });
+{ const base = openMP; openMP = function () { base(); const box = document.querySelector('.mpbox'); if (box && MP.code) box.insertAdjacentHTML('beforeend', '<button class="btn candy gold" id="mparms" style="margin-top:8px">⚔️ Armas de duelo</button><p class="note">Clique numa amiga no vale para desafiá-la para um duelo.</p>'); const b = $('mparms'); if (b) b.onclick = openArms; }; }
+{ const base = openForge; openForge = function () { base(); const f = document.querySelector('.forge'); if (f) f.insertAdjacentHTML('beforebegin', '<button class="btn candy gold sm" id="fgarms" style="margin:4px 0 8px">⚔️ Armas de duelo (espada, machado, arco)</button>'); const b = $('fgarms'); if (b) b.onclick = openArms; }; }
+
+// ---------- sem modelos atravessando outros: árvores dentro de casas, adereços empilhados, enfeites encostados ----------
+const OVL = { hidden: 0, removed: 0, moved: 0 };
+function fixOverlaps() {
+  const bb = new THREE.Box3(), sz = new THREE.Vector3(), objs = [];
+  const nameOf = (o) => { let n = ''; o.traverse((m) => { if (!n && m.isMesh && m.name) n = m.name; }); return n || o.name || ''; };
+  for (const o of world.children) { if (o.isInstancedMesh || o.isLight || o.isSprite || o.isPoints || !o.visible) continue; bb.setFromObject(o); if (bb.isEmpty()) continue; bb.getSize(sz);
+    if (sz.x > 12 || sz.z > 12 || sz.y < 0.35 || bb.min.y > 1.2 || bb.max.x < 0 || bb.max.z < 0 || bb.min.x > W || bb.min.z > H) continue;
+    const n = nameOf(o); objs.push({ o, n, x0: bb.min.x, x1: bb.max.x, z0: bb.min.z, z1: bb.max.z, h: sz.y, a: sz.x * sz.z, big: /^building_|^Rock$|^Wood$/.test(n) || sz.x * sz.z > 6, deco: /^(Leaves|Flowers|torch_mounted)$/.test(n) || /^building_mine/.test(n), mine: zoneAt(Math.floor((bb.min.x + bb.max.x) / 2), Math.floor((bb.min.z + bb.max.z) / 2), 0) && !o.userData.dress }); }
+  const ov = (A, B) => { const ix = Math.min(A.x1, B.x1) - Math.max(A.x0, B.x0), iz = Math.min(A.z1, B.z1) - Math.max(A.z0, B.z0); return ix > 0.05 && iz > 0.05 ? (ix * iz) / Math.max(0.01, Math.min(A.a, B.a)) : 0; };
+  const C = 4, cell = {}; const addC = (it, i) => { for (let x = Math.floor(it.x0 / C); x <= Math.floor(it.x1 / C); x++) for (let z = Math.floor(it.z0 / C); z <= Math.floor(it.z1 / C); z++) (cell[x + ',' + z] = cell[x + ',' + z] || []).push(i); };
+  objs.forEach(addC); const near = (it) => { const out = new Set(); for (let x = Math.floor(it.x0 / C); x <= Math.floor(it.x1 / C); x++) for (let z = Math.floor(it.z0 / C); z <= Math.floor(it.z1 / C); z++) for (const i of cell[x + ',' + z] || []) out.add(i); return out; };
+  const gone = new Set();
+  // 1) enfeites que eu espalhei (dress) não podem encostar em nada; adereços pequenos não ficam dentro de prédios
+  objs.forEach((A, i) => { if (gone.has(i) || A.o.userData.keep) return; for (const j of near(A)) { if (j === i || gone.has(j)) continue; const B = objs[j]; const f = ov(A, B); if (f < 0.3) continue;
+      if (A.deco || B.deco) continue; // floreiras das janelas fazem parte da casa
+      let kill = A.o.userData.dress ? A : B.o.userData.dress ? B : (!A.big && B.big && A.h < 1.8) ? A : (!B.big && A.big && B.h < 1.8) ? B : null; if (kill && kill.mine) kill = null; // decoração da jogadora nunca é removida
+      if (kill && !kill.o.userData.keep) { const k = objs.indexOf(kill); gone.add(k); kill.o.parent && kill.o.parent.remove(kill.o); for (const t of kill.o.userData.tiles || []) if (obj[t] && obj[t].prop) obj[t] = null; OVL.removed++; if (kill === A) return; continue; }
+      /* sem empurrar adereços pequenos: correntes de bandeirinhas e cercas sairiam do lugar */ } });
+  // 2) árvores, pinheiros, pedras e arbustos instanciados que atravessam prédios ou adereços somem e liberam o tile
+  const geoKey = {}; for (const [k, m] of Object.entries(MODELS)) if (m && m.root) m.root.traverse((o) => { if (o.isMesh) geoKey[o.geometry.uuid] = k; });
+  const solids = objs.filter((o, i) => !gone.has(i) && !o.deco && o.h > 0.8 && (o.big || o.a > 1.2));
+  for (const [k, ins] of Object.entries(INST)) { if (!/^(st_tree|k_pine|q_rock|q_bush|un_palm|q_tree)/.test(k)) continue; const m0 = MODELS[k.replace(/_[pa]$/, '')] || MODELS[k]; if (!m0) continue;
+    const gb = new THREE.Box3().setFromObject(m0.root), gs = gb.getSize(new THREE.Vector3()), pos = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+    ins.map.forEach(([ck, j], idx) => { const c = ins.chunks[ck]; if (!c || !c.inst || !c.inst.parts[0]) return; const M = new THREE.Matrix4(); c.inst.parts[0].im.getMatrixAt(j, M); M.decompose(pos, q, sc); if (sc.x < 0.3) return;
+      const rx = gs.x * sc.x * 0.3, rz = gs.z * sc.z * 0.3, it = { x0: pos.x - rx, x1: pos.x + rx, z0: pos.z - rz, z1: pos.z + rz, a: 4 * rx * rz };
+      for (const s2 of solids) { if (s2.x1 < it.x0 || s2.x0 > it.x1 || s2.z1 < it.z0 || s2.z0 > it.z1) continue; if (ov(it, s2) < (s2.big ? 0.25 : 0.4)) continue;
+        ins.set(idx, ZERO); const t = I(Math.floor(pos.x), Math.floor(pos.z)), o = obj[t]; if (o && /^(tree|pine|rock|bush|palm)$/.test(o.t) && !o.rim) obj[t] = null; OVL.hidden++; break; } }); }
+  flushBounds();
+}
+{ const base = buildWorld; buildWorld = function () { const r = base(); try { fixOverlaps(); } catch (e) { console.error(e); } return r; }; }
+// segunda passada com o mundo completo (mina, adereços da praça e da praia, fazenda) depois de carregar o save
+{ const base = applyState; applyState = function (d) { base(d); setTimeout(() => { try { fixOverlaps(); } catch (e) { console.error(e); } }, 0); }; }
+
+// ---------- interiores com mais vida: objetos por tema, morador em casa, lojistas que reagem ----------
+const ROOM_EXTRA = { casa: ['qi_plant1', 'f_pictureframe_standing_B', 'f_cabinet_small_decorated', 'qi_plant4'], rosa: ['qi_fireplace', 'qi_plant4', 'qi_bookshelf'], moinho: ['qv_hay', 'kn_logs', 'r_crate_carrots', 'qv_hay'],
+  torre: ['qi_bookshelf', 'qi_plant1', 'f_pictureframe_large_B'], cabana: ['qi_plant4', 'f_cactus_medium_B', 'f_rug_rectangle_B'], obs: ['qi_bookshelf', 'qi_plant1'], def: ['qi_plant1', 'f_shelf_B_small_decorated'] };
+function roomExtras(R, keys) { const { x, z, w, h } = R, C = [[0.6, 0.6], [w - 0.6, 0.6], [0.6, h / 2], [w - 0.6, h / 2], [w / 2 - 2.2, 0.5], [w / 2 + 2.2, 0.5], [0.6, h - 1.7], [w - 0.6, h - 1.7]], used = new Set();
+  for (const k of keys) { if (!MODELS[k]) continue; for (let ci = 0; ci < C.length; ci++) { if (used.has(ci)) continue; const [px, pz] = C[ci]; if (Math.abs(px - w / 2) < 1.6 && pz > h - 2.2) continue;
+      const o = cloneM(k); if (!o.children.length && !o.isMesh) break; o.position.set(x + px, 0, z + pz); o.rotation.y = pz < 1 ? 0 : px < w / 2 ? Math.PI / 2 : -Math.PI / 2; o.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(o);
+      if ((R.rects || []).some((r) => bb.min.x < r[2] - 0.05 && bb.max.x > r[0] + 0.05 && bb.min.z < r[3] - 0.05 && bb.max.z > r[1] + 0.05)) continue;
+      o.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); R.g.add(o); if (R.rects && !/rug/.test(k)) R.rects.push([bb.min.x, bb.min.z, bb.max.x, bb.max.z]); used.add(ci); break; } }
+  const l = new THREE.PointLight(0xffd2a0, 1.4, 8, 1.4); l.position.set(x + w / 2, 2.4, z + h / 2); R.g.add(l);
+}
+{ const base = buildRoomFor; buildRoomFor = function (D) { const R = base(D); try { roomExtras(R, ROOM_EXTRA[D.type] || ROOM_EXTRA.def); } catch (e) { console.error(e); } return R; }; }
+const SHOP_EXTRA = { tico: [['kn_disp_fruit', 0.8, 4.3, Math.PI / 2], ['kn_disp_bread', 8.2, 4.3, -Math.PI / 2], ['r_crate_tomatoes', 0.6, 6.2, 0], ['r_crate_carrots', 8.4, 6.2, 0]], forja: [['kn_anvil', 1.2, 4.2, Math.PI / 2], ['k_barrel', 8.3, 5.9, 0], ['kn_workbench', 8.0, 4.0, -Math.PI / 2]], atelie: [['f_pictureframe_large_B', 0.5, 4, Math.PI / 2], ['qi_plant4', 8.4, 6.1, 0], ['f_rug_rectangle_B', 4.5, 5.2, 0], ['qi_plant1', 0.6, 6.1, 0]] };
+{ const base = buildShops; buildShops = function () { base(); for (const [id, list] of Object.entries(SHOP_EXTRA)) { const sh = SHOPS[id]; if (!sh || !sh.g) continue; for (const [k, px, pz, ry] of list) { if (!MODELS[k]) continue; const o = cloneM(k); o.position.set(sh.x + px, 0, sh.z + pz); o.rotation.y = ry; o.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); sh.g.add(o); } } }; }
+// morador em casa (à noite, e em alguns dias também de dia)
+const RES = {};
+function residentOf(D) { if (RES[D.id] !== undefined) return RES[D.id]; let r = null;
+  if (D.type === 'rosa') r = { name: 'Vovó Rosa', key: 'mage', hue: 0.85, talk: () => talkRosa() };
+  else if (D.type === 'casa') { let best = null, bd = 14; for (const n of npcs) { try { const h = n.d.home(), cx = h[0] + (h[2] || 0) / 2, cz = h[1] + (h[3] || 0) / 2, d = Math.hypot(cx - D.ex, cz - D.ez); if (d < bd) { bd = d; best = n; } } catch (e) {} } if (best) r = { name: best.d.n, key: best.d.m, hue: best.d.hue, sc: best.d.sc, talk: () => talkNpc(best) }; }
+  return (RES[D.id] = r); }
+function residentHome(D) { const h = hourNow(); return h >= 18.5 || h < 8 || hash2(S.day, D.id.length * 7 + D.id.charCodeAt(1), 3) < 0.35; }
+{ const base = enterRoom; enterRoom = function (D) { base(D); const R = ROOMS[D.id], r = residentOf(D); if (!R || !r) return; if (!R.res) { try { const c = new Char(r.key); c.obj.traverse((m) => { if (m.isMesh && m.material && m.material.color) { m.material = m.material.clone(); m.material.color.offsetHSL(r.hue || 0, 0.06, 0.04); } }); if (r.sc) c.obj.scale.multiplyScalar(r.sc); c.obj.position.set(R.x + R.w * 0.66, 0, R.z + R.h * 0.5); R.res = c; } catch (e) { return; } }
+  R.resHome = residentHome(D); R.res.obj.visible = false; R.resInfo = r; R.resWave = 0.9; }; }
+{ const base = roomsUpdate; roomsUpdate = function (dt) { base(dt); for (const R of Object.values(ROOMS)) if (R.res) R.res.obj.visible = curShop === R.id && !!R.resHome; const R = SHOPS[curShop]; if (!R || !R.res || !R.res.obj.visible) return; const c = R.res, dx = P.x - c.obj.position.x, dz = P.z - c.obj.position.z; c.obj.rotation.y = angLerp(c.obj.rotation.y, Math.atan2(dx, dz), Math.min(1, dt * 4));
+    if (R.resWave > 0) { R.resWave -= dt; if (R.resWave <= 0 && c.actions.Cheer) c.play('Cheer', true, 1.1); } c.update(dt, 'Idle'); }; }
+{ const base = shopSpecials; shopSpecials = function (list) { base(list); const R = SHOPS[curShop]; if (R && R.res && R.res.obj.visible && R.resInfo) list.push({ d: Math.hypot(P.x - R.res.obj.position.x, P.z - R.res.obj.position.z) - 0.6, label: `Conversar com ${R.resInfo.name}`, act: R.resInfo.talk }); }; }
+// lojistas viram para você, acenam quando você entra e de vez em quando arrumam a loja
+let keepT = 0;
+function keepersUpdate(dt) { if (mode !== 'shop') return; keepT -= dt; for (const c of shopChars) { if (!c.obj.visible) continue; const dx = P.x - c.obj.position.x, dz = P.z - c.obj.position.z, d = Math.hypot(dx, dz); if (d < 6) c.obj.rotation.y = angLerp(c.obj.rotation.y, Math.atan2(dx, dz), Math.min(1, dt * 3)); }
+  if (keepT <= 0) { keepT = 6 + rand() * 5; const c = pick(shopChars.filter((x) => x.obj.visible)); if (c && c.actions.Interact) c.play('Interact', true, 1); } }
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { keepersUpdate(dt); } catch (e) {} }; }
+{ const base = enterShop; enterShop = function (id) { base(id); setTimeout(() => { for (const c of shopChars) if (c.obj.visible && c.actions.Cheer) c.play('Cheer', true, 1.2); }, 900); }; }
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -4689,4 +4979,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };

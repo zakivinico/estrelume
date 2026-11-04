@@ -2,7 +2,7 @@
 
 Um jogo cozy em 3D no navegador: plante, pesque, faça amizades, deseje bichinhos mágicos no Poço dos Desejos, enfrente a Vovó Rosa, navegue até o Mar Estrelado e encare o Kraken.
 
-**Versão atual: v17** (sem travamentos, multiplayer funcionando, rosto pintado, chão novo e um vale mais cheio). Histórico completo em [`CHANGELOG.md`](CHANGELOG.md).
+**Versão atual: v18** (duas moedas, bancadas de craft, reforma da casa, natureza que volta, interiores vivos, duelos com três armas e HUD enxuto). Histórico completo em [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Jogar
 

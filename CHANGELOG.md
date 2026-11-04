@@ -2,6 +2,33 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v18: duas moedas, craft, reforma da casa, natureza que volta e duelos
+**Economia**
+- Duas moedas: **🪙 Moedas** para comércio (vender, comprar, sementes, arar, Ateliê, Forja, expansões, reforma da casa e armas) e **⭐ Desejos**, só para o Poço dos Desejos (estrelas caídas, tarefas do dia, presentes, cartas, eventos e chefes).
+- Mais difícil ganhar Moedas: itens vendem por 35% menos (e os pedidos dos moradores acompanham) e as tarefas do dia pagam em Desejos. O jogo novo começa com 120🪙 e 100⭐.
+- Saves antigos: o saldo vira Moedas e você fica com até 300⭐ Desejos (aparece um aviso).
+
+**Craft**
+- Bancada de Trabalho ao lado da sua casa, também construível para a fazenda e como móvel para dentro de casa. Tem 19 receitas: cercas, caixotes, bancos, barril, fogueira, lanterna, canteiros, cadeira, mesa, estante, tapete, lareira, planta, bolinho, suco e a própria bancada. Tudo usa madeira, pedra, minérios, flores, frutas e lã, sem gastar Moedas.
+
+**Casa**
+- Reforma em 3 níveis (Varanda, Lanternas, Casa dos Sonhos) com Moedas e materiais. A casa fica maior por dentro (9×7 → 11×8 → 13×9 → 15×10) e ganha banco, flores, lanternas que acendem à noite, chaminé fumegando e jardim por fora. Cada nível também dá Desejos a cada noite dormida.
+
+**Natureza**
+- Árvores cortadas viram toco, depois muda, depois árvore jovem, e voltam adultas no 3º dia. Pedras quebradas voltam depois de 2 dias. As duas coisas ficam salvas no save.
+
+**Mundo e interiores**
+- Auditoria de sobreposição: árvores, pinheiros, pedras e arbustos que atravessavam casas e adereços somem e liberam o tile. Enfeites que encostavam em outros saem. A decoração que você colocou nunca é mexida.
+- Nada de barraca na frente das portas das casas e das lojas.
+- Interiores com mais vida: as casas dos moradores ganham plantas, quadros, armários, estantes e lareira por tema, e o morador fica em casa à noite (e em alguns dias), para conversar. As lojas têm barraca de frutas e pães, caixotes, bigorna, bancada, quadros, plantas e tapete. Os lojistas viram para você, comemoram quando você entra e arrumam a loja de vez em quando.
+
+**PvP**
+- Duelos: com multiplayer ligado, clique numa amiga para desafiar. Ela recebe um convite para aceitar ou recusar, os duelos são em melhor de 3 com arena temporária, contagem 3-2-1 e placar, e a vitória dá +15⭐ +30🪙 uma vez por dia por adversária.
+- Três armas selecionáveis com 3 níveis de melhoria (Moedas + minérios): **Espada** (rápida, com combo), **Machado** (lento, empurra longe) e **Arco** (flechas que dá para desviar; no nível 3 atira 3). Ficam no painel "Armas de duelo", acessível pela Forja, pelo multiplayer e pelo duelo. A Arena Estelar também usa as armas novas.
+
+**HUD**
+- 12% menor, com ficha da personagem, minimapa, tarefas e pílulas compactas, e os espaços vazios da hotbar viraram quadradinhos. As Moedas ganharam ícone de moeda, ao lado dos Desejos.
+
 ## v17: fluidez, multiplayer de verdade, rosto pintado e um vale mais cheio
 **Desempenho (fim dos travamentos)**
 - Pool fixo de luzes: as luzes do jogo viram "fontes" e só 4 luzes reais recebem as mais próximas (adotadas na hora em toda troca de área). Antes eram até 17 ativas, e trocar de área mudava a contagem e recompilava todos os shaders.
