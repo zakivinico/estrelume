@@ -143,7 +143,7 @@ const DECKY = 0.08;
 rect(30, 37, 36, 40, SO); rect(33, 34, 34, 35, PA); rect(33, 28, 34, 31, PA); rect(48, 27, 49, 31, PA); rect(52, 31, 52, 31, PA);
 const put = (x, y, o) => { obj[I(x, y)] = o; };
 const SOLID = new Set(['tree', 'pine', 'rock', 'bush', 'house', 'shrine', 'box', 'board', 'lamp', 'fence', 'part', 'mill', 'shop', 'smith', 'vwell', 'palm', 'umbrella', 'mine', 'tower', 'hut', 'atelie', 'ffence', 'pfence']);
-function multi(x0, y0, w, h, o) { for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) put(x, y, x === x0 && y === y0 ? o : { t: 'part' }); }
+function multi(x0, y0, w, h, o) { for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) put(x, y, x === x0 && y === y0 ? o : { t: 'part', b: o.t }); }
 const H1 = { x: 32, y: 25 }, H2 = { x: 47, y: 24 }, SHRINE = { x: 42, y: 30 }, BOX = { x: 44, y: 36 }, BOARD = { x: 46, y: 30 }, MILL = { x: 25, y: 27 }, SHOP = { x: 51, y: 28 };
 multi(H1.x, H1.y, 4, 3, { t: 'house', m: 'k_home_a' }); multi(H2.x, H2.y, 4, 3, { t: 'house', m: 'k_home_b' });
 const houseBack = (hx, hy) => { for (let x = hx; x < hx + 4; x++) if (inb(x, hy - 1) && !obj[I(x, hy - 1)]) put(x, hy - 1, { t: 'part' }); };
@@ -2050,7 +2050,7 @@ function openAtelie() {
   if (atTab === 'roupas') items = OUTFITS.map((o) => card(THUMB['o_' + o.id], o.n, o.lore, OUT_PRICE[o.id], !!S.outfits[o.id], 'out:' + o.id)).join('');
   if (atTab === 'acess') items = Object.entries(WARD_PRICE.ac).map(([k, p]) => card(accThumb(k), ACCS[k].n, 'Acessório para a cabeça', p, owns('ac', k), 'ac:' + k)).join('');
   if (atTab === 'cabelo') items = Object.entries(WARD_PRICE.hs).map(([k, p]) => card(hairThumb(k), HSTYLE[k].n, 'Penteado', p, owns('hs', k), 'hs:' + k)).join('') + Object.entries(WARD_PRICE.hc).map(([k, p]) => card(swatchThumb(HAIRC[k].c), 'Tinta ' + HAIRC[k].n, 'Cor de cabelo', p, owns('hc', k), 'hc:' + k)).join('');
-  if (atTab === 'cores') items = Object.entries(WARD_PRICE.cl).map(([k, p]) => card(swatchThumb(CLOTH[k].c), 'Tecido ' + CLOTH[k].n, 'Cor de roupa', p, owns('cl', k), 'cl:' + k)).join('');
+  if (atTab === 'cores') items = Object.entries(WARD_PRICE.cl).map(([k, p]) => card(swatchThumb(CLOTH[k].c), 'Tecido ' + CLOTH[k].n, 'Cor de roupa', p, owns('cl', k), 'cl:' + k)).join('') + (WARD_PRICE.cp ? card(emojiThumb('🎨'), 'Paleta mágica', 'Cor livre para cabelo e roupa', WARD_PRICE.cp.livre, owns('cp', 'livre'), 'cp:livre') : '');
   if (atTab === 'rastros') items = Object.entries(WARD_PRICE.tr).map(([k, p]) => card(emojiThumb(TRAILS[k].e), TRAILS[k].n, 'Rastro mágico ao andar', p, owns('tr', k), 'tr:' + k)).join('');
   openModal(`<div class="shophead"><img src="${THUMB.npc_fifi || THUMB.rosa}"><div><h2 style="margin:0">👗 Ateliê da Fifi</h2><p class="lead" style="margin:2px 0 0">"Querida, a moda é uma forma de magia! Você tem <b>${S.coins}🪙</b>."</p></div></div>
    <div class="wtabs">${Object.entries(tabs).map(([k, n]) => `<button class="btn ctab ${atTab === k ? 'on' : ''}" data-at="${k}">${n}</button>`).join('')}</div><div class="sgrid">${items}</div>
@@ -2833,7 +2833,7 @@ function endIntro() { if (!CUT) return; CUT = null; const el = $('cut'); if (el)
 /* ---------- decoração das vilas: bandeirolas, floreiras, bancos, varais de luz ---------- */
 function decorateVillages() {
   const flagCols = ['#ff8fbd', '#ffe18d', '#9fe8ff', '#c9a2ff', '#b6f06a'];
-  const bunting = (x0, z0, x1, z1, h = 2.6) => { const n = Math.max(4, Math.round(Math.hypot(x1 - x0, z1 - z0) * 1.6)); const pts = []; for (let i = 0; i <= n; i++) { const k = i / n; pts.push(new THREE.Vector3(lerp(x0, x1, k), h - Math.sin(k * Math.PI) * 0.45, lerp(z0, z1, k))); }
+  const bunting = (x0, z0, x1, z1, h = 2.6) => { if (buntBlocked(x0, z0, x1, z1)) return; /* v20: varal não atravessa casa */ const n = Math.max(4, Math.round(Math.hypot(x1 - x0, z1 - z0) * 1.6)); const pts = []; for (let i = 0; i <= n; i++) { const k = i / n; pts.push(new THREE.Vector3(lerp(x0, x1, k), h - Math.sin(k * Math.PI) * 0.45, lerp(z0, z1, k))); }
     const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: '#6a4a3a' })); world.add(line);
     for (let i = 1; i < n; i++) { const tri = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.26, 3), lam(flagCols[i % flagCols.length])); tri.rotation.x = Math.PI; tri.position.copy(pts[i]).add(new THREE.Vector3(0, -0.14, 0)); tri.rotation.y = Math.atan2(x1 - x0, z1 - z0); world.add(tri); }
     for (const [x, z] of [[x0, z0], [x1, z1]]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, h + 0.1, 6), lam('#7a5038')); p.position.set(x, (h + 0.1) / 2, z); p.castShadow = true; world.add(p); solidDecor(x, z); } };
@@ -3545,9 +3545,9 @@ function fencePiece(grp, x, y) { if (!inb(x, y)) return; if (obj[I(x, y)] && obj
 const tileFree = (x, y) => inb(x, y) && !obj[I(x, y)] && tile[I(x, y)] === GR;
 function decorateVillaHouses() {
   VILLA_HOUSES.forEach(([x, y], vi) => {
-    for (const tx of [x, x + 3]) if (tileFree(tx, y + 3)) { const bed = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.22, 0.6), lam('#8a5a3e')); bed.position.set(tx + 0.5, 0.11, y + 3.35); bed.castShadow = true; world.add(bed); const soil = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.04, 0.5), lam('#6b4630')); soil.position.set(tx + 0.5, 0.23, y + 3.35); world.add(soil); for (let i = 0; i < 3; i++) { const f = cloneM((i + vi) % 2 ? 'q_flower_r' : 'q_flower_y'); f.position.set(tx + 0.22 + i * 0.28, 0.2, y + 3.35); f.scale.multiplyScalar(0.7); world.add(f); } put(tx, y + 3, { t: 'part' }); }
+    for (const tx of [x, x + 3]) if (tileFree(tx, y + 3)) { const pg = new THREE.Group(); pg.userData.dress = 1; world.add(pg); const bed = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.22, 0.6), lam('#8a5a3e')); bed.position.set(tx + 0.5, 0.11, y + 3.35); bed.castShadow = true; pg.add(bed); const soil = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.04, 0.5), lam('#6b4630')); soil.position.set(tx + 0.5, 0.23, y + 3.35); pg.add(soil); for (let i = 0; i < 3; i++) { const f = cloneM((i + vi) % 2 ? 'q_flower_r' : 'q_flower_y'); f.position.set(tx + 0.22 + i * 0.28, 0.2, y + 3.35); f.scale.multiplyScalar(0.7); pg.add(f); } put(tx, y + 3, { t: 'part' }); }
     const mx = tileFree(x + 4, y + 2) ? x + 4 : tileFree(x - 1, y + 2) ? x - 1 : null;
-    if (mx !== null) { const mb = new THREE.Group(); const post = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.8, 0.07), lam('#7a5038')); post.position.y = 0.4; mb.add(post); const box = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.38), lam(['#e0566f', '#7cc4ff', '#ffd45a'][vi % 3])); box.position.y = 0.9; mb.add(box); const fl = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.16, 0.08), lam('#e0394c')); fl.position.set(0.16, 1.02, 0.08); mb.add(fl); mb.position.set(mx + 0.5, 0, y + 2.5); mb.traverse((n) => { if (n.isMesh) n.castShadow = true; }); world.add(mb); put(mx, y + 2, { t: 'part' }); }
+    if (mx !== null) { const mb = makeMailbox(['#ff8fa3', '#7cc4ff', '#ffd45a'][vi % 3], vi); mb.position.set(mx + 0.5, 0, y + 2.5); mb.traverse((n) => { if (n.isMesh) n.castShadow = true; }); world.add(mb); put(mx, y + 2, { t: 'part' }); }
   });
 }
 // resolve sobreposições entre adereços pequenos (barris, caixas, vasos, postes...)
@@ -3805,7 +3805,7 @@ const DECO14 = { r_crate_carrots: { s: 0.8 }, r_crate_tomatoes: { s: 0.8 }, r_cr
 for (const [k, v] of Object.entries(DECO14)) { MODEL_LIST.push(k); FIT[k] = v; }
 function decor14() {
   const R = rng(1414); let n = 0;
-  const place = (k, x, z, ry = 0, solid = true) => { const tx = Math.floor(x), tz = Math.floor(z); if (!MODELS[k] || !inb(tx, tz) || obj[I(tx, tz)] || tile[I(tx, tz)] === WA || tile[I(tx, tz)] === DK) return null; const g = cloneM(k); g.position.set(x, 0, z); g.rotation.y = ry; g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world.add(g); if (solid) put(tx, tz, { t: 'part' }); n++; return g; };
+  const place = (k, x, z, ry = 0, solid = true) => { const tx = Math.floor(x), tz = Math.floor(z); if (!MODELS[k] || !inb(tx, tz) || obj[I(tx, tz)] || tile[I(tx, tz)] === WA || tile[I(tx, tz)] === DK || tile[I(tx, tz)] === PA) return null; /* v20: nada de abóbora ou caixote no meio do caminho */ const g = cloneM(k); g.position.set(x, 0, z); g.rotation.y = ry; g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); world.add(g); if (solid) put(tx, tz, { t: 'part' }); n++; return g; };
   // barraca e lojinha: caixotes de verduras
   for (const [k, x, z] of [['r_crate_carrots', BOX.x - 0.5, BOX.y + 0.6], ['r_crate_tomatoes', BOX.x + 2.5, BOX.y + 0.5], ['r_crate_potatoes', SHOP.x - 0.5, SHOP.y + 3.5], ['r_crate_lettuce', SHOP.x + 3.5, SHOP.y + 3.5], ['r_crate_onions', 99.5, 37.5]]) place(k, x, z, R() * 0.6 - 0.3);
   // abóboras na fazenda e na Vila Girassol, lampiões nas estradas
@@ -4507,7 +4507,7 @@ function dressWorld() {
   dressProps(66, BEACHY + 2, 18, ['kk_umb_pink', 'kk_umb_yellow', 'kk_umb_blue', 'kn_canoe'], 6, 4, [SA]);
   dressProps(141, 30, 13, ['kn_stump', 'kn_logs', 'kn_tent', 'kn_stump', 'kn_campfire'], 6, 3, [GR]);
   dressProps(60, 75, 11, ['qv_hay', 'qv_hay', 'kn_cart', 'qv_hay'], 5, 3, [GR]);
-  dressProps(LAKE.x, LAKE.y, 16, ['qv_gazebo'], 1, 6, [GR], 3);
+  /* v20: sem gazebo no lago (de cima parecia uma lona chapada e escondia o Seu Bento) */
   dressProps(LAKE.x, LAKE.y, 15, ['kn_stump', 'kn_logs', 'qv_bench'], 4, 4, [GR]);
 }
 { const base = buildWorld; buildWorld = function () { try { dressWorld(); } catch (e) { console.error(e); } const r = base(); try { lightenWorld(); } catch (e) { console.error(e); } return r; }; }
@@ -4995,6 +4995,231 @@ let aniT = 4;
   try { base(); const rt = composer.readBuffer, prev = renderer.getRenderTarget(); if (rt) { renderer.setRenderTarget(rt); try { base(); } finally { renderer.setRenderTarget(prev); } } }
   finally { for (const im of tmp) { world.remove(im); im.dispose(); } } }; }
 
+/* =================== v20: correções visuais (interface, criador, mundo, chão, placas e moradores) =================== */
+// ---------- criador: penteados do gênero escolhido e Cor livre coerente com as cores pagas ----------
+for (const k of ['hr_female1', 'hr_female2', 'hr_female3', 'hr_female4']) if (HSTYLE[k]) HSTYLE[k].g = 'f';
+if (HSTYLE.hr_male1) HSTYLE.hr_male1.g = 'm';
+hairTab = function (lk, chips) { const gd = crGender === 'm' ? 'm' : 'f', L = Object.fromEntries(Object.entries(HSTYLE).filter(([k, v]) => k === lk.hs || v.g === gd || v.g === 'u'));
+  return `<div class="crl">Cor do cabelo</div><div class="chips">${chips(HAIRC, 'hc', 'hc', lk.hc, (v) => v.c || '#7a4a30')}${cpick('hc', lk.hc)}</div>
+  <div class="crl">Mechas</div><div class="chips">${chips(HMECH, 'hm', 'hm', lk.hm || 'none', (v) => v.c || 'transparent')}</div>
+  <div class="crl">Volume</div><div class="chips">${chips(HVOL, 'hv', 'hv', lk.hv || 'n')}</div>
+  <div class="crl">Penteados ${gd === 'm' ? 'masculinos' : 'femininos'}</div><div class="chips">${chips(L, 'hs', 'hs', lk.hs)}</div>`; };
+WARD_PRICE.cp = { livre: 450 }; // "Paleta mágica": cor livre para cabelo e roupa (a pele continua livre)
+{ const base = cpick; cpick = function (cat, cur) { if (cat === 'sk' || owns('cp', 'livre')) return base(cat, cur); const v = cur && cur[0] === '#' ? cur : '';
+  return `<button class="btn chip cpick locked ${v ? 'on' : ''}" data-cplock="1" title="Compre a Paleta mágica no Ateliê da Fifi"><i style="background:${v || 'conic-gradient(#ff8fb0,#ffd45a,#8ff0c0,#7cc4ff,#b49cff,#ff8fb0)'}"></i>Cor livre 🔒</button>`; }; }
+{ const base = openCreator; openCreator = function (t) { const r = base(t); document.querySelectorAll('[data-cplock]').forEach((el) => (el.onclick = (e) => { e.preventDefault(); sfx('cancel'); toast('🔒 A <b>Paleta mágica</b> (cor livre) fica à venda no <b>Ateliê da Fifi</b>, na Vila Girassol.'); })); return r; }; }
+// quem já usava uma cor livre antes da v20 continua com a paleta
+{ const base = applyState; applyState = function (d) { base(d); const lk = S.look || {}; if (['hc', 'tint'].some((k) => typeof lk[k] === 'string' && lk[k][0] === '#') && !owns('cp', 'livre')) giveWard('cp', 'livre'); setTimeout(() => { try { fixSigns(); } catch (e) { console.error(e); } }, 0); }; }
+
+// ---------- penteados completos escondem o cabelo que vem modelado na cabeça (antes saíam por cima dele) ----------
+// O cabelo original faz parte da malha da cabeça: os vértices pintados com a cor do cabelo afundam para dentro do crânio.
+// As sobrancelhas (na frente, abaixo da franja) ficam.
+const HAIR_FULL = (hs) => /^hr_/.test(hs || '') || ['bob', 'curto', 'topete', 'espetado', 'moicano', 'afro', 'samurai', 'baguncado'].includes(hs);
+const HAIRCELLS = {};
+function hairCellsOf(obj) { const key = obj.userData.ck || 'x'; if (HAIRCELLS[key]) return HAIRCELLS[key]; let hm = null; obj.traverse((m) => { if (!hm && m.isMesh && /_Head(\b|_)/.test((m.name || '') + ' ' + ((m.parent && m.parent.name) || ''))) hm = m; }); if (!hm) return null;
+  const g = hm.userData.geo0 || hm.geometry, uv = g.attributes.uv, pos = g.attributes.position; if (!uv) return null; g.computeBoundingBox(); const bb = g.boundingBox, hy = bb.max.y - bb.min.y || 1, dz = bb.max.z - bb.min.z || 1, top = {}, face = {};
+  for (let i = 0; i < uv.count; i++) { const [cx, cy] = cellOfUV(uv.getX(i), uv.getY(i)), k = cx + ',' + cy, y = (pos.getY(i) - bb.min.y) / hy, z = (pos.getZ(i) - bb.min.z) / dz; if (y > 0.86) top[k] = (top[k] || 0) + 1; if (y > 0.2 && y < 0.55 && z > 0.7) face[k] = (face[k] || 0) + 1; }
+  const fk = Object.entries(face).sort((a, b) => b[1] - a[1])[0], hk = Object.entries(top).sort((a, b) => b[1] - a[1]).filter(([k]) => !fk || k !== fk[0])[0];
+  return (HAIRCELLS[key] = hk ? [hk[0]] : []); }
+function baseHair(obj, hide) {
+  const hc = hairCellsOf(obj); if (!hc || !hc.length) return; const cells = new Set(hc);
+  obj.traverse((m) => { if (!m.isMesh || !m.geometry || !/_Head(\b|_)/.test((m.name || '') + ' ' + ((m.parent && m.parent.name) || ''))) return;
+    if (!m.userData.geo0) m.userData.geo0 = m.geometry; if (!hide) { if (m.geometry !== m.userData.geo0) m.geometry = m.userData.geo0; return; }
+    if (m.userData.geoNoHair) { m.geometry = m.userData.geoNoHair; return; }
+    const g0 = m.userData.geo0, g = g0.clone(), uv = g.attributes.uv, pos = g.attributes.position; if (!uv) return; g0.computeBoundingBox(); const bb = g0.boundingBox, c = bb.getCenter(new THREE.Vector3()), hy = bb.max.y - bb.min.y || 1, dz = bb.max.z - bb.min.z || 1;
+    // centro do crânio: média dos vértices que não são cabelo
+    let sx = 0, sy = 0, sz = 0, n = 0; for (let i = 0; i < uv.count; i++) { const [cx, cy] = cellOfUV(uv.getX(i), uv.getY(i)); if (!cells.has(cx + ',' + cy)) { sx += pos.getX(i); sy += pos.getY(i); sz += pos.getZ(i); n++; } }
+    if (n) c.set(sx / n, sy / n, sz / n);
+    for (let i = 0; i < uv.count; i++) { const [cx, cy] = cellOfUV(uv.getX(i), uv.getY(i)); if (!cells.has(cx + ',' + cy)) continue; const y = (pos.getY(i) - bb.min.y) / hy, z = (pos.getZ(i) - bb.min.z) / dz; if (z > 0.72 && y > 0.3 && y < 0.7) continue; // sobrancelha
+      pos.setXYZ(i, lerp(pos.getX(i), c.x, 0.92), lerp(pos.getY(i), c.y, 0.92), lerp(pos.getZ(i), c.z, 0.92)); }
+    pos.needsUpdate = true; g.computeBoundingSphere(); m.userData.geoNoHair = g; m.geometry = g; });
+}
+{ const base = applyLook; applyLook = function (obj, look) { const human = obj && !String(obj.userData.ck || '').startsWith('h_'); try { if (human) baseHair(obj, false); } catch (e) {} // o encaixe do chapéu/cabelo mede a cabeça original
+  base(obj, look); try { if (human) baseHair(obj, HAIR_FULL((look || {}).hs)); } catch (e) { console.error(e); } }; }
+// cabelos 3D (hr_*): encaixe automático pela "touca" do modelo (a parte de cima), em vez da largura total
+// (os cabelos longos ficavam enormes e flutuando acima da cabeça)
+{ const base = makeHairPiece; makeHairPiece = function (style, col, mc, vol) { const g = base(style, col, mc, vol); if (!/^hr_/.test(style) || !g.children[0]) return g; const h = g.children[0];
+  h.scale.setScalar(1); h.position.set(0, 0, 0); h.updateMatrixWorld(true); const v = new THREE.Vector3(); let maxY = -1e9, minY = 1e9; const pts = [];
+  h.traverse((m) => { if (!m.isMesh) return; const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i += 1) { v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld); pts.push(v.x, v.y, v.z); if (v.y > maxY) maxY = v.y; if (v.y < minY) minY = v.y; } });
+  const cut = maxY - (maxY - minY) * 0.22; let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (let i = 0; i < pts.length; i += 3) if (pts[i + 1] >= cut) { x0 = Math.min(x0, pts[i]); x1 = Math.max(x1, pts[i]); z0 = Math.min(z0, pts[i + 2]); z1 = Math.max(z1, pts[i + 2]); }
+  const capW = Math.max(0.01, x1 - x0), f = HAIR_FIT[style] || [0, 0, 0, 1], k = (0.58 * f[3]) / capW;
+  h.scale.setScalar(k); h.position.set(-((x0 + x1) / 2) * k + f[0], -maxY * k + 0.13 + f[1], -((z0 + z1) / 2) * k - 0.04 + f[2]); return g; }; }
+
+// ---------- moradores com visual próprio (antes 4 deles eram o mesmo mago, 3 o mesmo bárbaro...) ----------
+// Mesmo sistema do criador: pele, cabelo, roupa, chapéu, óculos, costas, cintura, tamanho e rosto.
+const NPCLOOK = {
+  rosa: { sk: 's2', hs: 'coque', hc: 'branco', tint: 'rosa', acc: 'flores', gl: 'redondo', glc: 'lilas', sz: 'p', fc: 'blush' },
+  tico: { sk: 's3', hs: 'curto', hc: 'ruivo', tint: 'sol', acc: 'palha', wa: 'bolsa', wac: 'coral', fc: 'sardas' },
+  bento: { sk: 's4', tint: 'ceu', gl: 'quadrado', glc: 'grafite', bk: 'mochila', bkc: 'menta', sz: 'a' },
+  pipo: { sk: 's2', hs: 'espetado', hc: 'preto', tint: 'ceu', acc: 'boina', acc_c: 'coral', bk: 'mochila', bkc: 'sol', sz: 'p', hd: 'f', fc: 'sardas' },
+  iris: { sk: 's1', hs: 'longo', hc: 'lilas', tint: 'lavanda', acc: 'estrela', gl: 'redondo', glc: 'lilas', wa: 'sininho' },
+  duda: { sk: 's4', hs: 'trancas', hc: 'ruivo', tint: 'carvao', wa: 'cinto', wac: 'sol', fc: 'blush' },
+  otto: { sk: 's3', hs: 'topete', hc: 'castanho', tint: 'sol', acc: 'boina', acc_c: 'grafite', gl: 'quadrado', glc: 'sol', sz: 'a' },
+  lia: { sk: 's1', tint: 'menta', gl: 'sol', glc: 'coral', bk: 'aljava', wa: 'bolsa', wac: 'menta', fc: 'sardas' },
+  fifi: { sk: 's2', hs: 'bob', hc: 'rosa', tint: 'rosa', acc: 'laco', acc_c: 'lilas', gl: 'gatinho', glc: 'rosa', bk: 'laco', bkc: 'rosa', fc: 'blush' },
+  tome: { sk: 's5', hc: 'branco', tint: 'ceu', acc: 'gorro', acc_c: 'ceu', gl: 'redondo', glc: 'sol', sz: 'a' },
+  marina: { sk: 's5', hs: 'rabo', hc: 'preto', tint: 'ceu', acc: 'palha', gl: 'sol', glc: 'ceu', wa: 'flor', wac: 'coral' },
+};
+function dressNpc(obj, id, key) { const lk = NPCLOOK[id]; if (!obj || !lk || obj.userData.npcLook === id) return; obj.userData.ck = key; obj.userData.npcLook = id;
+  const sc = obj.scale.x; try { applyLook(obj, lk); applyBody(obj, lk); obj.scale.setScalar(sc * (SIZES[lk.sz] || SIZES.n)[1]); } catch (e) { console.error(e); } }
+function npcThumb(id, key) { try { const o = cloneM('ch_' + key); o.userData.ck = key; applyLook(o, NPCLOOK[id]); return thumb(o, { char: true, head: true, ry: -0.2 }); } catch (e) { return null; } }
+{ const base = buildNpcs; buildNpcs = function () { base();
+  for (const n of npcs) { dressNpc(n.c.obj, n.d.id, n.d.m); const t = npcThumb(n.d.id, n.d.m); if (t) THUMB['npc_' + n.d.id] = t; }
+  if (rosaC) { dressNpc(rosaC.obj, 'rosa', 'mage'); const t = npcThumb('rosa', 'mage'); if (t) THUMB.rosa = t; }
+  if (ticoC) { dressNpc(ticoC.obj, 'tico', 'barbarian'); const t = npcThumb('tico', 'barbarian'); if (t) THUMB.tico = t; } }; }
+// lojistas (dentro das lojas) e moradores em casa usam o mesmo visual de quem eles são
+const SHOP_WHO = { tico: 'tico', forja: 'duda', atelie: 'fifi' };
+{ const base = buildShops; buildShops = function () { const r = base(); for (const [id, sh] of Object.entries(SHOPS)) if (sh.c && SHOP_WHO[id]) dressNpc(sh.c.obj, SHOP_WHO[id], sh.keeper[0]); return r; }; }
+{ const base = residentOf; residentOf = function (D) { const r = base(D); if (r && !r.lid) { const nd = NPCDEF.find((d) => d.n === r.name); r.lid = r.name === 'Vovó Rosa' ? 'rosa' : nd ? nd.id : null; } return r; }; }
+{ const base = enterRoom; enterRoom = function (D) { base(D); const R = ROOMS[D.id]; if (R && R.res && R.resInfo && R.resInfo.lid) dressNpc(R.res.obj, R.resInfo.lid, R.resInfo.key); }; }
+
+// ---------- placas novas: poste com braço, tábua pendurada que balança, e um bichinho ou enfeite em cima ----------
+const FUNSIGNS = [], SGM = {};
+const sgMat = (c) => SGM[c] || (SGM[c] = lam(c));
+const SIGN_TOP = (t) => /Estrel|Observat|Farol|Ruínas|Barco/.test(t) ? 'star' : /Fadas|Lavanda|Girassol|Fazenda|Pomar|Pasto|Fifi/.test(t) ? 'flower' : 'bird';
+function roundedRect(w, h, r) { const sh = new THREE.Shape(), x = -w / 2, y = -h / 2; sh.moveTo(x + r, y); sh.lineTo(x + w - r, y); sh.quadraticCurveTo(x + w, y, x + w, y + r); sh.lineTo(x + w, y + h - r); sh.quadraticCurveTo(x + w, y + h, x + w - r, y + h); sh.lineTo(x + r, y + h); sh.quadraticCurveTo(x, y + h, x, y + h - r); sh.lineTo(x, y + r); sh.quadraticCurveTo(x, y, x + r, y); return sh; }
+function signBird(col) { const g = new THREE.Group(), body = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), sgMat(col)); body.scale.set(1, 0.85, 1.2); body.position.y = 0.08; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 8), sgMat(col)); head.position.set(0, 0.19, 0.07); g.add(head);
+  const beak = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.07, 6), sgMat('#ffb43c')); beak.rotation.x = Math.PI / 2; beak.position.set(0, 0.18, 0.15); g.add(beak);
+  for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.013, 6, 4), sgMat('#2a1d2e')); e.position.set(sx * 0.035, 0.21, 0.125); g.add(e); }
+  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.12, 6), sgMat(col)); tail.rotation.x = -Math.PI / 2.6; tail.position.set(0, 0.1, -0.13); g.add(tail);
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), sgMat('#fff4dd')); belly.position.set(0, 0.06, 0.06); belly.scale.set(1, 0.9, 0.6); g.add(belly); g.userData.head = head; return g; }
+function signStar() { const g = new THREE.Group(), sh = new THREE.Shape(); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 + Math.PI / 2, r = i % 2 ? 0.07 : 0.16; i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
+  const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.05, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 1 }), new THREE.MeshLambertMaterial({ color: '#ffd45a', emissive: '#ffb83c', emissiveIntensity: 0.45 })); m.position.y = 0.2; g.add(m); return g; }
+function signFlower() { const g = new THREE.Group(), stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 5), sgMat('#5aa14a')); stem.position.y = 0.08; g.add(stem);
+  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2, p = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), sgMat('#ff8fb8')); p.scale.set(1, 0.45, 1); p.position.set(Math.cos(a) * 0.065, 0.17, Math.sin(a) * 0.065); g.add(p); }
+  const c = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), sgMat('#ffd45a')); c.position.y = 0.18; g.add(c); return g; }
+makeSign = function (txt, ic) {
+  const clean = stripEmoji(txt).replace(/^[^\p{L}\p{N}]+\s*/u, ''); ic = ic || SIGN_IC[txt] || SIGN_IC[clean];
+  const g = new THREE.Group(), wood = sgMat('#8a5a3b'), dark = sgMat('#5a3424'), light = sgMat('#c9905e'), seed = hash2(clean.length * 7.3, clean.charCodeAt(0) || 1, 17);
+  // poste com braço (formato Γ), meio tortinho, e tufo na base
+  const posts = new THREE.Group(); g.add(posts); const px = -1.02;
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.095, 1.7, 8), wood); post.position.set(px, 0.85, 0); post.rotation.z = (seed - 0.5) * 0.06; post.castShadow = true; posts.add(post);
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.11, 0.12), wood); arm.position.set(px + 1.05, 1.62, 0); arm.castShadow = true; posts.add(arm);
+  const brace = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.07, 0.08), dark); brace.position.set(px + 0.17, 1.47, 0); brace.rotation.z = 0.78; posts.add(brace);
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), light); knob.position.set(px, 1.74, 0); posts.add(knob);
+  const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.18, 7), sgMat('#6cbf4c')); tuft.position.set(px, 0.07, 0); posts.add(tuft);
+  for (const [dx, dz] of [[0.18, 0.12], [-0.16, 0.1]]) { const mu = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2), sgMat(seed > 0.5 ? '#ff6f7d' : '#ffb45a')); mu.position.set(px + dx, 0.1, dz); posts.add(mu); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.1, 6), sgMat('#fff4dd')); st.position.set(px + dx, 0.05, dz); posts.add(st); }
+  // tábua pendurada por duas cordinhas (o pivô fica no braço, então ela balança)
+  const swing = new THREE.Group(); swing.position.set(px + 1.08, 1.56, 0); g.add(swing);
+  const W_ = 1.85, H_ = 0.6, bodyG = new THREE.ExtrudeGeometry(roundedRect(W_, H_, 0.14), { depth: 0.08, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2, curveSegments: 6 }); bodyG.translate(0, 0, -0.04);
+  const body = new THREE.Mesh(bodyG, dark); body.position.y = -0.52; body.castShadow = true; swing.add(body);
+  const fg = new THREE.ShapeGeometry(roundedRect(W_ - 0.04, H_ - 0.04, 0.12), 6), uv = fg.attributes.uv, pp = fg.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, (pp.getX(i) + (W_ - 0.04) / 2) / (W_ - 0.04), (pp.getY(i) + (H_ - 0.04) / 2) / (H_ - 0.04));
+  const face = new THREE.Mesh(fg, new THREE.MeshLambertMaterial({ map: signTex(clean, ic) })); face.position.set(0, -0.52, 0.065); swing.add(face);
+  const back = new THREE.Mesh(fg, face.material); back.rotation.y = Math.PI; back.position.set(0, -0.52, -0.065); swing.add(back);
+  for (const sx of [-0.72, 0.72]) { const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.24, 4), sgMat('#e8d2a8')); rope.position.set(sx, -0.12, 0); swing.add(rope); const ring = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.012, 5, 10), sgMat('#c9a2ff')); ring.position.set(sx, -0.23, 0.04); swing.add(ring); }
+  // enfeite em cima do braço: passarinho, estrela ou flor
+  const kind = SIGN_TOP(clean), top = kind === 'bird' ? signBird(['#7cc4ff', '#ff8fb8', '#ffd45a', '#8ff0c0'][Math.floor(seed * 4)]) : kind === 'star' ? signStar() : signFlower();
+  top.position.set(px + 1.75, 1.68, 0); top.rotation.y = kind === 'bird' ? -0.6 : 0; g.add(top);
+  g.userData.sign = true; g.userData.posts = posts; const S_ = { g, swing, top, kind, ph: seed * 6.28, kick: 0, near: false, hop: 2 + seed * 4, hopT: 0, y0: 1.68 }; g.userData.fun = S_; FUNSIGNS.push(S_); return g; };
+// placa presa na parede (lojas e casas por dentro): sem poste, só a tábua
+function wallSign(sg) { if (!sg || !sg.userData.posts) return; sg.userData.posts.visible = false; const f = sg.userData.fun; if (f) { f.top.visible = false; f.wall = true; f.swing.position.set(0, 1.44, 0); } }
+{ const base = buildShops; buildShops = function () { const r = base(); for (const sh of Object.values(SHOPS)) if (sh.g) sh.g.traverse((o) => { if (o.userData && o.userData.fun && o.position.y > 0.5) wallSign(o); }); return r; }; }
+{ const base = buildRoomFor; buildRoomFor = function (D) { const R = base(D); if (R && R.g) R.g.traverse((o) => { if (o.userData && o.userData.fun && o.position.y > 0.5) wallSign(o); }); return R; }; }
+// balanço: sempre um pouquinho; quando você passa perto, dá um "boing"; o passarinho pula de vez em quando
+function funSignsUpdate(dt) { const t = gtime; for (const f of FUNSIGNS) { const g = f.g; if (!g.parent) continue; const wp = g.position, near = (mode === 'out' && g.parent === world) ? Math.hypot(P.x - wp.x - 0.05, P.z - wp.z) < 1.7 : false;
+    if (near && !f.near) { f.kick = 0.32; if (f.kind === 'bird') f.hopT = 0.45; } f.near = near; f.kick *= Math.pow(0.04, dt);
+    f.swing.rotation.z = Math.sin(t * 1.7 + f.ph) * (f.wall ? 0.015 : 0.04) + Math.sin(t * 9) * f.kick; f.swing.rotation.x = Math.sin(t * 1.3 + f.ph * 2) * 0.03;
+    if (f.kind === 'bird' && !f.wall) { f.hop -= dt; if (f.hop <= 0) { f.hop = 2.5 + rand() * 4; f.hopT = 0.35; f.top.rotation.y = (rand() - 0.5) * 2.4; } if (f.hopT > 0) { f.hopT -= dt; f.top.position.y = f.y0 + Math.sin(Math.max(0, f.hopT) / 0.35 * Math.PI) * 0.12; } else f.top.position.y = f.y0; }
+    else if (f.kind === 'star') { f.top.rotation.y = t * 1.2 + f.ph; f.top.position.y = f.y0 + Math.sin(t * 2 + f.ph) * 0.03; } } }
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { funSignsUpdate(dt); } catch (e) {} }; }
+
+// ---------- placas fora das construções e da frente das portas ----------
+const SIGNFIX = { moved: 0, list: [] };
+// caixas por malha (não por grupo: o varal de bandeirinhas tem um grupo enorme, mas por dentro é só corda e poste fino)
+function bigBoxes() { const L = []; const bx = new THREE.Box3(), sz = new THREE.Vector3();
+  for (const o of world.children) { if (o.isInstancedMesh || o.isLight || o.isSprite || (o.userData && (o.userData.sign || o.userData.fun))) continue; if (o === GCV.mesh || (o.geometry && o.geometry.attributes && o.geometry.attributes.color === TERR.col)) continue;
+    o.traverse((m) => { if (!m.isMesh || m.isInstancedMesh) return; bx.setFromObject(m); if (bx.isEmpty()) return; bx.getSize(sz); if (sz.x > 30 || sz.z > 30 || sz.y < 0.6 || sz.x * sz.z < 0.3) return; L.push({ b: bx.clone(), big: sz.x * sz.z > 4 && sz.y > 1.6 }); }); }
+  return L; }
+function fixSigns() {
+  let boxes = bigBoxes(); const fronts = boxes.filter((o) => o.big).map((o) => [o.b.min.x + 0.4, o.b.max.x - 0.4, o.b.max.z - 0.2, o.b.max.z + 1.6]);
+  for (const D of doorList()) fronts.push([D.ex - 1.1, D.ex + 1.1, D.ez - 1.4, D.ez + 0.9]);
+  const hits = (x, z) => { const x0 = x - 1.2, x1 = x + 1.0, z0 = z - 0.3, z1 = z + 0.3; for (const o of boxes) { const b = o.b; if (x1 > b.min.x + 0.15 && x0 < b.max.x - 0.15 && z1 > b.min.z + 0.15 && z0 < b.max.z - 0.15) return true; } for (const f of fronts) if (x1 > f[0] && x0 < f[1] && z1 > f[2] && z0 < f[3]) return true;
+    for (const tx of [Math.floor(x0), Math.floor(x), Math.floor(x1)]) { const tz = Math.floor(z); if (!inb(tx, tz)) return true; const t = tile[I(tx, tz)]; if (t === WA || t === DK || t === SO) return true; const ob = obj[I(tx, tz)]; if (ob && !ob.sign && ob.t !== 'flower' && ob.t !== 'grass') return true; } return false; };
+  for (const o of world.children) { if (!o.userData || !o.userData.fun || o.userData.keep) continue; const ox = o.position.x, oz = o.position.z; const near = boxes.filter((q) => q.b.max.x > ox - 8 && q.b.min.x < ox + 8 && q.b.max.z > oz - 8 && q.b.min.z < oz + 8); const all = boxes; boxes = near; try { if (!hits(ox, oz)) continue;
+    let best = null; for (let r = 0.75; r <= 5 && !best; r += 0.5) for (let k = 0; k < 16; k++) { const a = (k / 16) * Math.PI * 2, x = ox + Math.cos(a) * r, z = oz + Math.sin(a) * r * 0.8; if (!hits(x, z)) { const pa = [-1, 0, 1].some((d) => tAt(Math.floor(x) + d, Math.floor(z + 1)) === PA || tAt(Math.floor(x) + d, Math.floor(z)) === PA); const sc = r - (pa ? 0.6 : 0); if (!best || sc < best[2]) best = [x, z, sc]; } }
+    if (!best) continue; const otx = Math.floor(ox), otz = Math.floor(oz); if (inb(otx, otz) && obj[I(otx, otz)] && obj[I(otx, otz)].t === 'part' && obj[I(otx, otz)].sign) obj[I(otx, otz)] = null;
+    o.position.set(best[0], 0, best[1]); SIGNFIX.moved++; SIGNFIX.list.push([+ox.toFixed(1), +oz.toFixed(1), +best[0].toFixed(1), +best[1].toFixed(1)]); } finally { boxes = all; } }
+  // a placa é sólida só no poste (lado esquerdo)
+  for (const o of world.children) { if (!o.userData || !o.userData.fun) continue; const tx = Math.floor(o.position.x - 1.02), tz = Math.floor(o.position.z); if (inb(tx, tz) && !obj[I(tx, tz)] && tAt(tx, tz) !== PA) put(tx, tz, { t: 'part', sign: 1 }); }
+}
+// snapSigns marcava o tile do centro da placa como sólido; agora quem é sólido é só o poste
+{ const base = snapSigns; snapSigns = function () { base(); for (const o of world.children) { if (!o.userData || !o.userData.fun) continue; const tx = Math.floor(o.position.x), tz = Math.floor(o.position.z); if (inb(tx, tz) && obj[I(tx, tz)] && obj[I(tx, tz)].t === 'part' && !obj[I(tx, tz)].b) obj[I(tx, tz)].sign = 1; } try { fixSigns(); } catch (e) { console.error(e); } }; }
+// ---------- píer do lago encostado na margem ----------
+function fixDock() { const M = MODELS.q_dock; if (!M || !M.root) return; const gs = new Set(); M.root.traverse((o) => { if (o.isMesh) gs.add(o.geometry.uuid); }); let dock = null;
+  for (const o of world.children) { let hit = false; o.traverse((n) => { if (n.isMesh && gs.has(n.geometry.uuid)) hit = true; }); if (hit) { dock = o; break; } } if (!dock) return;
+  const b = new THREE.Box3().setFromObject(dock), cz = (b.min.z + b.max.z) / 2; dock.position.x += dockStart - 0.35 - b.min.x; dock.position.z += 45 - cz; SIGNFIX.dock = [+(dockStart - 0.35).toFixed(2), +b.min.x.toFixed(2), +cz.toFixed(2)]; }
+{ const base = buildWorld; buildWorld = function () { const r = base(); try { fixDock(); } catch (e) { console.error(e); } return r; }; }
+
+// árvores, pedras e arbustos nunca ficam no caminho; e sob eles o chão é grama (o caminho não "vaza" por baixo)
+const NATURE = /^(tree|pine|rock|bush|palm)$/;
+const PATHCLEAR = { n: 0 };
+{ const base = buildWorld; buildWorld = function () { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = I(x, y), o = obj[i]; if (o && NATURE.test(o.t) && !o.rim && tile[i] === PA) { obj[i] = null; PATHCLEAR.n++; } } return base(); }; }
+// ---------- chão v20: mais resolução, normais suaves e detalhes pintados (tufos, florzinhas, pedrinhas, sulcos) ----------
+// Antes: 8 px por tile e sombreamento facetado sobre relevos aleatórios (triângulos claros e escuros pela grama).
+const GPX2 = matchMedia('(pointer: coarse)').matches ? 8 : 12;
+const GPAL2 = { [GR]: [140, 200, 86], [PA]: [226, 190, 134], [SO]: [132, 88, 58], [SA]: [244, 226, 170] };
+paintGroundRect = function (x0, y0, x1, y1) {
+  const { img } = GCV, d = img.data, CW2 = W * GPX2, types = [GR, PA, SO, SA], G = GPX2, B = 3;
+  x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(W - 1, x1); y1 = Math.min(H - 1, y1);
+  const PX0 = x0 * G, PY0 = y0 * G, PX1 = (x1 + 1) * G, PY1 = (y1 + 1) * G;
+  // ruído suave numa grade de 3 px (é o que pesava: ~9 ruídos por pixel)
+  const bw = Math.ceil((PX1 - PX0) / B) + 1, bh = Math.ceil((PY1 - PY0) / B) + 1, NB = new Float32Array(bw * bh * 3);
+  for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) { const wx = (PX0 + bx * B + 1.5) / G, wy = (PY0 + by * B + 1.5) / G, k = (by * bw + bx) * 3; NB[k] = fbm(wx * 0.07, wy * 0.07, 3) - 0.5; NB[k + 1] = fbm(wx * 0.35, wy * 0.35, 8) - 0.5; NB[k + 2] = (vn(wx * 0.6, wy * 0.6, 31) - 0.5) * 0.3; }
+  // tipo de cada tile (com uma borda) e se tem árvore/pedra em cima
+  const tw = x1 - x0 + 3, th = y1 - y0 + 3, TT = new Uint8Array(tw * th), NT = new Uint8Array(tw * th);
+  for (let ty = 0; ty < th; ty++) for (let tx = 0; tx < tw; tx++) { const X = x0 - 1 + tx, Y = y0 - 1 + ty; TT[ty * tw + tx] = gType(X, Y); const cx = Math.max(0, Math.min(W - 1, X)), cy = Math.max(0, Math.min(H - 1, Y)), o = obj[I(cx, cy)]; NT[ty * tw + tx] = o && NATURE.test(o.t) && !o.cut && tile[I(cx, cy)] === GR ? 1 : 0; }
+  const tt = (X, Y) => TT[(Math.max(y0 - 1, Math.min(y1 + 1, Y)) - y0 + 1) * tw + (Math.max(x0 - 1, Math.min(x1 + 1, X)) - x0 + 1)];
+  const w = [0, 0, 0, 0, 0, 0, 0];
+  for (let py = PY0; py < PY1; py++) { const fy = (py + 0.5) / G - 0.5, ty = Math.floor(fy), ay = fy - ty, oy = Math.floor(py / G), byi = Math.floor((py - PY0) / B) * bw;
+    for (let px = PX0; px < PX1; px++) {
+      const fx = (px + 0.5) / G - 0.5, tx = Math.floor(fx), ax = fx - tx, nk = (byi + Math.floor((px - PX0) / B)) * 3, big = NB[nk], mid = NB[nk + 1], wob = NB[nk + 2];
+      w[GR] = 0; w[PA] = 0; w[SO] = 0; w[SA] = 0;
+      w[tt(tx, ty)] += (1 - ax) * (1 - ay); w[tt(tx + 1, ty)] += ax * (1 - ay); w[tt(tx, ty + 1)] += (1 - ax) * ay; w[tt(tx + 1, ty + 1)] += ax * ay;
+      const ox = Math.floor(px / G); if (NT[(oy - y0 + 1) * tw + (ox - x0 + 1)]) w[GR] += 0.45; // o caminho não entra embaixo das árvores
+      let best = GR, bwt = -1, second = -1; for (const t of types) { const v = w[t] + (t === GR ? wob : 0); if (v > bwt) { second = bwt; bwt = v; best = t; } else if (v > second) second = v; }
+      const c = GPAL2[best]; let r = c[0], g = c[1], b = c[2], lf = 1;
+      if (best === GR) { lf += big * 0.14 + mid * 0.07;
+        const cxx = Math.floor(px / 5), cyy = Math.floor(py / 5), hr = hash2(cxx, cyy, 9), lx = (px % 5) - Math.floor(hr * 7.7) % 2, ly = (py % 5) - Math.floor(hr * 13.3) % 2;
+        if (hr < 0.2 && lx >= 0 && ly >= 0) { if ((ly === 1 || ly === 2) && (lx === 1 || lx === 3)) lf *= 0.86; else if (ly === 3 && lx === 2) lf *= 0.86; else if (ly === 0 && (lx === 1 || lx === 3)) lf *= 1.08; }
+        if ((px % 6) < 2 && (py % 6) < 2) { const fh = hash2(Math.floor(px / 6), Math.floor(py / 6), 13); if (fh > 0.994) { const pc = [[255, 255, 255], [255, 170, 200], [255, 226, 110]][Math.floor(fh * 1000) % 3]; r = pc[0]; g = pc[1]; b = pc[2]; lf = 1; } }
+        if (bwt - second < 0.08 && hash2(px, py, 7) > 0.6) lf *= 0.9; }
+      else if (best === PA) { lf += big * 0.06 + mid * 0.05; const lx = px % 5, ly = py % 5; if (lx >= 1 && lx <= 2 && ly >= 1 && ly <= 2 && hash2(Math.floor(px / 5), Math.floor(py / 5), 11) < 0.14) lf *= ly === 1 ? 1.09 : 0.92; }
+      else if (best === SO) lf += mid * 0.06 + ((py & 3) === 0 ? -0.1 : (py & 3) === 1 ? 0.05 : 0);
+      else { lf += big * 0.05 + mid * 0.04; if (hash2(px, py, 5) > 0.992) lf *= 1.1; }
+      if (best !== GR) { const m = bwt - second; if (m < 0.1) lf *= 0.86; else if (m < 0.2 && best === PA) lf *= 0.94; }
+      const i = (py * CW2 + px) * 4; d[i] = Math.min(255, r * lf); d[i + 1] = Math.min(255, g * lf); d[i + 2] = Math.min(255, b * lf); d[i + 3] = 255; } }
+  GCV.ctx.putImageData(img, 0, 0, PX0, PY0, PX1 - PX0, PY1 - PY0); if (GCV.tex) GCV.tex.needsUpdate = true;
+};
+paintGround = function () {
+  let mesh = null; world.traverse((o) => { if (o.isMesh && o.geometry && o.geometry.attributes.color === TERR.col) mesh = o; }); if (!mesh) return;
+  const cv = document.createElement('canvas'); cv.width = W * GPX2; cv.height = H * GPX2; GCV.cv = cv; GCV.ctx = cv.getContext('2d'); GCV.img = GCV.ctx.createImageData(cv.width, cv.height); const t0 = performance.now(); paintGroundRect(0, 0, W - 1, H - 1); GCV.ms = Math.round(performance.now() - t0);
+  const geo = mesh.geometry, pos = geo.attributes.position, uv = new Float32Array(pos.count * 2); for (let i = 0; i < pos.count; i++) { uv[i * 2] = pos.getX(i) / W; uv[i * 2 + 1] = 1 - pos.getZ(i) / H; }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  // normais suaves a partir da altura dos cantos (a malha não é indexada, então computeVertexNormals daria faces chapadas)
+  const hgt = new Map(); for (let i = 0; i < pos.count; i++) hgt.set(pos.getX(i) + ',' + pos.getZ(i), pos.getY(i)); const hAt = (x, z) => hgt.get(x + ',' + z) ?? 0;
+  const nrm = new Float32Array(pos.count * 3), v = new THREE.Vector3(); for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), z = pos.getZ(i); v.set(hAt(x - 1, z) - hAt(x + 1, z), 2, hAt(x, z - 1) - hAt(x, z + 1)).normalize(); nrm[i * 3] = v.x; nrm[i * 3 + 1] = v.y; nrm[i * 3 + 2] = v.z; }
+  geo.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; GCV.tex = t;
+  mesh.material = new THREE.MeshLambertMaterial({ map: t }); GCV.mesh = mesh;
+};
+
+// varal de bandeirinhas que passaria por cima de uma construção não é pendurado
+const BUNT = { skipped: 0 }, BLDT = new Set(['house', 'shop', 'mill', 'smith', 'atelie', 'tower', 'mine', 'hut', 'shrine', 'vwell', 'box']);
+function buntBlocked(x0, z0, x1, z1) { const L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(2, Math.ceil(L * 2)); for (let i = 1; i < n; i++) { const k = i / n; if (k < 0.06 || k > 0.94) continue; const tx = Math.floor(lerp(x0, x1, k)), tz = Math.floor(lerp(z0, z1, k)); if (!inb(tx, tz)) continue; const o = obj[I(tx, tz)]; if (o && (BLDT.has(o.t) || (o.t === 'part' && o.b && BLDT.has(o.b)))) { BUNT.skipped++; return true; } } return false; }
+// ---------- caixa de correio fofa (antes era um cubo num pau) ----------
+function makeMailbox(col, vi = 0) { const g = new THREE.Group(), wood = sgMat('#8a5a3b'), body = sgMat(col), dark = sgMat('#5a3424');
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 0.72, 7), wood); post.position.y = 0.36; g.add(post);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 0.06, 8), sgMat('#bfb6a8')); base.position.y = 0.03; g.add(base);
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.42), body); box.position.y = 0.82; g.add(box);
+  const roof = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.42, 12, 1, false, 0, Math.PI), body); roof.rotation.set(Math.PI / 2, 0, Math.PI / 2); roof.position.y = 0.92; roof.rotation.order = 'ZXY'; g.add(roof);
+  const door = new THREE.Mesh(new THREE.CircleGeometry(0.13, 12, 0, Math.PI), sgMat('#fff4dd')); door.position.set(0, 0.92, 0.212); g.add(door); const doorB = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.18), sgMat('#fff4dd')); doorB.position.set(0, 0.825, 0.212); g.add(doorB);
+  const heart = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), sgMat('#ff6f8a')); heart.scale.set(1, 0.8, 0.4); heart.position.set(0, 0.87, 0.225); g.add(heart);
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.24, 0.03), dark); arm.position.set(0.17, 0.95, 0.05); g.add(arm);
+  const flag = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.09, 0.13), sgMat('#e0394c')); flag.position.set(0.18, 1.04, 0.1); g.add(flag);
+  const letter = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.02, 0.1), sgMat('#ffffff')); letter.position.set(0, 1.08, 0.02); letter.rotation.z = 0.2; letter.visible = vi % 2 === 0; g.add(letter);
+  g.userData.dress = 1; return g; }
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -5038,4 +5263,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
