@@ -5073,6 +5073,13 @@ const SHOP_WHO = { tico: 'tico', forja: 'duda', atelie: 'fifi' };
 { const base = residentOf; residentOf = function (D) { const r = base(D); if (r && !r.lid) { const nd = NPCDEF.find((d) => d.n === r.name); r.lid = r.name === 'Vovó Rosa' ? 'rosa' : nd ? nd.id : null; } return r; }; }
 { const base = enterRoom; enterRoom = function (D) { base(D); const R = ROOMS[D.id]; if (R && R.res && R.resInfo && R.resInfo.lid) dressNpc(R.res.obj, R.resInfo.lid, R.resInfo.key); }; }
 
+// junta as peças fixas de um grupo numa malha só, com a cor de cada peça nos vértices (menos draw calls)
+const VCMAT = new THREE.MeshLambertMaterial({ vertexColors: true });
+function bakeVC(g) { const geos = [], kill = [], c = new THREE.Color();
+  for (const m of g.children) { if (m.isMesh && !m.visible) { kill.push(m); continue; } if (!m.isMesh || m.children.length || !m.material || m.material.map || Array.isArray(m.material) || (m.material.emissiveIntensity && m.material.emissive && m.material.emissive.r + m.material.emissive.g > 0.05)) continue;
+    m.updateMatrix(); let geo = m.geometry.clone().applyMatrix4(m.matrix); if (geo.index) geo = geo.toNonIndexed(); for (const k of Object.keys(geo.attributes)) if (!['position', 'normal'].includes(k)) geo.deleteAttribute(k);
+    c.copy(m.material.color); const n = geo.attributes.position.count, col = new Float32Array(n * 3); for (let i = 0; i < n; i++) { col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; } geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geos.push(geo); kill.push(m); }
+  if (geos.length < 2) return g; const merged = mergeGeometries(geos, false); if (!merged) return g; for (const m of kill) g.remove(m); const mm = new THREE.Mesh(merged, VCMAT); mm.castShadow = true; mm.receiveShadow = true; g.add(mm); return g; }
 // ---------- placas novas: poste com braço, tábua pendurada que balança, e um bichinho ou enfeite em cima ----------
 const FUNSIGNS = [], SGM = {};
 const sgMat = (c) => SGM[c] || (SGM[c] = lam(c));
@@ -5111,6 +5118,7 @@ makeSign = function (txt, ic) {
   // enfeite em cima do braço: passarinho, estrela ou flor
   const kind = SIGN_TOP(clean), top = kind === 'bird' ? signBird(['#7cc4ff', '#ff8fb8', '#ffd45a', '#8ff0c0'][Math.floor(seed * 4)]) : kind === 'star' ? signStar() : signFlower();
   top.position.set(px + 1.75, 1.68, 0); top.rotation.y = kind === 'bird' ? -0.6 : 0; g.add(top);
+  bakeVC(posts); bakeVC(swing); if (kind !== 'star') bakeVC(top);
   g.userData.sign = true; g.userData.posts = posts; const S_ = { g, swing, top, kind, ph: seed * 6.28, kick: 0, near: false, hop: 2 + seed * 4, hopT: 0, y0: 1.68 }; g.userData.fun = S_; FUNSIGNS.push(S_); return g; };
 // placa presa na parede (lojas e casas por dentro): sem poste, só a tábua
 function wallSign(sg) { if (!sg || !sg.userData.posts) return; sg.userData.posts.visible = false; const f = sg.userData.fun; if (f) { f.top.visible = false; f.wall = true; f.swing.position.set(0, 1.44, 0); } }
@@ -5220,7 +5228,7 @@ function makeMailbox(col, vi = 0) { const g = new THREE.Group(), wood = sgMat('#
   const arm = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.24, 0.03), dark); arm.position.set(0.17, 0.95, 0.05); g.add(arm);
   const flag = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.09, 0.13), sgMat('#e0394c')); flag.position.set(0.18, 1.04, 0.1); g.add(flag);
   const letter = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.02, 0.1), sgMat('#ffffff')); letter.position.set(0, 1.08, 0.02); letter.rotation.z = 0.2; letter.visible = vi % 2 === 0; g.add(letter);
-  g.userData.dress = 1; return g; }
+  bakeVC(g); g.userData.dress = 1; return g; }
 
 /* =================== início, título e carregamento =================== */
 let ready = false;
