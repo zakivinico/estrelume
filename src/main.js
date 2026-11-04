@@ -4988,7 +4988,9 @@ let aniT = 4;
 { const base = precompileAll; precompileAll = function () { const tmp = [];
   try { if (!WX.rain) buildRain(); } catch (e) {}
   for (const k of Object.keys(INST)) { const M = MODELS[k]; if (!M || !M.root) continue; M.root.updateMatrixWorld(true); M.root.traverse((o) => { if (!o.isMesh) return; const im = new THREE.InstancedMesh(o.geometry, o.material, 1); im.setMatrixAt(0, ZERO); im.receiveShadow = true; im.castShadow = !NO_SHADOW.test(k); im.frustumCulled = false; world.add(im); tmp.push(im); }); }
-  try { base(); } finally { for (const im of tmp) { world.remove(im); im.dispose(); } } }; }
+  // duas passadas: direto na tela (sRGB, qualidade Baixa) e no buffer do pós-processamento (linear, Média/Alta)
+  try { base(); const rt = composer.readBuffer, prev = renderer.getRenderTarget(); if (rt) { renderer.setRenderTarget(rt); try { base(); } finally { renderer.setRenderTarget(prev); } } }
+  finally { for (const im of tmp) { world.remove(im); im.dispose(); } } }; }
 
 /* =================== início, título e carregamento =================== */
 let ready = false;
