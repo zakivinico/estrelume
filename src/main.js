@@ -4771,7 +4771,7 @@ function openReform() {
 const PVPW = {
   espada: { n: 'Espada', ic: 'sword', desc: 'Rápida e com combo de 3 golpes.', lv: [{ dmg: 7, cd: 0.3, r: 1.4 }, { dmg: 9, cd: 0.27, r: 1.5 }, { dmg: 11, cd: 0.24, r: 1.6 }], cost: [null, { coins: 300, ore: { ferro: 4 } }, { coins: 800, ore: { ferro: 8, cristal: 2 } }] },
   machado: { n: 'Machado', ic: 'axe', desc: 'Lento, mas cada golpe empurra longe.', lv: [{ dmg: 12, cd: 0.8, r: 1.35, kb: 1.8 }, { dmg: 15, cd: 0.72, r: 1.45, kb: 2.2 }, { dmg: 18, cd: 0.64, r: 1.55, kb: 2.7 }], cost: [{ coins: 400, ore: { ferro: 6 } }, { coins: 700, ore: { ferro: 10, cobre: 6 } }, { coins: 1400, ore: { ferro: 14, ametista: 2 } }] },
-  arco: { n: 'Arco', ic: 'wand', desc: 'Flechas de longe; dá para desviar.', lv: [{ dmg: 6, cd: 0.6, spd: 13, range: 11 }, { dmg: 7, cd: 0.5, spd: 15, range: 13 }, { dmg: 8, cd: 0.45, spd: 16, range: 14, triple: 1 }], cost: [{ coins: 500, ore: { cobre: 8 } }, { coins: 900, ore: { cobre: 10, cristal: 2 } }, { coins: 1600, ore: { cristal: 4, ouro: 2 } }] },
+  arco: { n: 'Arco', ic: 'arco', desc: 'Flechas de longe; dá para desviar.', lv: [{ dmg: 6, cd: 0.6, spd: 13, range: 11 }, { dmg: 7, cd: 0.5, spd: 15, range: 13 }, { dmg: 8, cd: 0.45, spd: 16, range: 14, triple: 1 }], cost: [{ coins: 500, ore: { cobre: 8 } }, { coins: 900, ore: { cobre: 10, cristal: 2 } }, { coins: 1600, ore: { cristal: 4, ouro: 2 } }] },
 };
 const pwLv = (k) => (S.pw = S.pw || { espada: 1, machado: 0, arco: 0 })[k] || 0;
 const pwSel = () => { const k = S.pwSel || 'espada'; return pwLv(k) ? k : 'espada'; };
@@ -4935,6 +4935,65 @@ function keepersUpdate(dt) { if (mode !== 'shop') return; keepT -= dt; for (cons
   if (keepT <= 0) { keepT = 6 + rand() * 5; const c = pick(shopChars.filter((x) => x.obj.visible)); if (c && c.actions.Interact) c.play('Interact', true, 1); } }
 { const base = v14Update; v14Update = function (dt) { base(dt); try { keepersUpdate(dt); } catch (e) {} }; }
 { const base = enterShop; enterShop = function (id) { base(id); setTimeout(() => { for (const c of shopChars) if (c.obj.visible && c.actions.Cheer) c.play('Cheer', true, 1.2); }, 900); }; }
+
+/* =================== v19: pendências (ícone do arco, sem recompilar ao baixar a qualidade, sons de galinha, pato e vila) =================== */
+// Qualidade sem engasgo: ligar/desligar o shadowMap troca o programa de TODOS os materiais (recompila tudo).
+// Durante o jogo, a qualidade Baixa mantém as sombras ligadas, só que baratas (mapa 512 e atualização espaçada).
+// Ao abrir o jogo já em Baixa, as sombras começam desligadas (aí não há troca nenhuma).
+const QSH = { booted: false };
+applyQuality = function () {
+  const q = SET.quality, pr = q === 'alta' ? Math.min(devicePixelRatio, 1.5) : q === 'media' ? Math.min(devicePixelRatio, 1.25) : 1;
+  const PXF = { forte: 1 / 3.2, medio: 1 / 2.5, suave: 1 / 1.8 }[SET.pixel || 'medio']; renderer.setPixelRatio(PXF ? PXF : pr); document.body.classList.toggle('pixf', !!PXF);
+  const was = renderer.shadowMap.enabled, want = q !== 'baixa';
+  const on = QSH.booted ? was || want : want; // em jogo, nunca desliga (desligar recompila tudo); ligar só quando a jogadora pede
+  const sz = q === 'alta' ? 2048 : q === 'media' ? 1024 : 512;
+  renderer.shadowMap.enabled = on; sun.castShadow = on; QSH.cheap = on && !want;
+  if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+  renderer.shadowMap.needsUpdate = true;
+  if (on !== was) scene.traverse((o) => { if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => (m.needsUpdate = true)); } });
+  resize(); if (on !== was && QSH.booted) setTimeout(() => { try { precompileAll(); } catch (e) {} }, 60); // compila tudo de uma vez, com o menu aberto
+};
+setTimeout(function bootQ() { if (ready) QSH.booted = true; else setTimeout(bootQ, 500); }, 500);
+shadowThrottle = function (dt) { if (!renderer.shadowMap.enabled) return; if (SET.quality === 'alta') { renderer.shadowMap.autoUpdate = true; return; } renderer.shadowMap.autoUpdate = false; SHADOW_T.t -= dt; const moved = Math.hypot(P.x - SHADOW_T.x, P.z - SHADOW_T.z), cheap = QSH.cheap;
+  if (SHADOW_T.t <= 0 || moved > (cheap ? 0.8 : 0.6) || (mode !== 'out' && !cheap)) { renderer.shadowMap.needsUpdate = true; SHADOW_T.t = cheap ? 1 / 10 : 1 / 20; SHADOW_T.x = P.x; SHADOW_T.z = P.z; } };
+
+// arco na mão durante a luta (e o machado de duelo também aparece)
+{ const base = heldObj; heldObj = function (k) { if (k !== '#bow') return base(k); const g = new THREE.Group(), wood = lam('#a8693f'), lt = lam('#e9b980'), R = 0.32, A = Math.PI * 0.86;
+  // arco no plano XY, pontas ao longo do eixo Y da mão (o mesmo do cabo do machado), empunhadura na origem
+  const limb = new THREE.Mesh(new THREE.TorusGeometry(R, 0.022, 6, 18, A), wood); limb.rotation.z = -A / 2; limb.position.x = -R; g.add(limb);
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.034, 0.12, 8), lt); g.add(grip);
+  const str = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 2 * R * Math.sin(A / 2), 4), lam('#fff6e6')); str.position.x = R * Math.cos(A / 2) - R; g.add(str);
+  for (const sy of [-1, 1]) { const tip = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 5), lt); tip.position.set(R * Math.cos(A / 2) - R, sy * R * Math.sin(A / 2), 0); g.add(tip); }
+  return g; }; }
+{ const base = updateHand; updateHand = function () { const k = player && fighting() && mode === 'out' && !P.bike ? pwSel() : 'espada'; if (k === 'espada') return base();
+  player.setWeapon(null); const want = k === 'arco' ? '#bow' : '#axe'; if (want === handKey) return; if (handProp) handProp.parent.remove(handProp); handProp = null; handKey = want;
+  if (player.hand) { const g = heldObj(want); player.obj.updateMatrixWorld(true); const inv = 1 / player.hand.getWorldScale(new THREE.Vector3()).x; g.scale.multiplyScalar(inv * (want === '#axe' ? 1.15 : 0.95)); player.hand.add(g); handProp = g; } }; }
+{ let last = ''; const base = v14Update; v14Update = function (dt) { base(dt); const k = (fighting() ? 1 : 0) + pwSel() + S.slot; if (k !== last) { last = k; try { updateHand(); } catch (e) {} } }; }
+
+{ const base = spaceHint; spaceHint = function () { if (fighting() && mode === 'out' && !P.boat && TOOLS[S.slot].id === 'espada') { const k = pwSel(); if (k !== 'espada') return { ok: true, t: k === 'arco' ? 'Atirar com o arco' : 'Golpear com o machado' }; } return base(); }; }
+// sons novos da v19: cacarejo, quá-quá e murmúrio de vila (CC0, créditos em game/assets/CREDITS-v17-sons.md)
+AMB_KEYS.push('amb_village'); EXTRA_SFX.push('ani_cluck_1', 'ani_cluck_2', 'ani_cluck_3', 'ani_quack_1', 'ani_quack_2', 'amb_village');
+SFXALT.cluck = ['ani_cluck_1', 'ani_cluck_2', 'ani_cluck_1', 'ani_cluck_2', 'ani_cluck_3']; SFXALT.quack = ['ani_quack_1', 'ani_quack_2'];
+Object.assign(SFXV, { ani_cluck_1: 0.5, ani_cluck_2: 0.5, ani_cluck_3: 0.45, ani_quack_1: 0.5, ani_quack_2: 0.5 });
+const ANI_SND = { chicken: 'cluck', duck: 'quack' };
+{ const base = petCritter; petCritter = function (c) { const k = ANI_SND[c.kind]; if (!k || !AE.buf[SFXALT[k][0]]) return base(c); const was = c.kind; c.kind = '_' + was; try { base(c); } finally { c.kind = was; } setTimeout(() => sfx(k, c.x, c.z), 120); }; }
+// vila: conversa baixinha perto da praça e da Vila Girassol, de dia
+const VILLAGES = [{ x: 41, z: 37, r: 11 }, { x: 92, z: 32, r: 10 }];
+{ const base = ambTargets; ambTargets = function () { const T = base(); if (titleOn || !AE.ready || mode !== 'out' || P.boat) return T; const h = hourNow(); if (h < 7.5 || h > 19.5) return T;
+  let v = 0; for (const V of VILLAGES) v = Math.max(v, clamp(1 - (Math.hypot(P.x - V.x, P.z - V.z) - V.r * 0.5) / V.r, 0, 1)); T.amb_village = 0.16 * v * (1 - 0.6 * (WX.k || 0)); return T; }; }
+// galinhas e patos às vezes falam sozinhos quando você está por perto
+let aniT = 4;
+{ const base = v14Update; v14Update = function (dt) { base(dt); aniT -= dt; if (aniT > 0) return; aniT = 5 + rand() * 7; if (mode !== 'out' || !AE.ready || !critters) return;
+  const near = critters.filter((c) => ANI_SND[c.kind] && Math.hypot(c.x - P.x, c.z - P.z) < 9); if (near.length) { const c = pick(near); sfx(ANI_SND[c.kind], c.x, c.z); } }; }
+
+// pré-compilação completa: chuva (criada só no 1º temporal) e malhas instanciadas que ainda não têm nenhum exemplar
+// (os cogumelos e trevos do dia nascem depois do carregamento e criavam um shader novo no Bosque)
+{ const base = precompileAll; precompileAll = function () { const tmp = [];
+  try { if (!WX.rain) buildRain(); } catch (e) {}
+  for (const k of Object.keys(INST)) { const M = MODELS[k]; if (!M || !M.root) continue; M.root.updateMatrixWorld(true); M.root.traverse((o) => { if (!o.isMesh) return; const im = new THREE.InstancedMesh(o.geometry, o.material, 1); im.setMatrixAt(0, ZERO); im.receiveShadow = true; im.castShadow = !NO_SHADOW.test(k); im.frustumCulled = false; world.add(im); tmp.push(im); }); }
+  // duas passadas: direto na tela (sRGB, qualidade Baixa) e no buffer do pós-processamento (linear, Média/Alta)
+  try { base(); const rt = composer.readBuffer, prev = renderer.getRenderTarget(); if (rt) { renderer.setRenderTarget(rt); try { base(); } finally { renderer.setRenderTarget(prev); } } }
+  finally { for (const im of tmp) { world.remove(im); im.dispose(); } } }; }
 
 /* =================== início, título e carregamento =================== */
 let ready = false;
