@@ -24,7 +24,7 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 
 ## Desempenho: regras que evitam travamentos
 
-- **Nunca mude o número de luzes visíveis.** As `PointLight` do jogo são "fontes": o pool (`LP`, seção v17) copia as mais próximas para 2–6 luzes reais fixas. Pode criar luzes à vontade (o `lpScan` acha sozinho), mas não adicione luzes reais fora do pool.
+- **Nunca mude o número de luzes visíveis.** As `PointLight` do jogo são "fontes": o pool (`LP`, seção v17) copia as mais próximas para 4 luzes reais fixas; toda troca de área (via `fade`) adota as luzes novas na hora. Pode criar luzes à vontade (o `lpScan` acha sozinho), mas não adicione luzes reais fora do pool.
 - **Não troque o tipo da névoa nem use `scene.fog = null`.** Interiores usam `NOFOG` (mesmo tipo `Fog`, só que longe). Trocar o tipo recompila todos os shaders.
 - Todos os shaders são pré-compilados no carregamento (`precompileAll`). Material novo que só aparece num evento raro também fica coberto, desde que esteja na cena (mesmo invisível) ao carregar.
 - Vegetação e objetos repetidos vão por `Instancer` (blocos de 16×16 tiles, recortados por distância além da névoa). Itens miúdos não projetam sombra (`NO_SHADOW`).
@@ -52,3 +52,9 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 
 - `main` → GitHub Pages (workflow `pages.yml`).
 - Existe também uma versão publicada como Artifact no claude.ai ("Estrelume"), onde o jogo foi desenvolvido antes de vir para este repositório.
+
+## Som
+
+- Efeitos: `sfx(nome, x?, z?)` (com posição = pan e distância). Sons novos: arquivo em `game/assets/sfx/<nome>.ogg` e o nome em `EXTRA_SFX`. Variações aleatórias de um mesmo evento ficam em `ALT2`; volumes em `SFXV`.
+- Ambiência: camadas `amb_*` com volume-alvo em `ambTargets()`. Passos por terreno: `STEP_SETS` + `stepSet()`.
+- Converta com ffmpeg para OGG mono normalizado (veja o commit da v17). Só use sons CC0 e registre o crédito em `game/assets/CREDITS-v17-sons.md`.

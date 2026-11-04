@@ -4,9 +4,9 @@ Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js
 
 ## v17: fluidez, multiplayer de verdade, rosto pintado e um vale mais cheio
 **Desempenho (fim dos travamentos)**
-- Pool fixo de luzes: as luzes do jogo viram "fontes" e só 2 a 6 luzes reais (conforme a qualidade) recebem as mais próximas. Antes eram até 17 ativas, e trocar de área mudava a contagem e recompilava todos os shaders.
+- Pool fixo de luzes: as luzes do jogo viram "fontes" e só 4 luzes reais recebem as mais próximas (adotadas na hora em toda troca de área). Antes eram até 17 ativas, e trocar de área mudava a contagem e recompilava todos os shaders.
 - Névoa do mesmo tipo dentro de casa, nas lojas e no modo admin (antes `null` ↔ `Fog` recompilava tudo ao entrar e sair).
-- Todos os shaders pré-compilados no carregamento. Na v16 o jogo compilava 82 shaders novos durante o passeio; agora nenhum.
+- Todos os shaders pré-compilados no carregamento. Na v16, um passeio pelo vale, pela casa, pelas lojas e pela caverna compilava 82 shaders novos no meio do jogo (cada um é um engasgo); agora as trocas de área praticamente não compilam nada. A única exceção é quando o próprio jogo baixa a qualidade gráfica por estar lento.
 - Blocos de instância de 16×16 tiles, recorte por distância onde a névoa fecha, frutas do pomar low-poly (eram ~10 mil frutas de 256 triângulos), itens miúdos sem sombra e vegetação simplificada com meshopt. Na praça: 1.967 → ~1.290 draw calls e 5,4 → 2,5 milhões de triângulos.
 
 **Multiplayer**
@@ -19,6 +19,12 @@ Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js
 - Rosto como textura: bochechas, sardas, estrelinha, coração e pintinha agora são pintados na pele (uma cópia da malha da cabeça presa ao esqueleto). Novas opções: bigodinhos de gatinho, brilhinhos, curativo, pintura de fada, arco-íris e rubor forte.
 - 48 modelos CC0 novos (Kenney, Quaternius e KayKit): barraquinhas de feira na praça e na Vila Girassol, fonte, carrinhos, bancos, guarda-sóis e canoa na praia, gazebo e tocos no lago, acampamento no bosque, fardos de feno nos campos, e flores, samambaias e cogumelos espalhados pela natureza.
 - 18 móveis novos (camas, sofá, poltrona, lareira, estantes, plantas, tapetes, quadros) e 18 enfeites novos para a fazenda e as áreas personalizáveis.
+
+**Som**
+- Motor novo em WebAudio: os efeitos tocam a partir de buffers decodificados, com baixa latência e sem clonar `<audio>`, com variação de tom, limite de repetição e pan estéreo por posição. A música passa por um ganho por faixa, então o crossfade funciona no iPhone (o iOS ignora `audio.volume`). O som pausa com a aba escondida e destrava no primeiro toque.
+- Ambiência em camadas: pássaros de dia, grilos à noite, vento, lago, ondas na praia e no barco, chuva e caverna, com volume pelo lugar, pela hora e pelo clima.
+- Passos por terreno: grama, terra, areia, madeira (casa, lojas e píer), pedra (caverna) e água.
+- 70 sons novos (OpenGameArt e Kenney, todos CC0): pá ao plantar, regador, colheita, golpes suaves, espada, picareta na pedra, slime amassando, respingo da linha de pesca, vaca, ovelha, porco e pintinhos no carinho, páginas, moedas, sininhos e fanfarra. Créditos em `game/assets/CREDITS-v17-sons.md`.
 
 **Mundo e correções**
 - Bolsões de chão fechados por árvores e pedras (a auditoria achou 13): quando dá para abrir tirando até 3 árvores ou pedras, eles ganham passagem; os outros viram mato fechado, para nada nascer onde não dá para chegar.
