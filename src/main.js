@@ -5197,6 +5197,8 @@ paintGround = function () {
   const geo = mesh.geometry, pos = geo.attributes.position, uv = new Float32Array(pos.count * 2); for (let i = 0; i < pos.count; i++) { uv[i * 2] = pos.getX(i) / W; uv[i * 2 + 1] = 1 - pos.getZ(i) / H; }
   geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   // normais suaves a partir da altura dos cantos (a malha não é indexada, então computeVertexNormals daria faces chapadas)
+  // margem ondulada: os cantos da beira d'água (altura -0.2) variam um pouco, e a linha onde a água corta o chão deixa de ser escadinha
+  for (let i = 0; i < pos.count; i++) { const y = pos.getY(i); if (Math.abs(y + 0.2) < 0.002) pos.setY(i, -0.2 + (hash2(pos.getX(i), pos.getZ(i), 41) - 0.5) * 0.18); } pos.needsUpdate = true; geo.computeBoundingSphere();
   const hgt = new Map(); for (let i = 0; i < pos.count; i++) hgt.set(pos.getX(i) + ',' + pos.getZ(i), pos.getY(i)); const hAt = (x, z) => hgt.get(x + ',' + z) ?? 0;
   const nrm = new Float32Array(pos.count * 3), v = new THREE.Vector3(); for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), z = pos.getZ(i); v.set(hAt(x - 1, z) - hAt(x + 1, z), 2, hAt(x, z - 1) - hAt(x, z + 1)).normalize(); nrm[i * 3] = v.x; nrm[i * 3 + 1] = v.y; nrm[i * 3 + 2] = v.z; }
   geo.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
