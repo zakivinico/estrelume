@@ -4377,7 +4377,7 @@ let OPENED_POCKETS = 0;
 // e cada luz extra pesa em todos os pixels. Aqui as luzes do jogo viram "fontes" fora da camada da câmera e só
 // lpCount() luzes reais (sempre na cena) recebem cor, força e posição das fontes acesas mais perto de onde a câmera olha.
 const LP = { real: [], src: [], scanT: 0 }, LP_LAYER = 31;
-const lpCount = () => (SET.quality === 'alta' ? 6 : SET.quality === 'media' ? 4 : 2);
+const lpCount = () => 4; // fixo: mudar a quantidade recompilaria todos os shaders
 function lightPoolInit() {
   for (const l of LP.real) scene.remove(l); LP.real = [];
   for (let i = 0; i < lpCount(); i++) { const l = new THREE.PointLight(0xffffff, 0, 1, 2); l.userData.pool = 1; scene.add(l); LP.real.push(l); }
@@ -4395,7 +4395,8 @@ function lightPoolUpdate(dt) {
   for (let i = 0; i < LP.real.length; i++) { const r = LP.real[i], q = pick[i]; if (!q) { r.intensity = 0; continue; } r.position.set(q.x, q.y, q.z); r.color.copy(q.l.color); r.intensity = q.l.intensity; r.distance = q.l.distance; r.decay = q.l.decay; }
 }
 { const base = v14Update; v14Update = function (dt) { base(dt); lightPoolUpdate(dt); }; }
-{ const base = applyQuality; applyQuality = function () { base(); if (ready && LP.real.length !== lpCount()) lightPoolInit(); }; }
+// toda troca de área passa pelo fade: adota na hora as luzes recém-criadas (caverna, salas), antes do próximo quadro
+{ const base = fade; fade = function (mid) { return base(() => { mid(); try { if (LP.real.length) lpScan(); } catch (e) {} }); }; }
 
 // ---------- rosto pintado como textura ----------
 // Uma cópia da malha da cabeça (só os triângulos da frente) recebe UVs projetados de frente, no espaço de bind,
@@ -4579,7 +4580,7 @@ function aeInit() {
   AE.bus = AC.createGain(); AE.bus.gain.value = 1; AE.bus.connect(AC.destination);
   AE.mus = AC.createGain(); AE.mus.gain.value = 1; AE.mus.connect(AC.destination);
   for (const k of MUSN) { try { const src = AC.createMediaElementSource(MUS[k]), g = AC.createGain(); g.gain.value = 0; src.connect(g); g.connect(AE.mus); MUS[k].volume = 1; AE.musG[k] = g; AE.musV[k] = 0; } catch (e) {} }
-  const keys = [...new Set([...SFXN, ...EXTRA_SFX, ...AMB_KEYS, ...Object.values(STEP_SETS).flat()])];
+  const keys = [...new Set([...SFXN, ...EXTRA_SFX])]; // só arquivos que existem (EXTRA_SFX lista ambiência, passos e sons novos)
   Promise.all(keys.map(aeLoadOne)).then(() => { AE.ready = true; });
   document.addEventListener('visibilitychange', () => { try { document.hidden ? AC.suspend() : AC.resume(); } catch (e) {} });
 }
@@ -4622,6 +4623,21 @@ function ambUpdate(dt) {
     if (!a) continue; a.v += (want - a.v) * 0.12; a.g.gain.value = a.v; if (a.v < 0.002 && want === 0) { try { a.src.stop(); } catch (e) {} delete AE.amb[k]; } }
 }
 { const base = v14Update; v14Update = function (dt) { base(dt); ambUpdate(dt); }; }
+// sons novos (CC0, OpenGameArt + Kenney; créditos em game/assets/CREDITS-v17-sons.md)
+const NEW_SFX = { step_grass: 5, step_wood: 5, step_sand: 6, step_stone: 6, step_water: 3, hit_soft_: 3, mine_: 3, swish_: 4, page_: 3, pluck_: 2, pop_b: 2, splash_: 2 };
+for (const [pre, n] of Object.entries(NEW_SFX)) for (let i = 0; i < n; i++) { const st = /^(step_|hit_soft_|mine_)/.test(pre) ? 0 : 1; EXTRA_SFX.push((pre.endsWith('_') || /\d$/.test(pre) ? pre : pre + '_') + (i + st)); }
+EXTRA_SFX.push('dig', 'pour', 'sow', 'woodcut', 'chime', 'newthing', 'fanfare', 'coin_drop', 'squish_01', 'squish_03', 'squish_05', 'squish_07', 'ani_moo', 'ani_baa', 'ani_squeal', 'ani_peeps', 'ani_meow', 'ani_bark', 'ani_whinny', ...AMB_KEYS);
+for (const st of ['grass', 'wood', 'stone', 'sand', 'water']) STEP_SETS[st] = EXTRA_SFX.filter((k) => k.startsWith('step_' + st + '_'));
+STEP_SETS.dirt = ['step00', 'step02', 'step04', 'step06', 'step08'];
+// variações extras só no caminho WebAudio (o caminho antigo só conhece os arquivos originais)
+const ALT2 = { pop: ['pop', 'pluck_1', 'pluck_2', 'pop_b_1', 'pop_b_2'], hit: ['hit', 'hit2', 'impact', 'hit_soft_0', 'hit_soft_1', 'hit_soft_2'], swing: ['swing', 'swish_1', 'swish_2', 'swish_3', 'swish_4'], bookFlip2: ['bookFlip2', 'page_1', 'page_2', 'page_3'], coin: ['coin', 'handleCoins', 'coin_drop'], quest: ['quest', 'success', 'chime'], chop: ['chop', 'woodcut'], secret: ['secret', 'newthing'], mine: ['mine_0', 'mine_1', 'mine_2'], squish: ['squish_01', 'squish_03', 'squish_05', 'squish_07'], splash: ['splash_1', 'splash_2'], plant: ['dig', 'sow'] };
+Object.assign(SFXV, { dig: 0.75, pour: 0.6, sow: 0.7, pluck_1: 0.7, pluck_2: 0.7, pop_b_1: 0.55, pop_b_2: 0.55, hit_soft_0: 0.8, hit_soft_1: 0.8, hit_soft_2: 0.8, mine_0: 0.7, mine_1: 0.7, mine_2: 0.7, swish_1: 0.5, swish_2: 0.5, swish_3: 0.5, swish_4: 0.5, page_1: 0.7, page_2: 0.7, page_3: 0.7, ani_moo: 0.5, ani_baa: 0.5, ani_squeal: 0.45, ani_peeps: 0.5, squish_01: 0.65, squish_03: 0.65, squish_05: 0.65, squish_07: 0.65, splash_1: 0.6, splash_2: 0.6, woodcut: 0.6, chime: 0.55, newthing: 0.7, fanfare: 0.75, coin_drop: 0.55 });
+{ const base = sfx; sfx = function (k, x, z) { if (AE.ready && ALT2[k]) { const kk = pick(ALT2[k].filter((q) => AE.buf[q] || SFXA[q])); if (kk) { if (k === 'plant') tone(440, 0.09, 'triangle', 0.08, 160); if (!aePlay(kk, (SFXV[kk] || 0.9) * SET.sfxVol, x, z)) base(k, x, z); return; } } return base(k, x, z); }; }
+// gatilhos novos: bichos ao fazer carinho, slime amassando, picareta na pedra, linha caindo na água
+{ const base = petCritter; petCritter = function (c) { base(c); const k = { cow: 'ani_moo', sheep: 'ani_baa', pig: 'ani_squeal', chicken: 'ani_peeps', duck: 'ani_peeps', alpaca: 'ani_baa' }[c.kind]; if (k) setTimeout(() => sfx(k, c.x, c.z), 120); }; }
+{ const base = damageSlime; damageSlime = function (s2, ...a) { const r = base(s2, ...a); try { if (s2) sfx('squish', s2.x, s2.z); } catch (e) {} return r; }; }
+{ const base = mineAt; mineAt = function (tx, ty) { const r = base(tx, ty); if (r) sfx('mine'); return r; }; }
+{ const base = startFishing; startFishing = function (x, y) { base(x, y); setTimeout(() => sfx('splash', x + 0.5, y + 0.5), 520); }; }
 { const base = sfxP; sfxP = function (k, vol = 1, rate) { if (!AE.ready || SET.sfxVol <= 0 || !AE.buf[k]) return base(k, vol, rate); const b = AE.buf[k], src = AC.createBufferSource(), g = AC.createGain(); src.buffer = b; src.playbackRate.value = rate || 0.88 + rand() * 0.24; g.gain.value = clamp((SFXV[k] || 0.9) * SET.sfxVol * vol, 0, 1.5); src.connect(g); g.connect(AE.bus); src.start(); }; }
 
 // ---------- pré-compila os shaders de todas as áreas no carregamento (sem engasgo na primeira visita) ----------
