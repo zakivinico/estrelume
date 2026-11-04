@@ -4566,6 +4566,64 @@ function groundUpdate(dt) { groundT -= dt; if (groundT > 0 || !GCV.dirty) return
 { const base = v14Update; v14Update = function (dt) { base(dt); groundUpdate(dt); }; }
 { const base = buildWorld; buildWorld = function () { const r = base(); try { paintGround(); } catch (e) { console.error(e); } return r; }; }
 
+// ---------- áudio v17: WebAudio de verdade (baixa latência, funciona no iPhone), ambiência e passos por terreno ----------
+// Efeitos: buffers decodificados uma vez, com variação de tom, limite de repetição e pan estéreo por posição.
+// Música: cada faixa passa por um GainNode (no iOS o audio.volume é ignorado, então o crossfade não funcionava).
+const AE = { buf: {}, ready: false, loading: false, bus: null, mus: null, musG: {}, musV: {}, last: {}, amb: {}, ambV: {} };
+const AMB_KEYS = ['amb_day', 'amb_night', 'amb_waves', 'amb_water', 'amb_cave', 'amb_rain', 'amb_wind'];
+const STEP_SETS = { grass: [], dirt: [], sand: [], wood: [], stone: [], water: [] };
+const EXTRA_SFX = []; // preenchido pela lista de sons novos (abaixo)
+function aeLoadOne(k) { return fetch('assets/sfx/' + k + '.ogg').then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status))).then((ab) => new Promise((res, rej) => AC.decodeAudioData(ab, res, rej))).then((b) => { AE.buf[k] = b; }).catch(() => {}); }
+function aeInit() {
+  if (!AC || AE.loading) return; AE.loading = true;
+  AE.bus = AC.createGain(); AE.bus.gain.value = 1; AE.bus.connect(AC.destination);
+  AE.mus = AC.createGain(); AE.mus.gain.value = 1; AE.mus.connect(AC.destination);
+  for (const k of MUSN) { try { const src = AC.createMediaElementSource(MUS[k]), g = AC.createGain(); g.gain.value = 0; src.connect(g); g.connect(AE.mus); MUS[k].volume = 1; AE.musG[k] = g; AE.musV[k] = 0; } catch (e) {} }
+  const keys = [...new Set([...SFXN, ...EXTRA_SFX, ...AMB_KEYS, ...Object.values(STEP_SETS).flat()])];
+  Promise.all(keys.map(aeLoadOne)).then(() => { AE.ready = true; });
+  document.addEventListener('visibilitychange', () => { try { document.hidden ? AC.suspend() : AC.resume(); } catch (e) {} });
+}
+{ const base = audioInit; audioInit = function () { base(); try { if (AC && AC.state === 'suspended') AC.resume(); aeInit(); } catch (e) {} }; }
+// destrava o áudio no primeiro toque/tecla (Safari exige gesto)
+for (const ev of ['pointerdown', 'keydown', 'touchend']) addEventListener(ev, () => { try { audioInit(); } catch (e) {} }, { once: true, passive: true });
+const SFX_VAR = /hit|pick|chop|swing|pop|step|jump|impact|sword|coin|dig|splash|squish|cluck|moo|baa|quack/;
+function aePlay(k, vol, x, z) {
+  const b = AE.buf[k]; if (!b) return false; const now = AC.currentTime; if (AE.last[k] && now - AE.last[k] < 0.035) return true; AE.last[k] = now;
+  const src = AC.createBufferSource(); src.buffer = b; if (SFX_VAR.test(k)) src.playbackRate.value = 0.9 + rand() * 0.2;
+  const g = AC.createGain(); let v = vol, node = g;
+  if (x !== undefined) { const dx = x - camLook.x, dz = z - camLook.z, d = Math.hypot(dx, dz); v *= 1 / (1 + d / 9); if (d > 30) return true; if (AC.createStereoPanner) { const pn = AC.createStereoPanner(); pn.pan.value = clamp(dx / 12, -0.85, 0.85); g.connect(pn); node = pn; } }
+  g.gain.value = clamp(v, 0, 1.5); src.connect(g); node.connect(AE.bus); src.start(); return true;
+}
+function stepSet() { if (P.boat) return null; if (mode === 'in' || mode === 'shop') return 'wood'; if (mode === 'cave') return 'stone'; const t = tAt(Math.floor(P.x), Math.floor(P.z)); return t === SA ? 'sand' : t === PA ? 'dirt' : t === DK ? 'wood' : t === WA ? 'water' : 'grass'; }
+{ const base = sfx; sfx = function (k, x, z) {
+    if (!AE.ready || SET.sfxVol <= 0) return base(k);
+    if (k === 'step') { const st = stepSet(), set = st && STEP_SETS[st]; if (set && set.length) { const kk = pick(set); return void aePlay(kk, 0.32 * SET.sfxVol); } }
+    let kk = k; if (kk === 'water') { tone(700, 0.18, 'triangle', 0.06, -450); kk = AE.buf.pour ? 'pour' : 'metalPot1'; } if (kk === 'plant') { tone(440, 0.09, 'triangle', 0.08, 160); kk = AE.buf.dig ? 'dig' : 'cloth2'; } if (kk === 'flip') kk = 'switch'; if (SFXALT[kk]) kk = pick(SFXALT[kk]);
+    if (!aePlay(kk, (SFXV[kk] || 0.9) * SET.sfxVol, x, z)) base(k); }; }
+// música com GainNode (mesma lógica de escolha da faixa)
+{ const base = updateMusic; updateMusic = function (dt) {
+    if (!AE.mus || !Object.keys(AE.musG).length) return base(dt);
+    const tg = musicTarget(), mv = SET.musVol;
+    for (const k of MUSN) { const a = MUS[k], g = AE.musG[k]; if (!g) continue; const want = k === tg ? mv : 0; if (want > 0 && a.paused) { const pr = a.play(); if (pr) pr.catch(() => {}); }
+      let v = AE.musV[k] + Math.sign(want - AE.musV[k]) * dt * 0.6; v = clamp(v, 0, 1); if (Math.abs(v - want) < 0.02) v = want; AE.musV[k] = v; g.gain.value = v * v; if (v === 0 && !a.paused && want === 0) a.pause(); } }; }
+// ambiência em camadas, cada uma com volume-alvo pelo lugar, hora e clima
+function ambTargets() {
+  const T = {}; if (titleOn || !AE.ready) return T; const h = hourNow(), night = h >= 19.5 || h < 6.3, out = mode === 'out';
+  if (out) { const nearBeach = clamp(1 - (BEACHY - P.z) / 10, 0, 1), lake = clamp(1 - (Math.hypot((P.x - LAKE.x) / 1.25, P.z - LAKE.y) - 9) / 8, 0, 1);
+    T.amb_day = night ? 0 : 0.22 * (1 - nearBeach * 0.6); T.amb_night = night ? 0.22 : 0; T.amb_waves = 0.35 * nearBeach + (P.boat ? 0.3 : 0); T.amb_water = 0.22 * lake; T.amb_wind = P.boat || P.z > H - 12 ? 0.18 : 0.05; T.amb_rain = 0.4 * (WX.k || 0); }
+  if (mode === 'cave') T.amb_cave = 0.32;
+  return T;
+}
+let ambT = 0;
+function ambUpdate(dt) {
+  if (!AE.ready || !AC) return; ambT -= dt; if (ambT > 0) return; ambT = 0.1; const T = ambTargets(), sv = SET.sfxVol;
+  for (const k of AMB_KEYS) { const b = AE.buf[k]; if (!b) continue; const want = (T[k] || 0) * sv; let a = AE.amb[k];
+    if (!a && want > 0.005) { const src = AC.createBufferSource(); src.buffer = b; src.loop = true; const g = AC.createGain(); g.gain.value = 0; src.connect(g); g.connect(AE.bus); src.start(0, rand() * b.duration); a = AE.amb[k] = { src, g, v: 0 }; }
+    if (!a) continue; a.v += (want - a.v) * 0.12; a.g.gain.value = a.v; if (a.v < 0.002 && want === 0) { try { a.src.stop(); } catch (e) {} delete AE.amb[k]; } }
+}
+{ const base = v14Update; v14Update = function (dt) { base(dt); ambUpdate(dt); }; }
+{ const base = sfxP; sfxP = function (k, vol = 1, rate) { if (!AE.ready || SET.sfxVol <= 0 || !AE.buf[k]) return base(k, vol, rate); const b = AE.buf[k], src = AC.createBufferSource(), g = AC.createGain(); src.buffer = b; src.playbackRate.value = rate || 0.88 + rand() * 0.24; g.gain.value = clamp((SFXV[k] || 0.9) * SET.sfxVol * vol, 0, 1.5); src.connect(g); g.connect(AE.bus); src.start(); }; }
+
 // ---------- pré-compila os shaders de todas as áreas no carregamento (sem engasgo na primeira visita) ----------
 function precompileAll() {
   const hidden = []; scene.traverse((o) => { if (!o.visible && !o.isLight) { hidden.push(o); o.visible = true; } });
