@@ -4958,16 +4958,19 @@ shadowThrottle = function (dt) { if (!renderer.shadowMap.enabled) return; if (SE
   if (SHADOW_T.t <= 0 || moved > (cheap ? 0.8 : 0.6) || (mode !== 'out' && !cheap)) { renderer.shadowMap.needsUpdate = true; SHADOW_T.t = cheap ? 1 / 10 : 1 / 20; SHADOW_T.x = P.x; SHADOW_T.z = P.z; } };
 
 // arco na mão durante a luta (e o machado de duelo também aparece)
-{ const base = heldObj; heldObj = function (k) { if (k !== '#bow') return base(k); const g = new THREE.Group(), wood = lam('#a8693f'), lt = lam('#e9b980');
-  const limb = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.022, 6, 18, Math.PI * 0.86), wood); limb.rotation.z = Math.PI / 2 + Math.PI * 0.07; limb.position.x = -0.12; g.add(limb);
-  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.11, 8), lt); grip.position.set(-0.42, 0, 0); g.add(grip);
-  const a = Math.PI * 0.43, str = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 2 * 0.3 * Math.sin(a), 4), lam('#fff6e6')); str.position.x = -0.12 - 0.3 * Math.cos(a); g.add(str);
-  g.position.x = 0.36; const o = new THREE.Group(); o.add(g); o.rotation.set(0, Math.PI / 2, 0); return o; }; }
+{ const base = heldObj; heldObj = function (k) { if (k !== '#bow') return base(k); const g = new THREE.Group(), wood = lam('#a8693f'), lt = lam('#e9b980'), R = 0.32, A = Math.PI * 0.86;
+  // arco no plano XY, pontas ao longo do eixo Y da mão (o mesmo do cabo do machado), empunhadura na origem
+  const limb = new THREE.Mesh(new THREE.TorusGeometry(R, 0.022, 6, 18, A), wood); limb.rotation.z = -A / 2; limb.position.x = -R; g.add(limb);
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.034, 0.12, 8), lt); g.add(grip);
+  const str = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 2 * R * Math.sin(A / 2), 4), lam('#fff6e6')); str.position.x = R * Math.cos(A / 2) - R; g.add(str);
+  for (const sy of [-1, 1]) { const tip = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 5), lt); tip.position.set(R * Math.cos(A / 2) - R, sy * R * Math.sin(A / 2), 0); g.add(tip); }
+  return g; }; }
 { const base = updateHand; updateHand = function () { const k = player && fighting() && mode === 'out' && !P.bike ? pwSel() : 'espada'; if (k === 'espada') return base();
   player.setWeapon(null); const want = k === 'arco' ? '#bow' : '#axe'; if (want === handKey) return; if (handProp) handProp.parent.remove(handProp); handProp = null; handKey = want;
   if (player.hand) { const g = heldObj(want); player.obj.updateMatrixWorld(true); const inv = 1 / player.hand.getWorldScale(new THREE.Vector3()).x; g.scale.multiplyScalar(inv * (want === '#axe' ? 1.15 : 0.95)); player.hand.add(g); handProp = g; } }; }
 { let last = ''; const base = v14Update; v14Update = function (dt) { base(dt); const k = (fighting() ? 1 : 0) + pwSel() + S.slot; if (k !== last) { last = k; try { updateHand(); } catch (e) {} } }; }
 
+{ const base = spaceHint; spaceHint = function () { if (fighting() && mode === 'out' && !P.boat && TOOLS[S.slot].id === 'espada') { const k = pwSel(); if (k !== 'espada') return { ok: true, t: k === 'arco' ? 'Atirar com o arco' : 'Golpear com o machado' }; } return base(); }; }
 // sons novos da v19: cacarejo, quá-quá e murmúrio de vila (CC0, créditos em game/assets/CREDITS-v17-sons.md)
 AMB_KEYS.push('amb_village'); EXTRA_SFX.push('ani_cluck_1', 'ani_cluck_2', 'ani_cluck_3', 'ani_quack_1', 'ani_quack_2', 'amb_village');
 SFXALT.cluck = ['ani_cluck_1', 'ani_cluck_2', 'ani_cluck_1', 'ani_cluck_2', 'ani_cluck_3']; SFXALT.quack = ['ani_quack_1', 'ani_quack_2'];
