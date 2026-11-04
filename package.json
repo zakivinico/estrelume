@@ -1,17 +1,17 @@
 {
-  "name": "v3d",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
+  "name": "estrelume",
+  "version": "16.0.0",
+  "private": true,
+  "description": "Estrelume — jogo cozy em 3D no navegador (three.js)",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "bash build.sh",
+    "serve": "python3 -m http.server 8000 --directory game",
+    "dev": "bash build.sh && python3 -m http.server 8000 --directory game",
+    "opt": "node tools/opt.mjs",
+    "glb2js": "node tools/glb2js.mjs",
+    "kraken": "node tools/kraken.mjs"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@gltf-transform/cli": "^4.5.1",
     "@gltf-transform/core": "^4.5.1",
