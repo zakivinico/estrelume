@@ -1478,6 +1478,7 @@ function applyCloth(obj, tint) {
     const U = m.material.userData.hsl; U.h.value = t.h || 0; U.s.value = t.s ?? 1; U.l.value = t.l ?? 1; });
 }
 function attachHead(obj, mixer, id) {
+  id = id || 'none';
   if (obj.userData.acc) { if (obj.userData.acc.parent) obj.userData.acc.parent.remove(obj.userData.acc); obj.userData.acc = null; }
   if (!id.startsWith('__hair__')) obj.traverse((n) => { if (/(_Hat|_Helmet|_Hood)$/.test(n.name || '')) n.visible = /_Hood$/.test(n.name) ? id === 'none' : false; });
   if (!id || id === 'none') return; let head = null, hm = null;
@@ -2019,7 +2020,7 @@ function openCreator_v13(fromTitle) {
   if (crTab === 'cabelo') body = hairTab(crLook, chips);
   if (crTab === 'roupa') body = `${fromTitle ? '' : `<div class="crl">Roupa</div><div class="chips">${outs.map(([k, n]) => `<button class="btn chip ${(S.outfit || genderBase()) === k ? 'on' : ''}" data-ou="${k}">${n}</button>`).join('')}</div>`}<div class="crl">Cor da roupa</div><div class="chips">${chips(CLOTH, 'cl', 'cl', crLook.tint, (v) => v.c || '#3f9a4a')}${cpick('cl', crLook.tint)}</div><div class="crl">Acessório</div><div class="chips">${chips(ACCS, 'ac', 'ac', crLook.acc)}</div>`;
   if (crTab === 'rosto') body = faceTab(crLook);
-  if (crTab === 'acess') body = accTab(crLook);
+  if (crTab === 'acess') body = accTab(crLook, fromTitle);
   if (crTab === 'estilo') body = `<div class="crl">Rastro ao andar</div><div class="chips">${chips(TRAILS, 'tr', 'tr', crLook.trail)}</div>`;
   openModal(`<h2>👤 ${fromTitle ? 'Crie sua personagem' : 'Personagem'}</h2><div class="cr"><div class="cr3d" id="cr3d"></div><div class="crf">
    <label class="crl">Nome <input id="crName" maxlength="14" value="${escapeHtml(crName)}" placeholder="Como você se chama?"></label>
@@ -3845,6 +3846,8 @@ function makeHairPiece(style, col, mc, vol) {
     g = new THREE.Group(); const h = cloneM(style); h.traverse((o) => { if (o.isMesh) { o.material = m; o.castShadow = true; } });
     const sz = new THREE.Box3().setFromObject(h).getSize(new THREE.Vector3()), f = HAIR_FIT[style] || [0, 0, 0, 1], k = (0.74 * f[3]) / Math.max(0.01, sz.x);
     h.scale.multiplyScalar(k); h.position.set(f[0], -sz.y * k * (f[4] ?? 0.8) + f[1], f[2]); g.add(h);
+    // mechas: o modelo é uma peça só, então pintamos faixas por cor de vértice
+    if (mc) h.traverse((o) => { if (!o.isMesh) return; o.geometry = o.geometry.clone(); o.geometry.computeBoundingBox(); const p = o.geometry.attributes.position, bb = o.geometry.boundingBox, w = Math.max(1e-4, bb.max.x - bb.min.x), cA = new THREE.Color(col || '#7a4a30'), cB = new THREE.Color(mc), arr = new Float32Array(p.count * 3); for (let i = 0; i < p.count; i++) { const c = Math.floor(((p.getX(i) - bb.min.x) / w) * 9) % 3 === 1 ? cB : cA; arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b; } o.geometry.setAttribute('color', new THREE.BufferAttribute(arr, 3)); o.material = new THREE.MeshLambertMaterial({ vertexColors: true }); });
   } else g = makeHairPiece_v13(style, col);
   if (mc) { const mm = lam(mc); let i = 0; g.traverse((o) => { if (o.isMesh && o.material === m && i++ % 3 === 1) o.material = mm; }); }
   const vs = (HVOL[vol] || HVOL.n).s; g.scale.setScalar(vs); return g;
@@ -3909,7 +3912,7 @@ renderer.domElement.addEventListener('webglcontextrestored', () => { try { apply
 const PERF = { t: 0, n: 0, slow: 0, told: false };
 function perfUpdate(dt) { if (titleOn || modalOpen()) return; PERF.t += dt; PERF.n++; if (PERF.t < 4) return; const fps = PERF.n / PERF.t; PERF.t = 0; PERF.n = 0; if (fps < 28) PERF.slow++; else PERF.slow = 0; if (PERF.slow >= 2 && SET.quality !== 'baixa' && !SET.qLock) { SET.quality = SET.quality === 'alta' ? 'media' : 'baixa'; saveSettings(); applyQuality(); PERF.slow = 0; if (!PERF.told) { PERF.told = true; toast(`Ajustei a qualidade gráfica para <b>${SET.quality === 'media' ? 'Média' : 'Baixa'}</b> para o jogo ficar mais leve. Você pode mudar em Configurações.`); } } }
 const SHADOW_T = { t: 0, x: 0, z: 0 };
-function shadowThrottle(dt) { if (!renderer.shadowMap.enabled) return; renderer.shadowMap.autoUpdate = false; SHADOW_T.t -= dt; const moved = Math.hypot(P.x - SHADOW_T.x, P.z - SHADOW_T.z); if (SHADOW_T.t <= 0 || moved > 0.6 || mode !== 'out') { renderer.shadowMap.needsUpdate = true; SHADOW_T.t = 1 / 20; SHADOW_T.x = P.x; SHADOW_T.z = P.z; } }
+function shadowThrottle(dt) { if (!renderer.shadowMap.enabled) return; if (SET.quality === 'alta') { renderer.shadowMap.autoUpdate = true; return; } renderer.shadowMap.autoUpdate = false; SHADOW_T.t -= dt; const moved = Math.hypot(P.x - SHADOW_T.x, P.z - SHADOW_T.z); if (SHADOW_T.t <= 0 || moved > 0.6 || mode !== 'out') { renderer.shadowMap.needsUpdate = true; SHADOW_T.t = 1 / 20; SHADOW_T.x = P.x; SHADOW_T.z = P.z; } }
 function v14Update(dt) { shadowThrottle(dt); if (player) slotAnim(player.obj, gtime); pvpUpdate(dt); perfUpdate(dt); seaUpdate(dt); }
 
 /* ---------- v14b: palco com zoom no rosto, enquadramento preciso e criador mais divertido ---------- */
@@ -3937,7 +3940,7 @@ function openCreator(fromTitle) {
   openCreator_v13(fromTitle); const st = document.querySelector('.cr3d'); if (!st || !crLook) return;
   for (const [a, k] of [['bc', 'bc'], ['gc', 'gc']]) document.querySelectorAll(`[data-${a}]`).forEach((el) => (el.onclick = () => { crLook[k] = el.dataset[a]; sfx('accept'); openCreator(fromTitle); setTimeout(scPower, 60); }));
   document.querySelectorAll('[data-as]').forEach((el) => (el.onclick = () => { accSlot = el.dataset.as; sfx('switch'); openCreator(fromTitle); }));
-  for (const a of ['bk', 'wa', 'acc_c', 'acc_p', 'glc', 'glp', 'bkc', 'bkp', 'wac', 'wap', 'gl']) document.querySelectorAll(`[data-${a}]`).forEach((el) => (el.onclick = () => { crLook[a] = el.dataset[a]; sfx('accept'); openCreator(fromTitle); setTimeout(scPower, 60); }));
+  for (const a of ['bk', 'wa', 'acc_c', 'acc_p', 'glc', 'glp', 'bkc', 'bkp', 'wac', 'wap', 'gl']) document.querySelectorAll(`[data-${a}]`).forEach((el) => (el.onclick = () => { if (el.classList.contains('locked')) { sfx('cancel'); toast('🔒 Isso fica à venda no <b>Ateliê da Fifi</b> (Vila Girassol).'); return; } crLook[a] = el.dataset[a]; sfx('accept'); openCreator(fromTitle); setTimeout(scPower, 60); }));
   const head = crTab === 'rosto' || crTab === 'cabelo' || (crTab === 'acess' && (accSlot === 'cabeca' || accSlot === 'rosto')); if (SC.zoomUser) SC.focus = SC.zoomUser; else SC.focus = head ? 'head' : 'body'; scFit();
   st.insertAdjacentHTML('beforeend', `<div class="crtools"><button class="btn chip ${SC.focus === 'head' ? 'on' : ''}" id="crZh">Rosto</button><button class="btn chip ${SC.focus !== 'head' ? 'on' : ''}" id="crZb">Corpo inteiro</button><button class="btn chip gold" id="crRnd">Aleatório</button></div>`);
   $('crZh').onclick = () => { SC.zoomUser = 'head'; SC.focus = 'head'; scFit(); sfx('switch'); $('crZh').classList.add('on'); $('crZb').classList.remove('on'); };
@@ -4161,7 +4164,8 @@ function patTex(pat, col) {
   const t = new THREE.CanvasTexture(cv); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
   return (PAT_CACHE[key] = t);
 }
-const patMat = (col, pat, rep = 1, glow = 0) => { const t = patTex(pat || 'lisa', col).clone(); t.needsUpdate = true; t.repeat.set(rep, rep); t.offset.set(0.27, 0.27); return new THREE.MeshLambertMaterial({ map: t, emissive: glow ? col : '#000000', emissiveIntensity: glow }); };
+const PAT_TEX = {};
+const patMat = (col, pat, rep = 1, glow = 0) => { const key = (pat || 'lisa') + col + '|' + rep; let t = PAT_TEX[key]; if (!t) { t = PAT_TEX[key] = patTex(pat || 'lisa', col).clone(); t.needsUpdate = true; t.repeat.set(rep, rep); t.offset.set(0.27, 0.27); } return new THREE.MeshLambertMaterial({ map: t, emissive: glow ? col : '#000000', emissiveIntensity: glow }); };
 
 // Regiões do corpo e o que cabe em cada uma
 const ACC_SLOTS = { cabeca: { n: 'Cabeça', key: 'acc' }, rosto: { n: 'Rosto', key: 'gl' }, costas: { n: 'Costas', key: 'bk' }, cintura: { n: 'Cintura', key: 'wa' } };
@@ -4231,6 +4235,7 @@ const ACC_TINT = { hex: null, pat: 'lisa' };
 {
   const base = makeAcc;
   makeAcc = function (k) {
+    k = k || 'none';
     if (!['boina', 'gato', 'tiara'].includes(k)) {
       const o = base(k);
       if (!k.startsWith('__hair__') && (ACC_TINT.hex || ACC_TINT.pat !== 'lisa')) o.traverse((m) => { if (m.isMesh && m.material && m.material.color) { const glowy = m.material.emissive && m.material.emissive.r > 0.2; const c = ACC_TINT.hex && !glowy ? ACC_TINT.hex : '#' + m.material.color.getHexString(); m.material = patMat(c, ACC_TINT.pat, 0.8, m.material.emissiveIntensity && m.material.emissive && m.material.emissive.r > 0 ? 0.3 : 0); } });
@@ -4275,16 +4280,20 @@ function accAnchors(obj, ck) {
   for (const r of ['rosto', 'costas', 'cintura']) { const f = fit[r]; A[r].p.add(new THREE.Vector3(f[0] * hw, f[1] * hw, f[2] * hw)); A[r].s *= f[3]; }
   // o cinto abraça a cintura inteira (centrado), os outros itens ficam de lado
   A.cinturaFull = { bone: A.cintura.bone, p: new THREE.Vector3((bb.min.x + bb.max.x) / 2, bb.min.y + (bb.max.y - bb.min.y) * 0.12, (bb.min.z + bb.max.z) / 2), s: (bb.max.x - bb.min.x) * 1.05 };
-  return (ACC_ANCH[ck] = A);
+  // guarda cada âncora no espaço local do osso: assim não depende da pose nem do tamanho da cabeça (lk.hd)
+  const L = {};
+  for (const r of ['rosto', 'costas', 'cintura', 'cinturaFull']) { const a = A[r], bone = bones[a.bone]; if (!bone) continue; const d = new THREE.Object3D(); obj.add(d); d.position.copy(a.p); d.scale.setScalar(a.s); d.updateMatrixWorld(true); bone.attach(d); L[r] = { bone: a.bone, pos: d.position.clone(), quat: d.quaternion.clone(), scl: d.scale.clone() }; bone.remove(d); }
+  return (ACC_ANCH[ck] = L);
 }
+// libera geometrias e materiais dos acessórios de região (as texturas de estampa ficam em cache)
+function disposeSlots(o) { for (const g of o.userData.slotG || []) { if (g.parent) g.parent.remove(g); g.traverse((m) => { if (!m.isMesh) return; if (m.geometry !== starGeo) m.geometry.dispose(); m.material.dispose(); }); } o.userData.slotG = []; }
 // Prende óculos, costas e cintura nos ossos da personagem (personagens humanas h_* ficam de fora)
 function equipSlots(obj, lk) {
   if (!obj) return; const ck = String(obj.userData.ck || 'rogue'); if (ck.startsWith('h_')) return;
-  for (const g of obj.userData.slotG || []) if (g.parent) g.parent.remove(g);
-  obj.userData.slotG = [];
+  disposeSlots(obj);
   const A = accAnchors(obj, ck); if (!A) return;
-  const bones = {}; obj.traverse((o) => { if (/^(head|chest|spine|hips)$/.test(o.name) && !bones[o.name]) bones[o.name] = o; }); obj.updateMatrixWorld(true);
-  const put = (slot, g, full) => { const a = full ? A.cinturaFull : A[slot], bone = bones[a.bone]; if (!bone) return; obj.add(g); g.position.copy(a.p); g.scale.setScalar(a.s); g.updateMatrixWorld(true); bone.attach(g); obj.userData.slotG.push(g); };
+  const bones = {}; obj.traverse((o) => { if (/^(head|chest|spine|hips)$/.test(o.name) && !bones[o.name]) bones[o.name] = o; });
+  const put = (slot, g, full) => { const a = full ? A.cinturaFull : A[slot], bone = a && bones[a.bone]; if (!bone) return; bone.add(g); g.position.copy(a.pos); g.quaternion.copy(a.quat); g.scale.copy(a.scl); obj.userData.slotG.push(g); };
   const col = (k) => accCol(lk[k]);
   if (lk.gl && lk.gl !== 'none') put('rosto', makeGlasses3D(lk.gl, col('glc') || (GLCOL[lk.gc] && GLCOL[lk.gc][1]) || '#3a2d4a', lk.glp));
   if (lk.bk && lk.bk !== 'none') put('costas', makeBackAcc(lk.bk, col('bkc') || '#ff8fb8', lk.bkp));
@@ -4294,15 +4303,33 @@ function equipSlots(obj, lk) {
 function slotAnim(obj, t) { for (const g of (obj && obj.userData.slotG) || []) g.traverse((m) => { if (m.userData.flap) m.rotation.y = m.userData.flap * (-0.5 - Math.sin(t * 9) * 0.25); }); }
 // Aba "Acessórios" do criador de personagem
 let accSlot = 'cabeca';
-function accTab(lk) {
-  const items = (T, key, cur) => Object.entries(T).map(([k, v]) => `<button class="btn chip ${cur === k ? 'on' : ''}" data-${key}="${k}">${typeof v == 'string' ? v : v.n}</button>`).join('');
+function accTab(lk, fromTitle) {
+  const own = (cat, k) => (fromTitle ? (WARD_FREE[cat] || []).includes(k) : owns(cat, k));
+  const items = (T, key, cur, cat) => Object.entries(T).map(([k, v]) => { const ok = own(cat, k); return `<button class="btn chip ${cur === k ? 'on' : ''} ${ok ? '' : 'locked'}" data-${key}="${k}" ${ok ? '' : 'title="Compre no Ateliê da Fifi"'}>${typeof v == 'string' ? v : v.n}${ok ? '' : ' 🔒'}</button>`; }).join('');
   const cols = (key, cur) => Object.entries(ACC_COLS).map(([k, c]) => `<button class="btn chip sw ${cur === k ? 'on' : ''}" data-${key}="${k}" title="${k}"><i style="background:${c}"></i></button>`).join('') + cpick(key, cur);
   const pats = (key, cur) => Object.entries(PATTERNS).map(([k, n]) => `<button class="btn chip pat ${(cur || 'lisa') === k ? 'on' : ''}" data-${key}="${k}"><i style="background-image:url(${patTex(k, '#ff8fb8').image.toDataURL()});background-size:12px;image-rendering:pixelated"></i>${n}</button>`).join('');
   const tabs = `<div class="slotsel">${Object.entries(ACC_SLOTS).map(([k, s]) => `<button class="btn ctab ${accSlot === k ? 'on' : ''}" data-as="${k}">${s.n}</button>`).join('')}</div>`;
-  if (accSlot === 'cabeca') return tabs + `<div class="crl">Cabeça</div><div class="chips">${items(Object.fromEntries(Object.entries(ACCS).map(([k, v]) => [k, v.n])), 'ac', lk.acc)}</div><div class="crl">Cor</div><div class="chips">${cols('acc_c', lk.acc_c)}</div><div class="crl">Estampa pixel</div><div class="chips">${pats('acc_p', lk.acc_p)}</div>`;
-  if (accSlot === 'rosto') return tabs + `<div class="crl">Óculos</div><div class="chips">${items(ACC_ITEMS.rosto, 'gl', lk.gl || 'none')}</div><div class="crl">Cor da armação</div><div class="chips">${cols('glc', lk.glc)}</div><div class="crl">Estampa pixel</div><div class="chips">${pats('glp', lk.glp)}</div>`;
-  if (accSlot === 'costas') return tabs + `<div class="crl">Costas</div><div class="chips">${items(ACC_ITEMS.costas, 'bk', lk.bk || 'none')}</div><div class="crl">Cor</div><div class="chips">${cols('bkc', lk.bkc)}</div><div class="crl">Estampa pixel</div><div class="chips">${pats('bkp', lk.bkp)}</div>`;
-  return tabs + `<div class="crl">Cintura</div><div class="chips">${items(ACC_ITEMS.cintura, 'wa', lk.wa || 'none')}</div><div class="crl">Cor</div><div class="chips">${cols('wac', lk.wac)}</div><div class="crl">Estampa pixel</div><div class="chips">${pats('wap', lk.wap)}</div>`;
+  if (accSlot === 'cabeca') return tabs + `<div class="crl">Cabeça</div><div class="chips">${items(Object.fromEntries(Object.entries(ACCS).map(([k, v]) => [k, v.n])), 'ac', lk.acc, 'ac')}</div><div class="crl">Cor</div><div class="chips">${cols('acc_c', lk.acc_c)}</div><div class="crl">Estampa pixel</div><div class="chips">${pats('acc_p', lk.acc_p)}</div>`;
+  if (accSlot === 'rosto') return tabs + `<div class="crl">Óculos</div><div class="chips">${items(ACC_ITEMS.rosto, 'gl', lk.gl || 'none', 'a_rosto')}</div><div class="crl">Cor da armação</div><div class="chips">${cols('glc', lk.glc)}</div><div class="crl">Estampa pixel</div><div class="chips">${pats('glp', lk.glp)}</div>`;
+  if (accSlot === 'costas') return tabs + `<div class="crl">Costas</div><div class="chips">${items(ACC_ITEMS.costas, 'bk', lk.bk || 'none', 'a_costas')}</div><div class="crl">Cor</div><div class="chips">${cols('bkc', lk.bkc)}</div><div class="crl">Estampa pixel</div><div class="chips">${pats('bkp', lk.bkp)}</div>`;
+  return tabs + `<div class="crl">Cintura</div><div class="chips">${items(ACC_ITEMS.cintura, 'wa', lk.wa || 'none', 'a_cintura')}</div><div class="crl">Cor</div><div class="chips">${cols('wac', lk.wac)}</div><div class="crl">Estampa pixel</div><div class="chips">${pats('wap', lk.wap)}</div>`;
+}
+// "Aleatório" também sorteia óculos, costas, cintura, cores e estampas (e zera a cor antiga de óculos, sem interface)
+{
+  const base = randLook;
+  randLook = function (fromTitle) {
+    base(fromTitle);
+    const pk = (r) => { const ks = Object.keys(ACC_ITEMS[r]).filter((k) => (fromTitle ? (WARD_FREE['a_' + r] || []).includes(k) : owns('a_' + r, k))); return pick(ks.length ? ks : ['none']); };
+    const cols = Object.keys(ACC_COLS), pats = Object.keys(PATTERNS), pat = () => (rand() < 0.6 ? 'lisa' : pick(pats));
+    Object.assign(crLook, { gl: rand() < 0.35 ? pk('rosto') : 'none', bk: rand() < 0.4 ? pk('costas') : 'none', wa: rand() < 0.4 ? pk('cintura') : 'none', glc: pick(cols), bkc: pick(cols), wac: pick(cols), acc_c: rand() < 0.5 ? pick(cols) : null, glp: pat(), bkp: pat(), wap: pat(), acc_p: pat(), gc: 'auto' });
+  };
+}
+// ao trocar a prévia 3D, libera os acessórios de região da prévia anterior
+{
+  const free = () => { if (SC.obj) SC.obj.traverse((o) => { if (o.userData.slotG) disposeSlots(o); }); };
+  const baseMount = scMount, baseStop = scStop;
+  scMount = function (el, obj, opt) { if (SC.obj && SC.obj !== obj) free(); return baseMount(el, obj, opt); };
+  scStop = function () { free(); return baseStop(); };
 }
 // applyLook passa a aplicar cor/estampa do acessório de cabeça e a prender os acessórios de região
 {

@@ -14,6 +14,15 @@ Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js
 - Suporte à cabeça com capuz (`_Head_Hooded`) da base `rogue_hooded`.
 - Correção: as bolinhas de cor dos acessórios agora pintam o item (antes só a "Cor livre" funcionava).
 
+### v16.1: correções
+- Óculos, costas e cintura ficam presos no lugar certo com qualquer tamanho de cabeça e em qualquer pose (âncoras guardadas no espaço do osso).
+- Mechas funcionam nos 8 cabelos 3D novos (faixas por cor de vértice).
+- Sombras voltam a atualizar todo quadro na qualidade Alta; o limite de 20×/s fica só em Média/Baixa.
+- Aba Acessórios respeita o Ateliê da Fifi: laço, coroa de flores, gorro, tiara estelar e coroa aparecem com 🔒 até serem comprados (antes dava para equipar de graça).
+- "Aleatório" também sorteia óculos, costas, cintura, cores e estampas.
+- Acessórios antigos da prévia 3D são liberados da memória e as texturas de estampa são compartilhadas.
+- Não quebra mais ao carregar um visual sem acessório definido.
+
 ## v15 / v15b: mar aberto e Kraken
 - Vozes, respostas nos diálogos, sons de interface, barco, mar aberto e o chefe Kraken com modelo próprio (`tools/kraken.mjs`).
 - Tabela única de game feel (`FEEL`): pausa de impacto, tremor, zoom, flash, som e elástico.
