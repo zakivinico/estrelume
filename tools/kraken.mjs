@@ -1,6 +1,6 @@
 // Modela o Kraken fofo do Estrelume com three.js e exporta como GLB (GLTFExporter)
-import * as THREE from '/home/claude/v3d/node_modules/three/build/three.module.js';
-import { GLTFExporter } from '/home/claude/v3d/node_modules/three/examples/jsm/exporters/GLTFExporter.js';
+import * as THREE from 'three';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import fs from 'fs';
 globalThis.FileReader = class { readAsArrayBuffer(b) { b.arrayBuffer().then((a) => { this.result = a; this.onloadend && this.onloadend(); }); } readAsDataURL(b) { b.arrayBuffer().then((a) => { this.result = 'data:application/octet-stream;base64,' + Buffer.from(a).toString('base64'); this.onloadend && this.onloadend(); }); } };
 const M = (c, e = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0, emissive: e ? c : '#000000', emissiveIntensity: e });
