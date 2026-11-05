@@ -6449,7 +6449,7 @@ function padUpdate() { const gps = navigator.getGamepads ? navigator.getGamepads
   if (!INPUT.pad) { INPUT.pad = true; uiApply(); toast('🎮 Controle conectado! <b>A</b> usar · <b>X</b> falar · <b>B</b> esquivar · <b>Y</b> mochila · <b>LB/RB</b> trocar item · <b>Start</b> menu'); }
   const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0, dz = 0.35; keys.KeyD = ax > dz; keys.KeyA = ax < -dz; keys.KeyS = ay > dz; keys.KeyW = ay < -dz; keys.ShiftLeft = !!(gp.buttons[7] && gp.buttons[7].pressed) || Math.hypot(ax, ay) > 0.95;
   for (const [i, code] of Object.entries(PADMAP)) { const on = !!(gp.buttons[i] && gp.buttons[i].pressed), was = !!INPUT.prev[i]; INPUT.prev[i] = on;
-    if (on && !was) { if (code === 'BracketLeft' || code === 'BracketRight') { setSlot(S.slot + (code === 'BracketLeft' ? -1 : 1)); continue; } dispatchEvent(new KeyboardEvent('keydown', { code, key: code === 'Space' ? ' ' : code, bubbles: true })); }
+    if (on && !was) { if (code === 'BracketLeft' || code === 'BracketRight') { setSlot(S.slot + (code === 'BracketLeft' ? -1 : 1)); continue; } const c2 = padBack(i) ? 'Escape' : code; dispatchEvent(new KeyboardEvent('keydown', { code: c2, key: c2 === 'Space' ? ' ' : c2, bubbles: true })); }
     if (!on && was) dispatchEvent(new KeyboardEvent('keyup', { code, key: code === 'Space' ? ' ' : code, bubbles: true })); } }
 addEventListener('gamepadconnected', () => padUpdate());
 
@@ -6729,7 +6729,7 @@ PRE_GH.push(() => { arenaBuild(); parkourBuild(); });
 // pulo no desenho: a personagem sobe P.jy (a câmera sobe um pouco junto)
 { const base = renderer.render.bind(renderer); renderer.render = function (sc, cam) { const j = sc === scene && mode === 'out' && player ? P.jy || 0 : 0; if (!j) return base(sc, cam); player.obj.position.y += j; const cj = cam === camera ? j * 0.45 : 0; cam.position.y += cj; try { return base(sc, cam); } finally { player.obj.position.y -= j; cam.position.y -= cj; } }; }
 // teclas: C pula, L abre o Álbum; no celular, um botão de pulo
-addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (e.code === 'KeyC' && ready && !titleOn) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) doJump(); } else if (e.code === 'KeyL' && ready && !titleOn && !modalOpen()) { e.preventDefault(); openAlbum(); } }, true);
+addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (e.code === 'KeyC' && ready && !titleOn) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) doJump(); } else if (e.code === 'KeyL' && ready && !titleOn && !e.repeat && !dlg) { e.preventDefault(); if ($('modal').classList.contains('on')) { closeModal(); sfx('cancel'); } else if (!modalOpen()) openAlbum(); } }, true);
 PADMAP[6] = 'KeyC';
 { const a = APPS.find((q) => q.k === 'album'); if (a) a.key = 'L'; }
 setTimeout(() => { try { const ta = $('tA'); if (ta && !$('tJ')) { ta.insertAdjacentHTML('afterend', '<button class="btn tbtn" id="tJ" style="right:100px;bottom:176px">⤒</button>'); $('tJ').addEventListener('touchstart', (e) => { e.preventDefault(); doJump(); }, { passive: false }); }
@@ -6828,6 +6828,15 @@ addEventListener('keydown', (e) => { if (!CUT || !CUT.v27) return; if (e.code ==
   else { CUT.walk = false; P.x = CUT.x0; P.z = CUT.z0; if (sc.cam) sc.cam(e); $('cut').classList.remove('showt'); }
   P.ang = Math.PI; P.fx = 0; P.fz = -1; P.kx = P.kz = 0; P.roll = null; if (player) { player.obj.position.set(P.x, 0, P.z); player.obj.rotation.y = Math.PI; } }; }
 { const base = endIntro; endIntro = function () { const el = $('cut'); if (el) { el.onclick = null; el.classList.remove('v27'); } INTRO.hold = 0; return base(); }; }
+
+// ---------- janelas que não fechavam ----------
+// B do controle fecha a janela aberta (antes só o Start fechava; o B virava esquiva e não fazia nada).
+function padBack(i) { return +i === 1 && (($('modal') && $('modal').classList.contains('on')) || RING.on || decor || farmEd || P.fishing); }
+// a roda de ferramentas só fechava ao soltar o X: se o X fosse solto com a janela sem foco, ela ficava aberta para sempre
+addEventListener('keydown', (e) => { if (RING.on && e.code === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); ringClose(false); sfx('cancel'); } }, true);
+addEventListener('blur', () => ringClose(false));
+document.addEventListener('visibilitychange', () => { if (document.hidden) ringClose(false); });
+document.addEventListener('pointerdown', (e) => { if (RING.on && !(e.target.closest && e.target.closest('#ring .rs'))) ringClose(false); }, true);
 
 /* =================== início, título e carregamento =================== */
 let ready = false;

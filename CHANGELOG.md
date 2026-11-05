@@ -23,6 +23,12 @@ Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js
 - A abertura virou cinco cenas curtas com diálogo em balão: a Narradora conta a história do vale, do Poço e da névoa, e depois a carta da Vovó Rosa aparece.
 - O texto aparece letra por letra. <kbd>Espaço</kbd>, <kbd>Enter</kbd>, <kbd>E</kbd>, um clique ou um toque mostra a fala inteira e depois passa para a próxima. <kbd>Esc</kbd> ou o botão "Pular" encerra a abertura.
 
+**Janelas que não fechavam (correção)**
+- O ✕ de quase todas as janelas (Mochila, Mapa, Loja, Ateliê, Ajustes, Habilidades, Poço...) ficava coberto pelo título do painel, então clicar ou tocar nele não fazia nada. Agora ele fica sempre por cima e grudado no topo mesmo quando você rola a janela.
+- <kbd>L</kbd> abre e fecha o Álbum (antes só abria).
+- A roda de ferramentas fecha com <kbd>Esc</kbd>, com um clique fora dela ou quando a janela do jogo perde o foco. Antes ela podia ficar aberta para sempre.
+- No controle, o <kbd>B</kbd> fecha a janela aberta (antes só o Start fechava).
+
 ## v26: cabelos divertidos, casas variadas, corações com sol e lua, arena aberta da Vovó, pulo e parkour
 **Cabelos**
 - 10 penteados novos da Fofinha: rabo de lado com laço, tranças, afro fofo, moicano, chanel com franja, coquinhos de coelho, chiquinhas com estrelas, topete de onda, orelhinhas de gato e rabo alto com xuxinha. Quatro são de graça; os outros ficam no Ateliê da Fifi.
