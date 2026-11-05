@@ -5594,6 +5594,57 @@ Object.assign(EMO, { '🔨': 'anvil', '✅': 'star', '🌐': 'map', '🏁': 'scr
 // armas do duelo não disparam de bicicleta nem no barco
 { const base = weaponAttack; weaponAttack = function () { if (P.bike || P.boat) return; return base(); }; }
 
+/* =================== v22: mais leve (chão no shader, áreas), ataques estilo Genshin, pesca com zoom, casa editável por dentro, fazenda que cresce =================== */
+// ---------- chão no shader: um mapa de 170×120 com o tipo de cada tile; bordas e detalhes saem da GPU ----------
+// Antes: textura de 2040×1440 pintada na CPU (1,4 s no carregamento e ~16 MB de memória de vídeo). Agora: 80 KB e nada a pintar.
+const GSPLAT = { tex: null, data: null, ms: 0 };
+function splatTexel(x, y) { if (!GSPLAT.data || !inb(x, y)) return; const i = (y * W + x) * 4, t = gType(x, y), o = obj[I(x, y)], d = GSPLAT.data; d[i] = t === PA ? 255 : 0; d[i + 1] = t === SO ? 255 : 0; d[i + 2] = t === SA ? 255 : 0; d[i + 3] = o && NATURE.test(o.t) && !o.cut && tile[I(x, y)] === GR ? 255 : 0; }
+const GROUND_GLSL = `
+uniform sampler2D uSplat; uniform vec2 uSz; uniform vec3 uGR, uPA, uSO, uSA; varying vec2 vGW;
+float gh(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float gv(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(gh(i), gh(i + vec2(1.0, 0.0)), f.x), mix(gh(i + vec2(0.0, 1.0)), gh(i + vec2(1.0, 1.0)), f.x), f.y); }
+float gf(vec2 p) { return gv(p) * 0.55 + gv(p * 2.03 + 7.1) * 0.3 + gv(p * 4.1 - 3.3) * 0.15; }
+`;
+const GROUND_FRAG = `
+  vec4 sp = texture2D(uSplat, vGW / uSz);
+  float big = gf(vGW * 0.07) - 0.5, mid = gf(vGW * 0.35 + 11.0) - 0.5, wob = (gv(vGW * 0.6 + 31.0) - 0.5) * 0.3;
+  vec4 w4 = vec4(max(0.0, 1.0 - sp.r - sp.g - sp.b) + sp.a * 0.45 + wob, sp.r, sp.g, sp.b);
+  float mx = max(max(w4.x, w4.y), max(w4.z, w4.w));
+  vec4 e = exp((w4 - mx) * 22.0); e /= (e.x + e.y + e.z + e.w);
+  // luz de cada tipo com detalhes macios
+  float lG = 1.0 + big * 0.14 + mid * 0.08 - smoothstep(0.6, 0.74, gv(vec2(vGW.x * 1.6, vGW.y * 0.6) + 9.0)) * 0.05 + smoothstep(0.7, 0.8, gv(vGW * 1.7 + 41.0)) * 0.05;
+  float lP = 1.0 + big * 0.06 + mid * 0.05 + smoothstep(0.74, 0.82, gv(vGW * 2.2 + 3.0)) * 0.05 - smoothstep(0.8, 0.88, gv((vGW - vec2(0.0, 0.1)) * 2.2 + 3.0)) * 0.035;
+  float lS = 1.0 + mid * 0.06 + sin(vGW.y * 6.2832 * 2.5) * 0.06;
+  float lA = 1.0 + big * 0.05 + mid * 0.04 + smoothstep(0.82, 0.9, gv(vGW * 1.7 + 77.0)) * 0.04;
+  vec3 gcol = uGR * lG * e.x + uPA * lP * e.y + uSO * lS * e.z + uSA * lA * e.w;
+  // contorno macio nas bordas do caminho e da terra
+  float sec = 0.0; { vec4 t = w4; t = mx == t.x ? vec4(-9.0, t.yzw) : mx == t.y ? vec4(t.x, -9.0, t.zw) : mx == t.z ? vec4(t.xy, -9.0, t.w) : vec4(t.xyz, -9.0); sec = max(max(t.x, t.y), max(t.z, t.w)); }
+  float edge = 1.0 - (1.0 - smoothstep(0.0, 0.2, mx - sec)) * mix(0.05, 0.12, 1.0 - e.x);
+  gcol *= edge;
+  // florzinhas raras na grama
+  vec2 fc = vGW * 1.7, fi = floor(fc); float fh = gh(fi + 13.0); if (fh > 0.992 && e.x > 0.9) { float dd = length(fract(fc) - 0.5); float a = 1.0 - smoothstep(0.12, 0.2, dd); vec3 fcol = fh > 0.9973 ? vec3(1.0, 0.98, 0.94) : fh > 0.9946 ? vec3(1.0, 0.42, 0.55) : vec3(1.0, 0.76, 0.16); gcol = mix(gcol, fcol, a); }
+  diffuseColor.rgb *= gcol;
+`;
+paintGround = function () {
+  let mesh = null; world.traverse((o) => { if (o.isMesh && o.geometry && o.geometry.attributes.color === TERR.col) mesh = o; }); if (!mesh) return; const t0 = performance.now();
+  GSPLAT.data = new Uint8Array(W * H * 4); for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) splatTexel(x, y);
+  const tex = new THREE.DataTexture(GSPLAT.data, W, H, THREE.RGBAFormat); tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter; tex.generateMipmaps = false; tex.needsUpdate = true; GSPLAT.tex = tex;
+  const geo = mesh.geometry, pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) { const y = pos.getY(i); if (Math.abs(y + 0.2) < 0.002) pos.setY(i, -0.2 + (hash2(pos.getX(i), pos.getZ(i), 41) - 0.5) * 0.18); } pos.needsUpdate = true; geo.computeBoundingSphere();
+  const hgt = new Map(); for (let i = 0; i < pos.count; i++) hgt.set(pos.getX(i) + ',' + pos.getZ(i), pos.getY(i)); const hAt = (x, z) => hgt.get(x + ',' + z) ?? 0;
+  const nrm = new Float32Array(pos.count * 3), v = new THREE.Vector3(); for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), z = pos.getZ(i); v.set(hAt(x - 1, z) - hAt(x + 1, z), 2, hAt(x, z - 1) - hAt(x, z + 1)).normalize(); nrm[i * 3] = v.x; nrm[i * 3 + 1] = v.y; nrm[i * 3 + 2] = v.z; }
+  geo.setAttribute('normal', new THREE.BufferAttribute(nrm, 3)); if (geo.attributes.uv) geo.deleteAttribute('uv');
+  const lin = (c) => new THREE.Color().setRGB(c[0] / 255, c[1] / 255, c[2] / 255, THREE.SRGBColorSpace);
+  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  mat.onBeforeCompile = (sh) => { Object.assign(sh.uniforms, { uSplat: { value: tex }, uSz: { value: new THREE.Vector2(W, H) }, uGR: { value: lin(GPAL2[GR]) }, uPA: { value: lin(GPAL2[PA]) }, uSO: { value: lin(GPAL2[SO]) }, uSA: { value: lin(GPAL2[SA]) } });
+    sh.vertexShader = 'varying vec2 vGW;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vGW = (modelMatrix * vec4(transformed, 1.0)).xz;');
+    sh.fragmentShader = GROUND_GLSL + sh.fragmentShader.replace('#include <map_fragment>', GROUND_FRAG); };
+  mat.customProgramCacheKey = () => 'chao-shader-v22';
+  mesh.material = mat; GCV.mesh = mesh; GCV.img = null; GCV.cv = null; GSPLAT.ms = GCV.ms = Math.round(performance.now() - t0);
+};
+// trocar um tile (arar, desfazer canteiro...) só atualiza o mapinha
+{ const base = setTileColor; setTileColor = function (x, y) { base(x, y); if (!GSPLAT.data) return; for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) splatTexel(x + i, y + j); GSPLAT.tex.needsUpdate = true; }; }
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -5637,4 +5688,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { GSPLAT, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
