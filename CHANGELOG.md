@@ -2,6 +2,22 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v23: terreno irregular, inimigos novos, elites, acampamentos e mirantes
+**Terreno irregular**
+- O vale ganhou relevo: colinas suaves na grama selvagem, mais altas na Floresta do Norte e nas Terras do Leste e mais baixas na praia. Caminhos, praças, fazenda, arenas, beiras de água e o entorno das construções continuam planos, então as trilhas passam entre os morros.
+- Árvores, pedras, flores, moradores, bichinhos, inimigos e itens acompanham a altura do chão, e a câmera sobe um pouco junto com você. O topo das colinas fica mais claro e as encostas mais escuras, para dar para ler o relevo vista de cima.
+- O relevo é só visual: colisão, cliques e saves continuam iguais, e nenhum shader novo é compilado durante o jogo.
+
+**Inimigos**
+- **Caranguejo** (Praia do Sol): anda de lado em volta de você, ergue as garras e dá um bote. Depois do bote fica cansado e leva mais dano.
+- **Pedrolho** (Floresta do Norte e Terras do Leste): pedra com musgo que mira (linha vermelha no chão) e sai rolando. Normalmente é duro (leva pouco dano), mas se bater numa parede ou árvore fica **atordoado** e leva o dobro.
+- **Elites ★**: alguns inimigos fora da vila nascem maiores, com aura dourada, mais vida e mais força. Derrotar um dá moedas, Desejos e loot extra.
+
+**Áreas**
+- **Acampamentos de monstros**: um por área (Maré, Pétalas, Musgo, Campos e Pedras), com fogueira, barracas e cinco monstros liderados por um elite. Limpe o acampamento para abrir o baú (moedas, Desejos e itens da área), uma vez por dia. Eles aparecem no mapa (M).
+- **Mirantes**: o ponto mais alto de cada área tem uma bandeirinha. Aprecie a vista (E) para a câmera abrir e, na primeira vez, ganhar +5⭐ e XP.
+- Ambiência própria em cada área: folhas caindo no norte, pólen na Vila Girassol, brilhos na praia, sementinhas nos campos e luzes mágicas no leste.
+
 ## v22: mais leve, golpes estilo Genshin, pesca com zoom, casa editável por dentro e fazenda que cresce
 **Mais leve**
 - O chão é desenhado no shader: um mapa de tipos de 170×120 (≈80 KB) diz onde é grama, caminho, areia ou terra, e a GPU faz bordas e detalhes. Antes era uma textura pintada na CPU de ≈16 MB que levava mais de 1 s para ficar pronta; agora leva ≈0,1 s e fica lisa em qualquer zoom.
