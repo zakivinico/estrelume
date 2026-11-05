@@ -121,3 +121,12 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Tela inicial: `TSH` (triângulo de tela cheia com `ShaderMaterial` aditivo, `renderOrder` alto, sem teste de profundidade; aparece só com `titleOn`). Música do título: `cuteTitleSong()` renderiza com `OfflineAudioContext`, vira WAV e entra em `MUS.title.src`.
 - Abertura: `CSC()` lista as cenas (`d` duração, `h` hora, `n` nome, `txt`, `cam(k)`, `fx(dt)`, `me`); `cutCamera` conta o tempo com `dt` (`CUT.tt`).
 - Multiplayer: `PARTY.max = 4`; a presença leva `j` (hora de entrada), `lv` e `rg` (área). `partyOrder()` ordena por `j`; quem entrou depois dos 4 primeiros sai (`partyCheckFull`). Painel `#party` em `partyUpdate`.
+
+## Cabelos, casas, HUD, arena, pulo e parkour (v26)
+
+- Penteados novos da Fofinha: `case 'h1'..'h10'` em `fofaParts`, rótulos em `KM_HEADS` (que agora é a lista de penteados válidos). Ajudantes: `bang` (franja em mechas), `chain` (rabo/trança), `bow` (laço) e `star`. Cor de brilho: `hl`.
+- Casas: modelos `hx_*` (KayKit Medieval Hexagon, licença em `game/assets/LICENSE-KayKit-Medieval-Hexagon-CC0.txt`). `houseModel(o, x, y)` escolhe o modelo de cada casa das vilas (a da jogadora e a da Vovó ficam como eram).
+- HUD: `hudHearts()` redesenha `#hearts` (corações em SVG, `#stbar`/`#sttxt` mantidos para a atualização por quadro). Relógio do retrato: `DIAL`/`dialUpdate` com `dialIcon` (sol e lua desenhados em canvas).
+- Arena: `ARENA26` (achada por `arenaFind` num campo aberto da vila ou da praia, montada em `PRE_GH` para ficar plana). `RB` e `PVP` usam o centro e o raio dela; `RB.wall` é o anel de pétalas no chão.
+- Pulo: `P.jy`/`P.jv` (`JUMP.v0`, `JUMP.g`), `doJump()` (tecla C, LT no controle, botão `#tJ`), `jumpUpdate`. No ar o `moveC` deixa passar por cima de `LOW26`. A altura é aplicada só no desenho (embrulho do `renderer.render`).
+- Parkour: `PK26.plats` (`x`, `z`, `w`, `d`, `h`); `platTop` dá o chão em cima delas e `platBlock` barra quem está mais baixo. Recorde em `S.pk`.

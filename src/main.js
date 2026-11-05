@@ -445,7 +445,7 @@ function buildWorld() {
       case 'bush': o.m = mat4(cx, 0, cz, ry, 1); o.inst = [INST.q_bush.add(o.m), INST.q_bushb.add(o.m)]; setBerry(o); break;
       case 'flower': o.m = mat4(cx, 0, cz, ry, 1); o.inst = [FL_M[o.c], INST[FL_M[o.c]].add(o.m)]; break;
       case 'clover': case 'mush': { const k = o.t === 'clover' ? 'q_clover' : 'q_mush'; o.m = mat4(cx, 0, cz, ry, 1); o.inst = [k, INST[k].add(o.m)]; break; }
-      case 'house': { const g = cloneM(o.m); g.position.set(x + 2, 0, y + 1.6); world.add(g); break; }
+      case 'house': { const g = cloneM(houseModel(o, x, y)); g.position.set(x + 2, 0, y + 1.6); world.add(g); break; }
       case 'shrine': { const g = cloneM('k_well'); g.position.set(x + 1, 0, y + 1); world.add(g); orb = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 1), new THREE.MeshBasicMaterial({ color: '#ffe8a0' })); orb.position.set(x + 1, 1.15, y + 1); world.add(orb); const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffd27a, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); s.scale.set(1.6, 1.6, 1); orb.add(s); const l = new THREE.PointLight(0xffd27a, 0, 7, 1.5); l.position.set(x + 1, 1.4, y + 1); world.add(l); lampLights.push(l); break; }
       case 'box': { buildStall(x, y); break; }
       case 'shop': { const g = cloneM('k_tavern_red'); g.position.set(x + 1.5, 0, y + 1.5); world.add(g); const sign = makeSign('Lojinha do Tico'); sign.position.set(x + 1.5, 0, y + 3.2); world.add(sign); break; }
@@ -6254,7 +6254,11 @@ function fofaParts(lk) {
   A('head', 'ball', dark(sk, 0.93), 0, 0.775, 0.3, 0.035, 0.028, 0.025); // narizinho
   // cabelo
   const capB = (tilt = 0.32, s = 1.07) => A('head', 'cap', hc, HC[0], HC[1] + 0.005, HC[2] - 0.01, 0.335 * s, 0.31 * s, 0.31 * s, -tilt, 0, 0);
-  const bang = (w = 0.26, y = 1.03) => A('head', 'ball', hc, 0, y, 0.2, w, 0.085, 0.14, 0.5, 0, 0);
+  const hl = '#' + new THREE.Color(hc).lerp(new THREE.Color('#ffffff'), 0.32).getHexString(); // mecha mais clara (brilho do cabelo)
+  const bang = (w = 0.26, y = 1.03) => { for (let i = -2; i <= 2; i++) { const t = i / 2; A('head', 'ball', hc, t * w * 0.92, y - Math.abs(t) * 0.06, 0.205 - Math.abs(t) * 0.05, w * 0.34, 0.095, 0.12, 0.45, 0, -t * 0.55); } A('head', 'ball', hl, -0.09, y + 0.07, 0.17, 0.085, 0.03, 0.06, 0.55, 0, 0.35); };
+  const chain = (x0, y0, z0, dx, dy, dz, n, r0, r1, col = hc, band = null) => { for (let i = 0; i < n; i++) { const k = i / Math.max(1, n - 1), r = r0 + (r1 - r0) * k; A('head', 'ball', col, x0 + dx * i, y0 + dy * i, z0 + dz * i, r, r * 1.08, r); if (band && i < n - 1) A('head', 'ring', band, x0 + dx * (i + 0.5), y0 + dy * (i + 0.5), z0 + dz * (i + 0.5), r * 0.62, r * 0.62, r * 0.62, Math.PI / 2, 0, 0); } };
+  const bow = (x, y, z, col, s2 = 1) => { for (const m of [-1, 1]) A('head', 'ball', col, x + m * 0.07 * s2, y, z, 0.075 * s2, 0.05 * s2, 0.035 * s2, 0, 0, m * 0.5); A('head', 'ball', dark(col, 0.85), x, y, z + 0.01, 0.03 * s2, 0.03 * s2, 0.03 * s2); };
+  const star = (x, y, z, col = '#ffd45a', r = 0.05) => { for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; A('head', 'cone', col, x + Math.sin(a) * r * 0.7, y + Math.cos(a) * r * 0.7, z, r * 0.4, r * 0.9, r * 0.25, Math.PI / 2, 0, -a); } A('head', 'ball', col, x, y, z, r * 0.55, r * 0.55, r * 0.35); };
   const bun = (x, y, z, r) => A('head', 'ball', hc, x, y, z, r, r, r);
   switch (lk.kh) {
     case 'fa': capB(); bang(); bun(0, 1.18, -0.08, 0.13); break; // coque alto
@@ -6269,6 +6273,16 @@ function fofaParts(lk) {
     case 'md': capB(0.3, 1.04); for (let i = 0; i < 7; i++) { const a = -0.9 + i * 0.3; A('head', 'cone', hc, Math.sin(a) * 0.22, 1.12 + Math.cos(i) * 0.02, -0.05 + Math.cos(a) * 0.05, 0.07, 0.17, 0.07, -0.4, 0, -a * 0.6); } break; // espetado
     case 'me': capB(); A('head', 'ball', hc, 0.05, 1.1, 0.16, 0.18, 0.11, 0.13, 0.4, 0, -0.3); for (const m of [-1, 1]) A('head', 'ring', '#2a2230', m * 0.11, 0.84, 0.305, 0.075, 0.075, 0.075); A('head', 'box', '#2a2230', 0, 0.85, 0.31, 0.07, 0.012, 0.012); break; // topete e óculos
     case 'mf': capB(0.3, 1.06); for (let i = 0; i < 9; i++) { const a = i * 0.7; A('head', 'ball', hc, Math.cos(a) * 0.2, 1.09 + (i % 3) * 0.025, -0.05 + Math.sin(a) * 0.17, 0.1, 0.07, 0.1, i, i * 2, 0); } break; // bagunçado
+    case 'h1': capB(); bang(); chain(0.3, 0.92, -0.12, 0.05, -0.09, -0.02, 4, 0.085, 0.06); bow(0.27, 1.0, -0.1, ct); break; // rabo de lado com laço
+    case 'h2': capB(); bang(); for (const m of [-1, 1]) chain(m * 0.27, 0.78, -0.08, m * 0.012, -0.075, 0.02, 5, 0.06, 0.045, hc, ct); break; // tranças
+    case 'h3': for (let i = 0; i < 26; i++) { const a = i * 2.4, b = Math.acos(1 - 2 * ((i + 0.5) / 26)); if (b > 2.1) continue; A('head', 'ball', i % 5 ? hc : hl, Math.sin(b) * Math.cos(a) * 0.36, 0.86 + Math.cos(b) * 0.36, -0.04 + Math.sin(b) * Math.sin(a) * 0.36, 0.13, 0.13, 0.13); } bang(0.24, 1.02); break; // afro fofo
+    case 'h4': capB(0.3, 1.02); for (let i = 0; i < 6; i++) A('head', 'cone', i % 2 ? hl : hc, 0, 1.12 + Math.sin(i * 0.5) * 0.02, 0.2 - i * 0.09, 0.06, 0.2 - Math.abs(i - 2) * 0.02, 0.07, -0.35 + i * 0.12, 0, 0); break; // moicano
+    case 'h5': capB(0.12, 1.08); A('head', 'ball', hc, 0, 1.0, 0.18, 0.31, 0.1, 0.16, 0.25, 0, 0); for (const m of [-1, 1]) A('head', 'ball', hc, m * 0.3, 0.74, 0.0, 0.1, 0.2, 0.2); A('head', 'ball', hl, -0.12, 1.06, 0.14, 0.09, 0.03, 0.07, 0.4, 0, 0.3); break; // chanel com franja
+    case 'h6': capB(); bang(); for (const m of [-1, 1]) { A('head', 'ball', hc, m * 0.15, 1.24, -0.06, 0.08, 0.17, 0.08, 0, 0, -m * 0.25); A('head', 'ball', '#ffb3cf', m * 0.155, 1.24, -0.01, 0.04, 0.11, 0.03, 0, 0, -m * 0.25); } break; // coquinhos de coelho
+    case 'h7': capB(); bang(); for (const m of [-1, 1]) { chain(m * 0.26, 1.08, -0.06, m * 0.07, 0.06, -0.01, 3, 0.09, 0.07); star(m * 0.24, 1.05, 0.06); } break; // chiquinhas altas com estrelas
+    case 'h8': capB(0.35, 1.05); for (let i = 0; i < 3; i++) A('head', 'ball', i === 1 ? hl : hc, 0.02, 1.08 + i * 0.05, 0.22 - i * 0.08, 0.2 - i * 0.03, 0.11, 0.15, -0.6 - i * 0.15, 0, 0); break; // topete de onda
+    case 'h9': capB(); bang(); for (const m of [-1, 1]) { A('head', 'cone', hc, m * 0.19, 1.15, -0.02, 0.09, 0.16, 0.06, 0, 0, -m * 0.35); A('head', 'cone', '#ffb3cf', m * 0.19, 1.14, 0.005, 0.05, 0.1, 0.03, 0, 0, -m * 0.35); } break; // orelhinhas de gato
+    case 'h10': capB(); bang(); chain(0, 1.12, -0.24, 0, -0.08, -0.06, 4, 0.1, 0.07); A('head', 'ring', ct, 0, 1.1, -0.2, 0.08, 0.08, 0.08, 0.8, 0, 0); break; // rabo alto com xuxinha
     default: capB(); bang();
   }
   // corpo e roupa
@@ -6313,7 +6327,7 @@ function fofaFace(obj, lk) { // rosto pintado numa casquinha na frente da cabeç
   if (!FOFA.faceGeo) { const w = 1.28, g = new THREE.SphereGeometry(1, 22, 14, Math.PI / 2 - w / 2, w, Math.PI * 0.33, Math.PI * 0.36); FOFA.faceGeo = g; } // olhos grandes, estilo Animal Crossing
   const tex = kmFaceTex(lk), mat = KM.faceMat[tex.uuid] || (KM.faceMat[tex.uuid] = new THREE.MeshLambertMaterial({ map: tex, transparent: true, alphaTest: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
   const m = new THREE.Mesh(FOFA.faceGeo, mat); m.position.set(0, (0.83 - R.p.y) * s, (-0.01 - R.p.z) * s); m.scale.set(0.338 * s, 0.313 * s, 0.313 * s); m.renderOrder = 2; m.castShadow = false; hb.add(m); obj.userData.kmFace = m; }
-kmLook = function (obj, look) { const lk = Object.assign({}, KM_DEF, look || {}); if (!KM_VAR.includes(lk.kb)) lk.kb = KM_DEF.kb; if (!KM_VAR.includes(lk.kh)) lk.kh = KM_DEF.kh;
+kmLook = function (obj, look) { const lk = Object.assign({}, KM_DEF, look || {}); if (!KM_VAR.includes(lk.kb)) lk.kb = KM_DEF.kb; if (!KM_HEADS[lk.kh]) lk.kh = KM_DEF.kh;
   obj.userData.kmKey = lk.kb + lk.kh; const parts = fofaBuild(lk), bones = {};
   obj.traverse((o) => { if (o.isSkinnedMesh && (o.name === 'km_Body' || o.name === 'km_Head')) { o.visible = false; o.castShadow = false; } if (o.isBone) bones[o.name] = o; });
   for (const m of obj.userData.fofa || []) m.parent && m.parent.remove(m); obj.userData.fofa = [];
@@ -6480,7 +6494,7 @@ function partyUpdate(dt) {
 // (O ch_rogue continua só como biblioteca de animações dos bichinhos-personagem; ele nunca aparece.)
 const OLD_BASES = ['rogue', 'knight', 'barbarian', 'mage', 'rogue_hooded'];
 const OUT_KM = { knight: { kb: 'mc', kh: 'mc', ct: 'carvao', cb: 'marinho', cs: 'carvao' }, barbarian: { kb: 'mb', kh: 'md', ct: 'laranja', cb: 'marrom', cs: 'marrom' }, mage: { kb: 'fc', kh: 'fe', ct: 'roxo', cb: 'lilas', cs: 'roxo', acc: 'estrela' }, rogue_hooded: { kb: 'fa', kh: 'mf', ct: 'verde', cb: 'marrom', cs: 'marrom' } };
-const lookKM = (outfit = S.outfit, lk = lookFull()) => { const base = Object.assign({}, KM_DEF, (S.gender === 'm' ? { kb: 'ma', kh: 'md' } : {}), lk || {}); if (!KM_VAR.includes(base.kb)) base.kb = S.gender === 'm' ? 'ma' : 'fb'; if (!KM_VAR.includes(base.kh)) base.kh = S.gender === 'm' ? 'md' : 'fb'; return Object.assign(base, OUT_KM[outfit] || {}); };
+const lookKM = (outfit = S.outfit, lk = lookFull()) => { const base = Object.assign({}, KM_DEF, (S.gender === 'm' ? { kb: 'ma', kh: 'md' } : {}), lk || {}); if (!KM_VAR.includes(base.kb)) base.kb = S.gender === 'm' ? 'ma' : 'fb'; if (!KM_HEADS[base.kh]) base.kh = S.gender === 'm' ? 'md' : 'fb'; return Object.assign(base, OUT_KM[outfit] || {}); };
 { const Base = Char; Char = class extends Base { constructor(key) { super(OLD_BASES.includes(key) ? 'km' : key); if (this.key !== 'km' && OLD_BASES.includes(key)) this.key = 'km'; if (OLD_BASES.includes(key) || key === 'km') this.obj.userData.ck = 'km'; } }; }
 setOutfit_v12 = function (force) { const k = S.outfit || 'km', key = k + JSON.stringify(OUT_KM[k] || 0); if (player && player.okey === key && !force) return; const old = player; player = new Char('km'); player.okey = key; player.obj.userData.ck = 'km'; applyLook(player.obj, lookKM(k)); refreshMeThumb();
   if (old) { player.obj.position.copy(old.obj.position); player.obj.rotation.y = old.obj.rotation.y; scene.remove(old.obj); } handKey = null; updateHand(); };
@@ -6603,6 +6617,129 @@ kmThumb = function (lk, head, size = 160) { const key = JSON.stringify(lk) + hea
     return (KM.th[key] = url); } catch (e) { console.error(e); return emojiThumb('👕'); } };
 refreshMeThumb = function () { try { THUMB.me = kmThumb(lookKM(), true); const f = $('pface'); if (f) f.src = THUMB.me; } catch (e) { console.error(e); } };
 
+/* =================== v26: cabelos divertidos, casas variadas, corações com sol e lua, arena aberta da Vovó, pulo e parkour =================== */
+// ---------- penteados novos da Fofinha ----------
+Object.assign(KM_HEADS, { h1: 'Rabo de lado com laço', h2: 'Tranças', h3: 'Afro fofo', h4: 'Moicano', h5: 'Chanel com franja', h6: 'Coquinhos de coelho', h7: 'Chiquinhas com estrelas', h8: 'Topete de onda', h9: 'Orelhinhas de gato', h10: 'Rabo alto com xuxinha' });
+WARD_FREE.kh.push('h1', 'h2', 'h5', 'h10'); Object.assign(WARD_PRICE.kh, { h3: 140, h4: 120, h6: 180, h7: 200, h8: 150, h9: 220 });
+
+// ---------- casas variadas (KayKit Medieval Hexagon, CC0): 2 modelos × 4 cores, taverna, mercado e capelinha ----------
+const HXM = { hx_home_a_blue: { s: 4.3 }, hx_home_a_red: { s: 4.3 }, hx_home_a_green: { s: 4.3 }, hx_home_a_yellow: { s: 4.3 }, hx_home_b_blue: { s: 4.3 }, hx_home_b_red: { s: 4.3 }, hx_home_b_green: { s: 4.3 }, hx_home_b_yellow: { s: 4.3 }, hx_tavern_red: { s: 4.6 }, hx_market_yellow: { s: 4.4 }, hx_church_blue: { s: 4.2 } };
+for (const [k, v] of Object.entries(HXM)) { MODEL_LIST.push(k); FIT[k] = v; }
+const HX_HOMES = ['hx_home_a_blue', 'hx_home_b_red', 'hx_home_a_green', 'hx_home_b_yellow', 'hx_home_a_red', 'hx_home_b_blue', 'hx_home_a_yellow', 'hx_home_b_green', 'k_home_b', 'hx_tavern_red', 'k_home_a', 'hx_market_yellow'];
+let hxN = 0;
+function houseModel(o, x, y) { if ((x === H1.x && y === H1.y) || (x === H2.x && y === H2.y)) return o.m; // a sua casa e a da Vovó continuam como eram (fachada e enfeites)
+  const k = HX_HOMES[(hxN++ + ((x * 7 + y * 3) % 5)) % HX_HOMES.length]; return MODELS[k] ? k : o.m; }
+
+// ---------- HUD: corações de vida, fôlego e saciedade arredondados e um céu com sol ou lua atrás do retrato ----------
+const HEART_SVG = (f) => `<span class="ht"><svg viewBox="0 0 20 18"><path class="he" d="M10 17 C2 11 0 7.5 0 5 C0 2 2.4 0 5 0 C7 0 8.6 1.2 10 3 C11.4 1.2 13 0 15 0 C17.6 0 20 2 20 5 C20 7.5 18 11 10 17Z"/></svg><span class="hf" style="width:${Math.round(f * 100)}%"><svg viewBox="0 0 20 18"><path class="hh" d="M10 17 C2 11 0 7.5 0 5 C0 2 2.4 0 5 0 C7 0 8.6 1.2 10 3 C11.4 1.2 13 0 15 0 C17.6 0 20 2 20 5 C20 7.5 18 11 10 17Z"/><ellipse cx="5.5" cy="4.5" rx="2.2" ry="1.5" fill="#fff" opacity=".7"/></svg></span></span>`;
+function hudHearts() { const el = $('hearts'); if (!el) return; const mh = maxHp(), hp = Math.max(0, P.hp), n = Math.max(3, Math.ceil(mh / 20)), per = mh / n;
+  const hs = Array.from({ length: n }, (_, i) => HEART_SVG(clamp((hp - i * per) / per, 0, 1))).join(''), low = hp / mh < 0.25, st = P.st / maxSt(), fd = (S.food ?? 100) / 100;
+  el.innerHTML = `<div class="v26 ${low ? 'low' : ''}"><div class="hrow" title="Vida: ${Math.ceil(hp)} / ${mh}">${hs}<em>${Math.ceil(hp)}</em></div>
+    <div class="vb st" title="Fôlego (correr, esquivar, pular e minerar)"><b><img src="${icon('boots', 32)}"></b><div class="vt"><i id="stbar" style="width:${st * 100}%"></i></div><span id="sttxt">${Math.round(P.st)}</span></div>
+    <div class="vb fd ${fd < 0.25 ? 'hungry' : ''}" title="Saciedade (aperte U para comer)"><b><img src="${icon('apple', 32)}"></b><div class="vt"><i style="width:${fd * 100}%"></i></div><span>${Math.round(fd * 100)}</span></div>
+    <div class="vb xp" title="Experiência"><b class="xpb">XP</b><div class="vt"><i style="width:${(S.xp / xpNeed()) * 100}%"></i></div></div></div>` + (P.boost > 0 ? '<span class="tag" style="font-size:11px">🧃 turbo</span>' : ''); }
+{ const base = hud; hud = function () { const k0 = lastHud; base(); if (lastHud !== k0 || !document.querySelector('#hearts .v26')) hudHearts(); }; }
+// céu do relógio: sol de dia, lua à noite, girando num arco atrás do retrato
+const DIAL = { el: null, t: 0 };
+function dialUpdate(dt) { DIAL.t -= dt; if (DIAL.t > 0) return; DIAL.t = 0.4; const pf = document.querySelector('#hudTL .pfw'); if (!pf) return;
+  if (!DIAL.el) { DIAL.el = document.createElement('div'); DIAL.el.className = 'dial'; DIAL.el.innerHTML = '<i class="sky"></i><i class="dstars"></i><img class="orb">'; pf.parentNode.insertBefore(DIAL.el, pf); pf.classList.add('ondial'); }
+  DIAL.el.style.left = Math.round(pf.offsetLeft + pf.offsetWidth / 2 - 48) + 'px'; DIAL.el.style.top = Math.round(pf.offsetTop + pf.offsetHeight / 2 - 48) + 'px';
+  const h = hourNow() % 24, day = h >= 6 && h < 18.5, k = day ? (h - 6) / 12.5 : ((h >= 18.5 ? h - 18.5 : h + 5.5) / 11.5), a = Math.PI * (1 - clamp(k, 0, 1)), R = 46;
+  const sky = h < 5 || h >= 20 ? ['#1b2350', '#3a3f80'] : h < 7 ? ['#ff9fb8', '#ffd59a'] : h < 16.5 ? ['#7cc8ff', '#c8ecff'] : h < 18.5 ? ['#ff9a6a', '#ffcf8a'] : ['#6a5cb8', '#ff9fb8'];
+  DIAL.el.querySelector('.sky').style.background = `radial-gradient(circle at 50% 70%, ${sky[1]}, ${sky[0]})`; DIAL.el.querySelector('.dstars').style.opacity = day ? 0 : 1;
+  const orb = DIAL.el.querySelector('.orb'), src = dialIcon(day); if (orb.dataset.k !== (day ? 's' : 'm')) { orb.src = src; orb.dataset.k = day ? 's' : 'm'; }
+  orb.style.transform = `translate(${Math.cos(a) * R}px, ${-Math.sin(a) * R + 6}px)`; DIAL.el.title = `${fmtClock()} · ${day ? 'dia' : 'noite'}`; }
+
+// ---------- arena da Vovó num campo aberto (sem paredes: um círculo de pedra com bandeirinhas e tochas) ----------
+const ARENA26 = { cx: 0, cz: 0, R: 7.5, g: null, ring: null, ok: false };
+function arenaFind() { // procura em todo o mapa um campo livre (vila ou praia), o mais perto possível da praça
+  const bad = new Uint8Array(W * H), DL = doorList();
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const t = tile[I(x, y)], o = obj[I(x, y)], rr = regionAt(x + 0.5, y + 0.5);
+    bad[I(x, y)] = !rr || (rr.id !== 'vila' && rr.id !== 'praia') || (t !== GR && t !== SA && t !== PA) || (o && SOLID.has(o.t) && !NATURE.test(o.t)) || inFarm(x, y, 2) || zoneAt(x, y, 2) || (x >= PASTO.x0 - 3 && x <= PASTO.x1 + 3 && y >= PASTO.y0 - 3 && y <= PASTO.y1 + 3) || Math.hypot(x - SHRINE.x, y - SHRINE.y) < 8 || DL.some((D) => Math.abs(D.ex - x) < 4 && Math.abs(D.ez - y) < 4) ? 1 : 0; }
+  const free = (cx, cy, r) => { for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) { if ((x - cx) * (x - cx) + (y - cy) * (y - cy) > r * r) continue; if (!inb(x, y) || bad[I(x, y)]) return false; } return true; };
+  for (const r of [9, 8, 7, 6]) { let best = null, bd = 1e9; for (let y = r + 2; y < H - r - 2; y++) for (let x = r + 2; x < W - r - 2; x++) { const d = Math.hypot(x - 42, y - 36); if (d >= bd || bad[I(x, y)]) continue; if (free(x, y, r)) { best = [x, y, r]; bd = d; } } if (best) return best; }
+  return null; }
+function clearNature(x0, y0, x1, y1, round) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { if (!inb(x, y)) continue; if (round && Math.hypot(x - round[0], y - round[1]) > round[2]) continue; const o = obj[I(x, y)]; if (!o || !NATURE.test(o.t)) continue; try { if (o.apples) { o.fruit = false; try { setFruit(o); } catch (e) {} } if (o.t === 'bush' && o.inst) { INST.q_bush.set(o.inst[0], ZERO); INST.q_bushb.set(o.inst[1], ZERO); } else if (o.inst && INST[o.inst[0]]) INST[o.inst[0]].set(o.inst[1], ZERO); if (o.ri !== undefined && INST[o.v ? 'q_rockm' : 'q_rock']) INST[o.v ? 'q_rockm' : 'q_rock'].set(o.ri, ZERO); } catch (e) {} obj[I(x, y)] = null; } }
+function arenaBuild() { const f = arenaFind(); if (!f) return; const [x, y, r] = f; clearNature(x - r - 1, y - r - 1, x + r + 1, y + r + 1, [x, y, r + 1.5]); ARENA26.cx = x + 0.5; ARENA26.cz = y + 0.5; ARENA26.R = r - 1.2; ARENA26.ok = true;
+  RB.cx = PVP.cx = ARENA26.cx; RB.cz = PVP.cz = ARENA26.cz; RB.R = PVP.R = ARENA26.R;
+  for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (Math.hypot(i, j) <= r && Math.abs(Math.hypot(i, j) - (r - 0.6)) < 0.7 && (i * 7 + j * 3) % 4 === 0) put(x + i, y + j, { t: 'part', arena: 1 });
+  const g = new THREE.Group(); g.userData.keep = 1; const c = ARENA26.cx, z = ARENA26.cz, R = ARENA26.R;
+  const floor = new THREE.Mesh(new THREE.RingGeometry(R - 0.5, R + 0.25, 64).rotateX(-Math.PI / 2), lam('#e8dcc4')); floor.position.set(c, 0.025, z); floor.receiveShadow = true; g.add(floor);
+  const inner = new THREE.Mesh(new THREE.CircleGeometry(1.4, 40).rotateX(-Math.PI / 2), lam('#f3c8d8')); inner.position.set(c, 0.03, z); g.add(inner);
+  const deco = new THREE.Group(), cols = ['#ff8fbd', '#ffe18d', '#9fe8ff', '#c9a2ff'];
+  for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2, px = c + Math.cos(a) * (R + 0.8), pz = z + Math.sin(a) * (R + 0.8);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 1.6, 8), lam('#cfc4b2')); post.position.set(px, 0.8, pz); deco.add(post);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), lam('#e8dcc4')); cap.position.set(px, 1.66, pz); deco.add(cap);
+    const fl = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.34, 0.03), lam(cols[i % 4])); fl.position.set(px + Math.cos(a + 1.57) * 0.28, 1.35, pz + Math.sin(a + 1.57) * 0.28); fl.rotation.y = -a; deco.add(fl); }
+  g.add(bakeVC(deco)); world.add(g); ARENA26.g = g;
+  for (const a of [0.8, 2.4, 3.9, 5.5]) { const L = new THREE.PointLight(0xffb36a, 1.1, 7, 1.6); L.position.set(c + Math.cos(a) * (R + 0.8), 2.0, z + Math.sin(a) * (R + 0.8)); world.add(L); }
+  // tapete de pétalas que acende durante a luta (no lugar da parede de vidro)
+  const pm = new THREE.MeshBasicMaterial({ color: '#ff9fd0', transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const ringM = new THREE.Mesh(new THREE.RingGeometry(R - 0.25, R + 0.05, 64).rotateX(-Math.PI / 2), pm); ringM.position.set(c, 0.06, z); ringM.userData.keep = 1; world.add(ringM); ARENA26.ring = ringM;
+  RB.wall = ringM; ringM.visible = false; PVP.wall = PVP.wall || null; }
+
+// ---------- pulo e parkour ----------
+// C pula (o Álbum foi para a tecla L). No ar dá para passar por cima de cercas, pedrinhas e arbustos baixos.
+// Circuito de Parkour perto da arena: plataformas cada vez mais altas até a estrela lá no alto.
+const JUMP = { v0: 7.2, g: 20, coyote: 0 }; P.jy = 0; P.jv = 0;
+const PK26 = { plats: [], g: null, goal: null, t0: 0, run: false, done: false };
+const LOW26 = new Set(['ffence', 'pfence', 'fence', 'debris', 'bush', 'rock', 'lotsign']);
+function platTop(x, z, r = 0.18) { let h = 0; for (const p of PK26.plats) if (x > p.x - p.w / 2 - r && x < p.x + p.w / 2 + r && z > p.z - p.d / 2 - r && z < p.z + p.d / 2 + r) h = Math.max(h, p.h); return h; }
+function platBlock(x, z, r = 0.24) { for (const p of PK26.plats) if (p.h > P.jy + 0.28 && x > p.x - p.w / 2 - r && x < p.x + p.w / 2 + r && z > p.z - p.d / 2 - r && z < p.z + p.d / 2 + r) return true; return false; }
+function canJump() { return mode === 'out' && !P.boat && !P.bike && !P.fishing && !P.dead && !modalOpen() && !dlg && !farmEd && !CUT && !titleOn; }
+function doJump() { if (!canJump()) return; const sup = platTop(P.x, P.z); if (P.jy > sup + 0.05 && JUMP.coyote <= 0) return; if (P.st < 6) { floatText(P.x, 1.8, P.z, 'Sem fôlego!', C.pink); return; }
+  P.jv = JUMP.v0; P.jy = Math.max(P.jy, sup) + 0.01; JUMP.coyote = 0; P.st -= 6; P.stT = 0.5; anim('Jump_Full_Short', 1.6); sfx('swing'); burst(P.x, 0.1 + P.jy, P.z, ['#e8dcc4', '#ffffff'], 6, 1.2); }
+function jumpUpdate(dt) { if (mode !== 'out') { P.jy = 0; P.jv = 0; return; } const sup = platTop(P.x, P.z);
+  if (P.jv !== 0 || P.jy > sup + 0.001) { P.jv -= JUMP.g * dt; P.jy += P.jv * dt; if (P.jy <= sup) { const hard = P.jv < -9; P.jy = sup; P.jv = 0; if (hard || sup > 0) { burst(P.x, sup + 0.05, P.z, ['#e8dcc4', '#ffffff'], hard ? 10 : 5, 1.6); sfx('step'); } JUMP.coyote = 0.12; } }
+  else { P.jy = sup; JUMP.coyote = 0.12; } if (P.jy > sup + 0.05) JUMP.coyote -= dt;
+  // circuito: cronômetro e chegada
+  if (PK26.plats.length) { const first = PK26.plats[0]; if (!PK26.run && Math.abs(P.jy - first.h) < 0.05 && Math.hypot(P.x - first.x, P.z - first.z) < 0.8) { PK26.run = true; PK26.t0 = gtime; toast('🏃 Parkour! Chegue na <b>estrela</b> lá no alto.'); }
+    const top = PK26.plats[PK26.plats.length - 1]; if (PK26.run && Math.abs(P.jy - top.h) < 0.05 && Math.hypot(P.x - top.x, P.z - top.z) < 0.9) { PK26.run = false; const t = gtime - PK26.t0; S.pk = S.pk || {}; const first = !S.pk.done, best = S.pk.best ? Math.min(S.pk.best, t) : t; S.pk.done = 1; S.pk.best = best;
+      if (first) { S.coins += 120; S.stars += 10; floatText(P.x, 2.6 + P.jy, P.z, '+120🪙 +10⭐ Primeira vez!', C.gold, true); } sfx('jingle_5'); confetti && confetti(innerWidth / 2, innerHeight / 2, 40, true); toast(`🏁 Circuito em <b>${t.toFixed(1)} s</b>! Recorde: ${best.toFixed(1)} s.`); lastHud = ''; hud(); }
+    if (PK26.run && P.jy < 0.02 && gtime - PK26.t0 > 1.5) PK26.run = false; }
+  if (PK26.goal) { PK26.goal.rotation.y += dt * 1.5; PK26.goal.position.y = PK26.goalY + Math.sin(gtime * 2) * 0.08; } }
+{ const base = moveC; moveC = function (o, dx, dz, r = 0.28) { if (o !== P || P.boat || mode !== 'out') return base(o, dx, dz, r); const x0 = o.x, z0 = o.z;
+  if (P.jy > 0.45) { for (const [ax, az] of [[dx, 0], [0, dz]]) { if (!ax && !az) continue; const nx = o.x + ax, nz = o.z + az, t = obj[I(Math.floor(nx), Math.floor(nz))], tl = tAt(Math.floor(nx), Math.floor(nz)); const ok = !solidW(nx, nz) || (t && LOW26.has(t.t) && tl !== WA); if (ok && !regionBlocked(nx, nz)) { o.x = nx; o.z = nz; } } }
+  else base(o, dx, dz, r);
+  if (PK26.plats.length && platBlock(o.x, o.z)) { if (!platBlock(o.x, z0)) o.z = z0; else if (!platBlock(x0, o.z)) o.x = x0; else { o.x = x0; o.z = z0; } } }; }
+function parkourBuild() { if (!ARENA26.ok) return; const R0 = ARENA26.R + 2.6; let ox = 0, oz = 0, okA = false;
+  for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const bx = Math.round(ARENA26.cx + dx * (R0 + 4)) - 3, bz = Math.round(ARENA26.cz + dz * (R0 + 4)) - 3; let ok = true; for (let j = 0; j < 7 && ok; j++) for (let i = 0; i < 8 && ok; i++) { const t = tAt(bx + i, bz + j), o = inb(bx + i, bz + j) && obj[I(bx + i, bz + j)]; if (!inb(bx + i, bz + j) || (t !== GR && t !== SA) || (o && SOLID.has(o.t) && !NATURE.test(o.t)) || inFarm(bx + i, bz + j, 1) || zoneAt(bx + i, bz + j, 1) || (bx + i >= PASTO.x0 - 2 && bx + i <= PASTO.x1 + 2 && bz + j >= PASTO.y0 - 2 && bz + j <= PASTO.y1 + 2)) ok = false; }
+    if (ok) { ox = bx + 1; oz = bz + 1; okA = true; clearNature(bx - 1, bz - 1, bx + 8, bz + 7); break; } }
+  if (!okA) return; const H = [0.45, 0.8, 1.15, 1.0, 1.4, 1.8, 1.55, 2.0, 2.45], plats = [];
+  for (let i = 0; i < H.length; i++) { const row = Math.floor(i / 3), col = row % 2 ? 2 - (i % 3) : i % 3; plats.push({ x: ox + 0.5 + col * 2.3, z: oz + 0.5 + row * 2.2, w: i === H.length - 1 ? 1.6 : 1.2, d: i === H.length - 1 ? 1.6 : 1.2, h: H[i] }); }
+  for (const p of plats) { const tx = Math.floor(p.x), tz = Math.floor(p.z); if (!inb(tx, tz) || (tAt(tx, tz) !== GR && tAt(tx, tz) !== SA) || (obj[I(tx, tz)] && SOLID.has(obj[I(tx, tz)].t))) return; } // sem lugar: não monta
+  PK26.plats = plats; const g = new THREE.Group(); g.userData.keep = 1; const parts = new THREE.Group(), wood = ['#c98a5a', '#b07448', '#d8a070'];
+  plats.forEach((p, i) => { const b = new THREE.Mesh(new THREE.BoxGeometry(p.w, p.h, p.d), lam(i % 2 ? '#cfc4b2' : wood[i % 3])); b.position.set(p.x, p.h / 2, p.z); parts.add(b); const t = new THREE.Mesh(new THREE.BoxGeometry(p.w + 0.08, 0.08, p.d + 0.08), lam(i === plats.length - 1 ? '#ffe18d' : '#8fd16a')); t.position.set(p.x, p.h + 0.03, p.z); parts.add(t); });
+  g.add(bakeVC(parts)); g.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); world.add(g); PK26.g = g;
+  const top = plats[plats.length - 1], st = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), lam('#ffd45a', 0.6)); st.position.set(top.x, top.h + 0.9, top.z); st.userData.keep = 1; world.add(st); PK26.goal = st; PK26.goalY = top.h + 0.9;
+  try { const sg = makeSign('Circuito de Parkour'); sg.position.set(ox - 0.8, 0, oz + 0.5); sg.rotation.y = Math.PI / 2; sg.userData.keep = 1; world.add(sg); } catch (e) {}
+  for (const p of plats) put(Math.floor(p.x), Math.floor(p.z), { t: 'part', pk: 1 }); }
+PRE_GH.push(() => { arenaBuild(); parkourBuild(); });
+// depois do relevo, os tiles do circuito deixam de ser "sólidos" para a lógica antiga (a colisão é a das plataformas)
+{ const base = buildWorld; buildWorld = function () { const r = base(); for (let i = 0; i < obj.length; i++) if (obj[i] && obj[i].pk) obj[i] = null; return r; }; }
+// pulo no desenho: a personagem sobe P.jy (a câmera sobe um pouco junto)
+{ const base = renderer.render.bind(renderer); renderer.render = function (sc, cam) { const j = sc === scene && mode === 'out' && player ? P.jy || 0 : 0; if (!j) return base(sc, cam); player.obj.position.y += j; const cj = cam === camera ? j * 0.45 : 0; cam.position.y += cj; try { return base(sc, cam); } finally { player.obj.position.y -= j; cam.position.y -= cj; } }; }
+// teclas: C pula, L abre o Álbum; no celular, um botão de pulo
+addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (e.code === 'KeyC' && ready && !titleOn) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) doJump(); } else if (e.code === 'KeyL' && ready && !titleOn && !modalOpen()) { e.preventDefault(); openAlbum(); } }, true);
+PADMAP[6] = 'KeyC';
+{ const a = APPS.find((q) => q.k === 'album'); if (a) a.key = 'L'; }
+setTimeout(() => { try { const ta = $('tA'); if (ta && !$('tJ')) { ta.insertAdjacentHTML('afterend', '<button class="btn tbtn" id="tJ" style="right:100px;bottom:176px">⤒</button>'); $('tJ').addEventListener('touchstart', (e) => { e.preventDefault(); doJump(); }, { passive: false }); }
+  const ba = $('bAlbum'); if (ba) { const k = ba.querySelector('.key'); if (k) k.textContent = 'L'; ba.title = 'Álbum (L)'; } } catch (e) {} }, 0);
+// rosa: luta no campo aberto, com o anel de pétalas acendendo
+{ const base = rosaStart; rosaStart = function () { base(); if (ARENA26.ring) { ARENA26.ring.visible = true; ARENA26.ring.material.opacity = 0.55; } }; }
+{ const b2 = v14Update; v14Update = function (dt) { b2(dt); try { jumpUpdate(dt); dialUpdate(dt); if (ARENA26.ring && ARENA26.ring.visible) ARENA26.ring.material.opacity = 0.4 + Math.sin(gtime * 3) * 0.15; } catch (e) {} }; }
+// mapa: arena e circuito
+{ const base = openMap; openMap = function () { base(); try { const c = $('mapc'); if (!c || mode !== 'out' || !ARENA26.ok) return; const x = c.getContext('2d'), s = 8; x.strokeStyle = '#ff8fbd'; x.lineWidth = 4; x.beginPath(); x.arc(ARENA26.cx * s, ARENA26.cz * s, ARENA26.R * s, 0, 7); x.stroke(); x.font = 'bold 12px sans-serif'; x.textAlign = 'center'; x.lineWidth = 3; x.strokeStyle = '#fff'; x.strokeText('Arena das Flores', ARENA26.cx * s, ARENA26.cz * s); x.fillStyle = '#14141b'; x.fillText('Arena das Flores', ARENA26.cx * s, ARENA26.cz * s);
+  if (PK26.plats.length) { const p = PK26.plats[4]; x.strokeText('Parkour', p.x * s, p.z * s); x.fillText('Parkour', p.x * s, p.z * s); } } catch (e) {} }; }
+
+// sol e lua desenhados (fofinhos, com carinha)
+function dialIcon(day) { const k = day ? 'sun' : 'moon'; DIAL.ic = DIAL.ic || {}; if (DIAL.ic[k]) return DIAL.ic[k]; const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); x.translate(32, 32); x.lineJoin = 'round';
+  if (day) { x.fillStyle = '#ffcf4a'; x.strokeStyle = '#14141b'; x.lineWidth = 3; for (let i = 0; i < 10; i++) { x.save(); x.rotate((i / 10) * Math.PI * 2); x.beginPath(); x.moveTo(-5, -19); x.lineTo(0, -29); x.lineTo(5, -19); x.closePath(); x.fill(); x.stroke(); x.restore(); }
+    x.beginPath(); x.arc(0, 0, 17, 0, 7); x.fillStyle = '#ffe27a'; x.fill(); x.stroke(); }
+  else { x.fillStyle = '#fff4c8'; x.strokeStyle = '#14141b'; x.lineWidth = 3; x.beginPath(); x.arc(0, 0, 20, 0.6, Math.PI * 2 - 0.6, false); x.arc(9, -2, 15, Math.PI * 2 - 1.15, 1.15, true); x.closePath(); x.fill(); x.stroke(); }
+  x.fillStyle = '#14141b'; const ex = day ? 0 : -7; x.beginPath(); x.arc(ex - 5, -2, 2.2, 0, 7); x.arc(ex + 5, -2, 2.2, 0, 7); x.fill(); x.fillStyle = 'rgba(255,120,150,.6)'; x.beginPath(); x.arc(ex - 9, 4, 3, 0, 7); x.arc(ex + 9, 4, 3, 0, 7); x.fill();
+  x.strokeStyle = '#14141b'; x.lineWidth = 2; x.beginPath(); x.arc(ex, 2, 4, 0.2, Math.PI - 0.2); x.stroke(); return (DIAL.ic[k] = c.toDataURL()); }
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -6646,4 +6783,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
