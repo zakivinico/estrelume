@@ -2,6 +2,27 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v27: mais leve (resolução dinâmica e qualidade automática), personagem do título, cabelos diferentes e introdução com diálogos
+**Desempenho**
+- **Resolução dinâmica**: o jogo mede o tempo de cada quadro e baixa a resolução interna quando fica lento (até 60%), subindo de volta quando sobra folga.
+- **Qualidade automática**: se mesmo na resolução mínima continuar lento, a qualidade desce sozinha de Alta para Média e depois para Baixa, com um aviso. Dá para desligar em Ajustes → ⚡ Desempenho, onde também tem a opção **Mostrar FPS**.
+- A névoa sonolenta (9 camadas de tela cheia) só é desenhada quando há uma região fechada por perto, e com metade das camadas fora da Alta.
+- O antisserrilhado (MSAA) do pós-processamento ficou só na Alta.
+- Objetos miúdos (vasinhos, pedrinhas, enfeites) não projetam mais sombra, o que deixa a passada de sombra mais leve.
+- O HUD é redesenhado no máximo 8 vezes por segundo, em vez de a cada quadro.
+
+**Tela inicial e píer**
+- A Fofinha da tela inicial fica de pé no píer e acena de vez em quando. O "sentar" das animações novas é de cadeira e afundava o corpo nas tábuas.
+- No jogo, a personagem também afundava uns 30 cm nas tábuas do píer. Agora pisa em cima delas.
+
+**Cabelos**
+- Cada penteado ganhou uma combinação própria de touca e franja: touca de lado, curtinha, comprida ou fofa (afro), e franja de cortina, reta, de lado ou espetada. Os 22 penteados ficaram bem diferentes uns dos outros.
+- Alguns moradores trocaram de penteado para não ficarem todos iguais.
+
+**Introdução**
+- A abertura virou cinco cenas curtas com diálogo em balão: a Narradora conta a história do vale, do Poço e da névoa, e depois a carta da Vovó Rosa aparece.
+- O texto aparece letra por letra. <kbd>Espaço</kbd>, <kbd>Enter</kbd>, <kbd>E</kbd>, um clique ou um toque mostra a fala inteira e depois passa para a próxima. <kbd>Esc</kbd> ou o botão "Pular" encerra a abertura.
+
 ## v26: cabelos divertidos, casas variadas, corações com sol e lua, arena aberta da Vovó, pulo e parkour
 **Cabelos**
 - 10 penteados novos da Fofinha: rabo de lado com laço, tranças, afro fofo, moicano, chanel com franja, coquinhos de coelho, chiquinhas com estrelas, topete de onda, orelhinhas de gato e rabo alto com xuxinha. Quatro são de graça; os outros ficam no Ateliê da Fifi.

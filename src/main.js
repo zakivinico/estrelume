@@ -139,7 +139,7 @@ for (let x = 44; x <= 68; x++) for (const y of [12, 13]) if (tile[I(x, y)] === G
 let dockStart = 0;
 for (let x = 44; x < 70; x++) { let wet = false; for (const y of [44, 45]) { if (tile[I(x, y)] === WA) wet = true; else tile[I(x, y)] = PA; } if (wet) { dockStart = x; break; } }
 for (let x = dockStart; x < dockStart + 5; x++) for (const y of [44, 45]) tile[I(x, y)] = DK;
-const DECKY = 0.08;
+const DECKY = 0.3; // topo das tábuas do q_dock (fica em ~0,39; os pés da Fofinha descem um pouco abaixo da origem)
 rect(30, 37, 36, 40, SO); rect(33, 34, 34, 35, PA); rect(33, 28, 34, 31, PA); rect(48, 27, 49, 31, PA); rect(52, 31, 52, 31, PA);
 const put = (x, y, o) => { obj[I(x, y)] = o; };
 const SOLID = new Set(['tree', 'pine', 'rock', 'bush', 'house', 'shrine', 'box', 'board', 'lamp', 'fence', 'part', 'mill', 'shop', 'smith', 'vwell', 'palm', 'umbrella', 'mine', 'tower', 'hut', 'atelie', 'ffence', 'pfence']);
@@ -3359,7 +3359,7 @@ function titleKey(k) {
 const TCAM = { x: 0, z: 45 }, TCO = { x: 4.4, y: 1.8, z: 2.3, lx: -1.4, ly: 0.95, lz: 0.5, r: 0.8 };
 function titleCam(dt) {
   S.time = (DAYLEN * (17.1 - 6)) / 18; const t = gtime, bx = dockStart + 4.1, bz = 44.9, by = typeof DECKY === 'number' ? DECKY : 0.15;
-  if (player) { player.obj.position.set(bx, by + 0.16, bz); player.obj.rotation.y = TCO.r; player.update(dt, 'Sit_Floor_Idle'); }
+  if (player) { player.obj.position.set(bx, by + 0.16, bz); player.obj.rotation.y = TCO.r; player.update(dt, typeof titlePose === 'function' ? titlePose(t) : 'Sit_Floor_Idle'); }
   if (petObj) { petObj.visible = true; petObj.position.set(bx + 0.3, by, bz + 0.85); petObj.rotation.y = TCO.r + Math.sin(t * 0.8) * 0.2; }
   camPos.set(bx + TCO.x + Math.sin(t * 0.06) * 0.4, by + TCO.y + Math.sin(t * 0.09) * 0.1, bz + TCO.z + Math.cos(t * 0.05) * 0.25);
   if (camera.position.distanceTo(camPos) > 5) camera.position.copy(camPos); else camera.position.lerp(camPos, 1 - Math.pow(0.05, dt));
@@ -5452,10 +5452,10 @@ const NPCKM = {
   iris: { kh: 'fe', hc: 'lilas', kb: 'fe', ct: 'branco', cb: 'lilas', cs: 'roxo', sk: 's1', ey: 'cilios', ec: 'lilas', mo: 'sorriso', gl: 'redondo', glc: 'lilas', acc: 'estrela' },
   duda: { kh: 'ff', hc: 'ruivo', kb: 'ff', ct: 'carvao', cb: 'marrom', cs: 'carvao', sk: 's4', ey: 'redondo', br: 'grossa', mo: 'dente', fc: 'blush', wa: 'cinto', wac: 'sol' },
   otto: { kh: 'me', hc: 'castanho', kb: 'md', ct: 'marinho', cb: 'marinho', cs: 'carvao', sk: 's3', ey: 'ponto', br: 'grossa', mo: 'linha', acc: 'boina', acc_c: 'grafite', sz: 'a' },
-  lia: { kh: 'fd', hc: 'loiro', kb: 'ma', ct: 'menta', cb: 'bege', cs: 'marrom', sk: 's1', ey: 'brilho', ec: 'verde', mo: 'sorrisao', fc: 'sardas', gl: 'sol', glc: 'coral', bk: 'aljava' },
-  fifi: { kh: 'fb', hc: 'rosa', kb: 'fc', ct: 'rosa', cb: 'lilas', cs: 'branco', sk: 's2', ey: 'cilios', ec: 'rosa', mo: 'bico', fc: 'blush', acc: 'laco', acc_c: 'lilas', gl: 'gatinho', glc: 'rosa' },
-  tome: { kh: 'ma', hc: 'branco', kb: 'me', ct: 'azul', cb: 'marinho', cs: 'marrom', sk: 's5', ey: 'sono', mo: 'sorriso', acc: 'gorro', acc_c: 'ceu', sz: 'a' },
-  marina: { kh: 'fa', hc: 'preto', kb: 'mc', ct: 'marinho', cb: 'branco', cs: 'carvao', sk: 's5', ey: 'redondo', br: 'brava', mo: 'sorriso', gl: 'sol', glc: 'ceu', acc: 'palha' },
+  lia: { kh: 'h1', hc: 'loiro', kb: 'ma', ct: 'menta', cb: 'bege', cs: 'marrom', sk: 's1', ey: 'brilho', ec: 'verde', mo: 'sorrisao', fc: 'sardas', gl: 'sol', glc: 'coral', bk: 'aljava' },
+  fifi: { kh: 'h7', hc: 'rosa', kb: 'fc', ct: 'rosa', cb: 'lilas', cs: 'branco', sk: 's2', ey: 'cilios', ec: 'rosa', mo: 'bico', fc: 'blush', acc: 'laco', acc_c: 'lilas', gl: 'gatinho', glc: 'rosa' },
+  tome: { kh: 'h4', hc: 'branco', kb: 'me', ct: 'azul', cb: 'marinho', cs: 'marrom', sk: 's5', ey: 'sono', mo: 'sorriso', acc: 'gorro', acc_c: 'ceu', sz: 'a' },
+  marina: { kh: 'h2', hc: 'preto', kb: 'mc', ct: 'marinho', cb: 'branco', cs: 'carvao', sk: 's5', ey: 'redondo', br: 'brava', mo: 'sorriso', gl: 'sol', glc: 'ceu', acc: 'palha' },
 };
 for (const [id, lk] of Object.entries(NPCKM)) NPCLOOK[id] = Object.assign({}, KM_DEF, lk);
 for (const d of NPCDEF) if (NPCKM[d.id]) { d.m = 'km'; d.hue = 0; }
@@ -6260,29 +6260,38 @@ function fofaParts(lk) {
   const bow = (x, y, z, col, s2 = 1) => { for (const m of [-1, 1]) A('head', 'ball', col, x + m * 0.07 * s2, y, z, 0.075 * s2, 0.05 * s2, 0.035 * s2, 0, 0, m * 0.5); A('head', 'ball', dark(col, 0.85), x, y, z + 0.01, 0.03 * s2, 0.03 * s2, 0.03 * s2); };
   const star = (x, y, z, col = '#ffd45a', r = 0.05) => { for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; A('head', 'cone', col, x + Math.sin(a) * r * 0.7, y + Math.cos(a) * r * 0.7, z, r * 0.4, r * 0.9, r * 0.25, Math.PI / 2, 0, -a); } A('head', 'ball', col, x, y, z, r * 0.55, r * 0.55, r * 0.35); };
   const bun = (x, y, z, r) => A('head', 'ball', hc, x, y, z, r, r, r);
+  // formas-base de cabelo bem diferentes entre si (v27)
+  const capSide = (dir = 1) => { capB(0.3, 1.06); A('head', 'ball', hc, dir * 0.12, 1.08, 0.02, 0.24, 0.12, 0.26, 0, 0, dir * 0.35); A('head', 'ball', hl, dir * 0.16, 1.12, 0.06, 0.1, 0.04, 0.12, 0.2, 0, dir * 0.4); };
+  const capShort = (col = hc) => { A('head', 'cap', col, HC[0], HC[1] + 0.01, HC[2] - 0.02, 0.345, 0.32, 0.325, -0.48, 0, 0); };
+  const capLong = (len = 0.5) => { capB(0.18, 1.08); A('head', 'ball', hc, 0, 0.86 - len * 0.35, -0.16, 0.34, 0.2 + len * 0.36, 0.2); for (const m of [-1, 1]) A('head', 'ball', hc, m * 0.3, 0.8 - len * 0.2, -0.02, 0.1, 0.16 + len * 0.22, 0.15); };
+  const capPuff = (k = 1) => { capB(0.25, 1.1 * k); for (let i = 0; i < 9; i++) { const a = (i / 9) * Math.PI * 2; A('head', 'ball', i % 3 ? hc : hl, Math.cos(a) * 0.3 * k, 1.02 + Math.sin(i * 1.7) * 0.03, -0.04 + Math.sin(a) * 0.28 * k, 0.11 * k, 0.1 * k, 0.11 * k); } };
+  const bangSwoop = (dir = 1) => { A('head', 'ball', hc, -dir * 0.06, 1.0, 0.2, 0.25, 0.08, 0.13, 0.5, 0, dir * 0.42); A('head', 'ball', hl, -dir * 0.1, 1.04, 0.21, 0.09, 0.03, 0.06, 0.5, 0, dir * 0.42); };
+  const bangCurtain = () => { for (const m of [-1, 1]) A('head', 'ball', hc, m * 0.13, 0.99, 0.2, 0.15, 0.09, 0.12, 0.5, 0, m * 0.55); };
+  const bangBlunt = () => { A('head', 'ball', hc, 0, 0.985, 0.2, 0.3, 0.075, 0.13, 0.35, 0, 0); A('head', 'box', dark(hc, 0.92), 0, 0.935, 0.255, 0.42, 0.03, 0.06); };
+  const bangSpiky = () => { for (let i = -2; i <= 2; i++) A('head', 'cone', i % 2 ? hc : hl, i * 0.09, 1.0, 0.22, 0.06, 0.15, 0.05, 1.2 + Math.abs(i) * 0.1, 0, -i * 0.25); };
   switch (lk.kh) {
-    case 'fa': capB(); bang(); bun(0, 1.18, -0.08, 0.13); break; // coque alto
-    case 'fb': capB(); bang(); bun(-0.26, 1.07, -0.04, 0.1); bun(0.26, 1.07, -0.04, 0.1); break; // coquinhos
-    case 'fc': capB(); bang(0.24, 1.0); bun(0, 1.16, -0.12, 0.12); A('head', 'ring', ct, 0, 1.03, -0.02, 0.335, 0.335, 0.335, Math.PI / 2 - 0.35, 0, 0); break; // coque com faixa
-    case 'fd': capB(); bang(); bun(0, 0.97, -0.33, 0.14); break; // coque redondo atrás
-    case 'fe': capB(0.15, 1.08); bang(0.27, 1.02); A('head', 'ball', hc, 0, 0.72, -0.13, 0.34, 0.36, 0.22); break; // liso comprido
-    case 'ff': capB(); bang(); for (const m of [-1, 1]) { A('head', 'ball', hc, m * 0.36, 0.78, -0.08, 0.09, 0.15, 0.09); A('head', 'ball', ct, m * 0.33, 0.9, -0.06, 0.045, 0.045, 0.045); } break; // chiquinhas
-    case 'ma': for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2, rr = 0.25; A('head', 'ball', hc, Math.cos(a) * rr * 1.15, 1.04 + Math.sin(i * 2.3) * 0.04, -0.06 + Math.sin(a) * rr, 0.1, 0.09, 0.1); } A('head', 'ball', hc, 0, 1.1, -0.05, 0.22, 0.12, 0.22); break; // cacheadinho
-    case 'mb': A('head', 'half', hc, 0, 0.7, 0.07, 0.29, 0.13, 0.25, Math.PI, 0, 0); break; // careca e barba
-    case 'mc': capB(0.32, 1.05); A('head', 'half', ct, 0, 1.0, -0.02, 0.33, 0.2, 0.32); A('head', 'cyl', dark(ct, 0.85), 0, 1.0, 0.24, 0.2, 0.025, 0.14); break; // quepe
-    case 'md': capB(0.3, 1.04); for (let i = 0; i < 7; i++) { const a = -0.9 + i * 0.3; A('head', 'cone', hc, Math.sin(a) * 0.22, 1.12 + Math.cos(i) * 0.02, -0.05 + Math.cos(a) * 0.05, 0.07, 0.17, 0.07, -0.4, 0, -a * 0.6); } break; // espetado
-    case 'me': capB(); A('head', 'ball', hc, 0.05, 1.1, 0.16, 0.18, 0.11, 0.13, 0.4, 0, -0.3); for (const m of [-1, 1]) A('head', 'ring', '#2a2230', m * 0.11, 0.84, 0.305, 0.075, 0.075, 0.075); A('head', 'box', '#2a2230', 0, 0.85, 0.31, 0.07, 0.012, 0.012); break; // topete e óculos
-    case 'mf': capB(0.3, 1.06); for (let i = 0; i < 9; i++) { const a = i * 0.7; A('head', 'ball', hc, Math.cos(a) * 0.2, 1.09 + (i % 3) * 0.025, -0.05 + Math.sin(a) * 0.17, 0.1, 0.07, 0.1, i, i * 2, 0); } break; // bagunçado
-    case 'h1': capB(); bang(); chain(0.3, 0.92, -0.12, 0.05, -0.09, -0.02, 4, 0.085, 0.06); bow(0.27, 1.0, -0.1, ct); break; // rabo de lado com laço
-    case 'h2': capB(); bang(); for (const m of [-1, 1]) chain(m * 0.27, 0.78, -0.08, m * 0.012, -0.075, 0.02, 5, 0.06, 0.045, hc, ct); break; // tranças
-    case 'h3': for (let i = 0; i < 26; i++) { const a = i * 2.4, b = Math.acos(1 - 2 * ((i + 0.5) / 26)); if (b > 2.1) continue; A('head', 'ball', i % 5 ? hc : hl, Math.sin(b) * Math.cos(a) * 0.36, 0.86 + Math.cos(b) * 0.36, -0.04 + Math.sin(b) * Math.sin(a) * 0.36, 0.13, 0.13, 0.13); } bang(0.24, 1.02); break; // afro fofo
-    case 'h4': capB(0.3, 1.02); for (let i = 0; i < 6; i++) A('head', 'cone', i % 2 ? hl : hc, 0, 1.12 + Math.sin(i * 0.5) * 0.02, 0.2 - i * 0.09, 0.06, 0.2 - Math.abs(i - 2) * 0.02, 0.07, -0.35 + i * 0.12, 0, 0); break; // moicano
-    case 'h5': capB(0.12, 1.08); A('head', 'ball', hc, 0, 1.0, 0.18, 0.31, 0.1, 0.16, 0.25, 0, 0); for (const m of [-1, 1]) A('head', 'ball', hc, m * 0.3, 0.74, 0.0, 0.1, 0.2, 0.2); A('head', 'ball', hl, -0.12, 1.06, 0.14, 0.09, 0.03, 0.07, 0.4, 0, 0.3); break; // chanel com franja
+    case 'fa': capB(); bangCurtain(); bun(0, 1.2, -0.06, 0.13); A('head', 'ring', hl, 0, 1.11, -0.06, 0.1, 0.1, 0.1, Math.PI / 2, 0, 0); break; // coque alto
+    case 'fb': capB(); bangBlunt(); bun(-0.27, 1.06, -0.04, 0.1); bun(0.27, 1.06, -0.04, 0.1); break; // coquinhos
+    case 'fc': capSide(1); bangSwoop(1); bun(0, 1.14, -0.15, 0.12); A('head', 'ring', ct, 0, 1.03, -0.02, 0.335, 0.335, 0.335, Math.PI / 2 - 0.35, 0, 0); break; // coque com faixa
+    case 'fd': capB(0.42, 1.06); bun(0, 0.92, -0.34, 0.15); A('head', 'ring', ct, 0, 0.93, -0.25, 0.09, 0.09, 0.09, 0.2, 0, 0); break; // coque redondo (testa livre)
+    case 'fe': capLong(0.8); bangCurtain(); break; // liso comprido
+    case 'ff': capB(); bang(); for (const m of [-1, 1]) { A('head', 'ball', hc, m * 0.36, 0.76, -0.08, 0.09, 0.16, 0.09); A('head', 'ball', ct, m * 0.33, 0.88, -0.06, 0.045, 0.045, 0.045); } break; // chiquinhas
+    case 'ma': for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2, rr = 0.26; A('head', 'ball', i % 4 ? hc : hl, Math.cos(a) * rr * 1.15, 1.04 + Math.sin(i * 2.3) * 0.05, -0.06 + Math.sin(a) * rr, 0.1, 0.09, 0.1); } A('head', 'ball', hc, 0, 1.1, -0.05, 0.22, 0.12, 0.22); for (let i = -1; i <= 1; i++) A('head', 'ball', hc, i * 0.12, 1.0, 0.2, 0.07, 0.07, 0.07); break; // cacheadinho
+    case 'mb': A('head', 'half', hc, 0, 0.7, 0.07, 0.29, 0.13, 0.25, Math.PI, 0, 0); A('head', 'ball', hc, 0, 0.74, 0.3, 0.1, 0.03, 0.04); break; // careca e barba
+    case 'mc': capShort(); A('head', 'half', ct, 0, 1.0, -0.02, 0.33, 0.2, 0.32); A('head', 'cyl', dark(ct, 0.85), 0, 1.0, 0.24, 0.2, 0.025, 0.14); break; // quepe
+    case 'md': capShort(); bangSpiky(); for (let i = 0; i < 7; i++) { const a = -0.9 + i * 0.3; A('head', 'cone', hc, Math.sin(a) * 0.22, 1.12 + Math.cos(i) * 0.02, -0.05 + Math.cos(a) * 0.05, 0.07, 0.17, 0.07, -0.4, 0, -a * 0.6); } break; // espetado
+    case 'me': capSide(-1); A('head', 'ball', hc, 0.05, 1.1, 0.16, 0.18, 0.11, 0.13, 0.4, 0, -0.3); for (const m of [-1, 1]) A('head', 'ring', '#2a2230', m * 0.11, 0.84, 0.305, 0.075, 0.075, 0.075); A('head', 'box', '#2a2230', 0, 0.85, 0.31, 0.07, 0.012, 0.012); break; // topete e óculos
+    case 'mf': capPuff(0.95); bangSpiky(); break; // bagunçado
+    case 'h1': capSide(1); bangSwoop(-1); chain(0.3, 0.92, -0.12, 0.05, -0.09, -0.02, 4, 0.085, 0.06); bow(0.27, 1.0, -0.1, ct); break; // rabo de lado com laço
+    case 'h2': capB(); bangBlunt(); for (const m of [-1, 1]) chain(m * 0.27, 0.78, -0.08, m * 0.012, -0.075, 0.02, 5, 0.06, 0.045, hc, ct); break; // tranças
+    case 'h3': for (let i = 0; i < 26; i++) { const a = i * 2.4, b = Math.acos(1 - 2 * ((i + 0.5) / 26)); if (b > 2.1) continue; A('head', 'ball', i % 5 ? hc : hl, Math.sin(b) * Math.cos(a) * 0.36, 0.86 + Math.cos(b) * 0.36, -0.04 + Math.sin(b) * Math.sin(a) * 0.36, 0.13, 0.13, 0.13); } break; // afro fofo
+    case 'h4': capShort(dark(hc, 0.7)); for (let i = 0; i < 6; i++) A('head', 'cone', i % 2 ? hl : hc, 0, 1.12 + Math.sin(i * 0.5) * 0.02, 0.2 - i * 0.09, 0.06, 0.2 - Math.abs(i - 2) * 0.02, 0.07, -0.35 + i * 0.12, 0, 0); break; // moicano
+    case 'h5': capLong(0.15); bangBlunt(); break; // chanel com franja
     case 'h6': capB(); bang(); for (const m of [-1, 1]) { A('head', 'ball', hc, m * 0.15, 1.24, -0.06, 0.08, 0.17, 0.08, 0, 0, -m * 0.25); A('head', 'ball', '#ffb3cf', m * 0.155, 1.24, -0.01, 0.04, 0.11, 0.03, 0, 0, -m * 0.25); } break; // coquinhos de coelho
-    case 'h7': capB(); bang(); for (const m of [-1, 1]) { chain(m * 0.26, 1.08, -0.06, m * 0.07, 0.06, -0.01, 3, 0.09, 0.07); star(m * 0.24, 1.05, 0.06); } break; // chiquinhas altas com estrelas
-    case 'h8': capB(0.35, 1.05); for (let i = 0; i < 3; i++) A('head', 'ball', i === 1 ? hl : hc, 0.02, 1.08 + i * 0.05, 0.22 - i * 0.08, 0.2 - i * 0.03, 0.11, 0.15, -0.6 - i * 0.15, 0, 0); break; // topete de onda
-    case 'h9': capB(); bang(); for (const m of [-1, 1]) { A('head', 'cone', hc, m * 0.19, 1.15, -0.02, 0.09, 0.16, 0.06, 0, 0, -m * 0.35); A('head', 'cone', '#ffb3cf', m * 0.19, 1.14, 0.005, 0.05, 0.1, 0.03, 0, 0, -m * 0.35); } break; // orelhinhas de gato
-    case 'h10': capB(); bang(); chain(0, 1.12, -0.24, 0, -0.08, -0.06, 4, 0.1, 0.07); A('head', 'ring', ct, 0, 1.1, -0.2, 0.08, 0.08, 0.08, 0.8, 0, 0); break; // rabo alto com xuxinha
+    case 'h7': capB(); bangCurtain(); for (const m of [-1, 1]) { chain(m * 0.26, 1.08, -0.06, m * 0.07, 0.06, -0.01, 3, 0.09, 0.07); star(m * 0.24, 1.05, 0.06); } break; // chiquinhas altas com estrelas
+    case 'h8': capSide(1); for (let i = 0; i < 3; i++) A('head', 'ball', i === 1 ? hl : hc, 0.02, 1.08 + i * 0.05, 0.22 - i * 0.08, 0.2 - i * 0.03, 0.11, 0.15, -0.6 - i * 0.15, 0, 0); break; // topete de onda
+    case 'h9': capPuff(0.85); bang(); for (const m of [-1, 1]) { A('head', 'cone', hc, m * 0.19, 1.15, -0.02, 0.09, 0.16, 0.06, 0, 0, -m * 0.35); A('head', 'cone', '#ffb3cf', m * 0.19, 1.14, 0.005, 0.05, 0.1, 0.03, 0, 0, -m * 0.35); } break; // orelhinhas de gato
+    case 'h10': capB(0.42, 1.06); chain(0, 1.12, -0.24, 0, -0.08, -0.06, 4, 0.1, 0.07); A('head', 'ring', ct, 0, 1.1, -0.2, 0.08, 0.08, 0.08, 0.8, 0, 0); break; // rabo alto com xuxinha (testa livre)
     default: capB(); bang();
   }
   // corpo e roupa
@@ -6740,6 +6749,86 @@ function dialIcon(day) { const k = day ? 'sun' : 'moon'; DIAL.ic = DIAL.ic || {}
   x.fillStyle = '#14141b'; const ex = day ? 0 : -7; x.beginPath(); x.arc(ex - 5, -2, 2.2, 0, 7); x.arc(ex + 5, -2, 2.2, 0, 7); x.fill(); x.fillStyle = 'rgba(255,120,150,.6)'; x.beginPath(); x.arc(ex - 9, 4, 3, 0, 7); x.arc(ex + 9, 4, 3, 0, 7); x.fill();
   x.strokeStyle = '#14141b'; x.lineWidth = 2; x.beginPath(); x.arc(ex, 2, 4, 0.2, Math.PI - 0.2); x.stroke(); return (DIAL.ic[k] = c.toDataURL()); }
 
+/* =================== v27: desempenho (resolução dinâmica e qualidade automática), personagem do título, introdução com diálogos =================== */
+// ---------- desempenho ----------
+// O gargalo é a placa de vídeo (pixels × efeitos) e o número de desenhos por quadro. Aqui:
+// 1) resolução dinâmica: mede o tempo de cada quadro e baixa (ou sobe) a resolução interna para manter ~60 fps;
+// 2) qualidade automática: se mesmo na resolução mínima continuar lento, desce Alta → Média → Baixa sozinha (dá para travar nos Ajustes);
+// 3) a névoa das regiões fechadas (9 camadas de tela cheia) só é desenhada quando há região fechada perto, e com menos camadas fora da Alta;
+// 4) MSAA do composer só na Alta; coisas miúdas não projetam sombra; FPS opcional na tela.
+SET.autoq = SET.autoq !== false; SET.fps = !!SET.fps;
+const PERF27 = { ema: 16, last: 0, t: 0, scale: 1, cap: 1, slow: 0, fast: 0, worse: 0, el: null, frames: 0, fps: 60, ft: 0, noauto: /noauto=1|admin=1/.test(location.search) };
+const PXF27 = () => ({ forte: 1 / 3.2, medio: 1 / 2.5, suave: 1 / 1.8 }[SET.pixel || 'medio']);
+function perfApplyScale() { if (PXF27()) return; const pr = Math.max(0.55, PERF27.cap * PERF27.scale); if (Math.abs(renderer.getPixelRatio() - pr) < 0.02) return; renderer.setPixelRatio(pr); resize(); }
+{ const base = applyQuality; applyQuality = function () { base(); if (!PXF27()) PERF27.cap = renderer.getPixelRatio(); perfApplyScale();
+  const want = SET.quality === 'alta' ? 2 : 0; for (const rt of [composer.renderTarget1, composer.renderTarget2]) if (rt && rt.samples !== want) { rt.samples = want; rt.dispose(); } }; }
+function perfTick(now) { if (PERF27.last) { const d = Math.min(100, now - PERF27.last); PERF27.ema = PERF27.ema * 0.92 + d * 0.08; PERF27.frames++; PERF27.ft += d; } PERF27.last = now; }
+function perfGovern(dt) {
+  PERF27.t -= dt; if (PERF27.t > 0) return; PERF27.t = 1; PERF27.fps = PERF27.frames ? Math.round(1000 / (PERF27.ft / PERF27.frames)) : 60; PERF27.frames = 0; PERF27.ft = 0;
+  if (document.hidden || PERF27.noauto || titleOn && !ready) return; const ms = PERF27.ema;
+  if (ms > 21) { PERF27.fast = 0; if (++PERF27.slow >= 2) { PERF27.slow = 0; if (PERF27.scale > 0.62) { PERF27.scale = Math.max(0.6, PERF27.scale - 0.12); perfApplyScale(); } else if (SET.autoq && ++PERF27.worse >= 3 && SET.quality !== 'baixa') { PERF27.worse = 0; SET.quality = SET.quality === 'alta' ? 'media' : 'baixa'; saveSettings(); applyQuality(); PERF27.scale = 0.85; perfApplyScale(); if (!titleOn) toast(`🍃 Deixei a qualidade em <b>${SET.quality === 'media' ? 'Média' : 'Baixa'}</b> para o jogo rodar liso. Dá para mudar em Ajustes.`); } } }
+  else if (ms < 13.5) { PERF27.slow = 0; PERF27.worse = 0; if (++PERF27.fast >= 4 && PERF27.scale < 1) { PERF27.fast = 0; PERF27.scale = Math.min(1, PERF27.scale + 0.08); perfApplyScale(); } }
+  else { PERF27.slow = 0; PERF27.fast = 0; }
+  if (SET.fps) { let el = PERF27.el; if (!el) { el = PERF27.el = document.createElement('div'); el.id = 'fps27'; document.body.appendChild(el); } el.style.display = ''; el.textContent = `${PERF27.fps} fps · ${Math.round(renderer.getPixelRatio() * 100)}% · ${SET.quality}`; } else if (PERF27.el) PERF27.el.style.display = 'none'; }
+{ const base = renderer.render.bind(renderer); let lastF = -1; renderer.render = function (sc, cam) { if (sc === scene && renderer.info.render.frame !== lastF) { lastF = renderer.info.render.frame; perfTick(performance.now()); } return base(sc, cam); }; }
+// névoa sonolenta: só desenha quando há região fechada por perto
+const FOG27 = { t: 0, near: true };
+{ const base = fogUpdate; fogUpdate = function (dt) { base(dt); if (!FOGR.tex || !FOGR.mats.length) return; FOG27.t -= dt;
+  if (FOG27.t <= 0) { FOG27.t = 0.5; let mx = 0; const cx = Math.floor(camLook.x), cz = Math.floor(camLook.z); for (let j = -26; j <= 26 && mx < 0.03; j += 3) for (let i = -36; i <= 36; i += 3) { const x = cx + i, z = cz + j; if (inb(x, z) && FOGR.cur[I(x, z)] > mx) mx = FOGR.cur[I(x, z)]; } FOG27.near = mx >= 0.03 || titleOn; }
+  const alta = SET.quality === 'alta'; FOGR.mats.forEach((m, i) => { if (!FOG27.near || (!alta && i % 2 === 1)) m.visible = false; }); }; }
+// coisas pequenas não projetam sombra (menos desenho na passada de sombra)
+function shadowDiet() { let n = 0; const b = new THREE.Box3(), sz = new THREE.Vector3(); world.traverse((o) => { if (!o.isMesh || o.isInstancedMesh || !o.castShadow) return; b.setFromObject(o); if (b.isEmpty()) return; b.getSize(sz); if (sz.y < 0.55 && Math.max(sz.x, sz.z) < 1.3) { o.castShadow = false; n++; } }); PERF27.diet = n; }
+{ const base = buildWorld; buildWorld = function () { const r = base(); try { shadowDiet(); } catch (e) {} return r; }; }
+// o HUD não precisa ser reconstruído a cada quadro: no máximo 8 vezes por segundo
+{ const base = hud; let lastT = 0, pend = 0; hud = function () { const now = performance.now(); if (now - lastT < 120) { if (!pend) pend = setTimeout(() => { pend = 0; lastT = performance.now(); base(); }, 125); return; } lastT = now; base(); }; }
+// ajustes: qualidade automática e FPS
+{ const base = uiSettingsRows; uiSettingsRows = function () { base(); const sg = document.querySelector('.setg'); if (!sg) return; const ch = (key, val, lab) => `<button class="btn chip ${SET[key] === val ? 'on' : ''}" data-p27="${key}:${val}">${lab}</button>`;
+  sg.insertAdjacentHTML('beforeend', `<h4 class="seth">⚡ Desempenho</h4><label>Qualidade automática (baixa sozinha se ficar lento) <span class="qbtns">${ch('autoq', true, 'Ligada')}${ch('autoq', false, 'Desligada')}</span></label><label>Mostrar FPS <span class="qbtns">${ch('fps', false, 'Não')}${ch('fps', true, 'Sim')}</span></label><p class="note">Resolução interna agora: <b>${Math.round(renderer.getPixelRatio() * 100)}%</b> · ${PERF27.fps} fps.</p>`);
+  sg.querySelectorAll('[data-p27]').forEach((el) => (el.onclick = () => { const [k, v] = el.dataset.p27.split(':'); SET[k] = v === 'true'; saveSettings(); sfx('switch'); openMenu('settings'); })); }; }
+{ const b2 = v14Update; v14Update = function (dt) { b2(dt); try { perfGovern(dt); } catch (e) {} }; }
+{ const b3 = titleCam; titleCam = function (dt) { b3(dt); try { perfGovern(dt); } catch (e) {} }; }
+
+// ---------- personagem da tela inicial: de pé no píer, sem espada na mão ----------
+/* a Fofinha fica de pé no meio do píer e acena de vez em quando (o "sentar" do Kenney é de cadeira e afundava o corpo nas tábuas) */
+function titlePose(t) { const k = t % 9; return k > 6.4 && k < 8.6 ? 'Waving' : 'Idle'; }
+{ const base = titleCam; titleCam = function (dt) { base(dt); if (!player) return; if (handProp) handProp.visible = false; const by = typeof DECKY === 'number' ? DECKY : 0.15; player.obj.position.set(dockStart + 3.4, by, 44.75); player.obj.rotation.y = 1.05; }; }
+{ const base = startFrom; startFrom = function (d) { const r = base(d); if (handProp) handProp.visible = true; return r; }; }
+
+// ---------- introdução mais leve, com diálogos que você passa apertando ----------
+// Cinco cenas curtas. Cada fala aparece letra por letra; Espaço, Enter, E ou um toque mostra tudo e depois passa.
+const INTRO = { sc: 0, ln: 0, shown: 0, full: false, t: 0, hold: 0 };
+const INTRO_SC = () => [
+  { h: 22.5, who: 'Narradora', lines: ['Era uma vez um vale escondido entre as montanhas...', 'Toda noite, estrelinhas caíam do céu e viravam flores que brilhavam no escuro.'], cam: (k) => { camPos.set(42 + k * 4, 6 + k * 2, 64 - k * 4); camLook.set(52, 13 - k * 2, 28); } },
+  { h: 18.8, who: 'Narradora', lines: ['No meio da vila fica o Poço dos Desejos.', 'Dizem que ele guarda a luz das estrelas... e que quem faz um pedido com carinho ganha um amiguinho!'], cam: (k) => { const a = 0.7 + k * 0.6, cx = SHRINE.x + 1, cz = SHRINE.y + 1; camPos.set(cx + Math.cos(a) * 7, 4, cz + Math.sin(a) * 7); camLook.set(cx, 1.2, cz); } },
+  { h: 17.2, who: 'Narradora', lines: ['Mas um dia uma névoa sonolenta cobriu parte do vale.', 'As estrelas pararam de cair, e os caminhos para longe ficaram escondidos.'], cam: (k) => { camPos.set(32 + k * 5, 9, 42 - k * 2); camLook.set(42 + k * 6, 1.5, 14); } },
+  { h: 7.3, who: 'Vovó Rosa', lines: [() => `Querida ${escapeHtml(S.name)}, a fazendinha da família está esperando por você.`, 'Venha morar no vale: plante, pesque, faça amigos... e me ajude a acordar as estrelas.', 'Com muito amor, sua Vovó Rosa. 💗'], cam: (k) => { camPos.set(CUT.x0 + 2.8, 2, CUT.z0 + 3.2); camLook.set(CUT.x0, 1.05, CUT.z0); }, me: 'read' },
+  { h: 7.6, who: '', lines: ['Bem-vinda ao Vale Estrelinha!'], cam: null, me: 'walk' },
+];
+function introLine() { const sc = INTRO_SC()[INTRO.sc]; if (!sc) return ''; let l = sc.lines[INTRO.ln]; if (typeof l === 'function') l = l(); if (sc.who === '' && S.gender === 'm') l = l.replace('Bem-vinda', 'Bem-vindo'); return l; }
+function introRender() { const box = $('cutbox'); if (!box) return; const sc = INTRO_SC()[INTRO.sc], l = introLine(), txt = INTRO.full ? l : l.slice(0, Math.floor(INTRO.shown));
+  box.querySelector('.cbn').textContent = sc.who || ''; box.querySelector('.cbn').style.display = sc.who ? '' : 'none'; box.querySelector('.cbt').innerHTML = txt; box.classList.toggle('done', INTRO.full); }
+function introAdvance() { if (!CUT || !CUT.v27) return; const L = INTRO_SC(), sc = L[INTRO.sc]; sfx('switch');
+  if (!INTRO.full) { INTRO.full = true; introRender(); return; }
+  if (INTRO.ln < sc.lines.length - 1) { INTRO.ln++; INTRO.shown = 0; INTRO.full = false; introRender(); return; }
+  if (INTRO.sc < L.length - 1) { INTRO.sc++; INTRO.ln = 0; INTRO.shown = 0; INTRO.full = false; INTRO.t = 0; const fl = $('cutfl'); if (fl) { fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on'); } introRender(); document.querySelectorAll('#cutdots i').forEach((d, j) => d.classList.toggle('on', j <= INTRO.sc)); return; }
+  endIntro(); }
+playIntro = function () {
+  for (const k in keys) keys[k] = false; P.charging = false; P.fishing && endFish(); CUT = { t: 0, tt: 0, line: -1, x0: 42.5, z0: 51, x1: 42.5, z1: 38.5, done: false, v25: 1, v27: 1 }; Object.assign(INTRO, { sc: 0, ln: 0, shown: 0, full: false, t: 0 }); CUT25.oldTime = S.time;
+  P.x = CUT.x0; P.z = CUT.z0; P.ang = Math.PI; P.fx = 0; P.fz = -1;
+  let el = $('cut'); if (!el) { el = document.createElement('div'); el.id = 'cut'; document.body.appendChild(el); }
+  el.innerHTML = `<div class="bar t"></div><div class="bar b"></div><div class="cfl" id="cutfl"></div><div class="ttl"><div class="cgn">${GAME_NAME}</div><div class="cgs">Uma história do Vale Estrelinha</div></div><div class="cdots" id="cutdots">${INTRO_SC().map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
+    <div class="cbox" id="cutbox"><span class="cbn"></span><div class="cbt"></div><em class="cbm">▼ <span class="key">Espaço</span> ou toque para continuar</em></div><button class="btn sm" id="cutskip">Pular ▶</button>`; el.classList.add('on', 'v27');
+  $('cutskip').onclick = (e) => { e.stopPropagation(); endIntro(); }; $('cutbox').onclick = (e) => { e.stopPropagation(); introAdvance(); }; el.onclick = () => introAdvance();
+  document.body.classList.add('incut'); if (petObj) { pet.x = P.x + 0.7; pet.z = P.z; } introRender(); try { playMusic && playMusic('title'); } catch (e) {} };
+addEventListener('keydown', (e) => { if (!CUT || !CUT.v27) return; if (e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyE') { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) introAdvance(); } else if (e.code === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); endIntro(); } }, true);
+{ const base = cutCamera; cutCamera = function (dt) { if (!CUT || !CUT.v27) return base(dt); const L = INTRO_SC(), sc = L[INTRO.sc]; INTRO.t += Math.min(dt, 0.05); const k = clamp(INTRO.t / 7, 0, 1), e = k * k * (3 - 2 * k);
+  if (!INTRO.full) { INTRO.shown += Math.min(dt, 0.05) * 42; if (INTRO.shown >= introLine().length) INTRO.full = true; introRender(); }
+  S.time = (DAYLEN * (sc.h - 6)) / 18; const showMe = sc.me === 'read' || sc.me === 'walk'; if (player) player.obj.visible = showMe;
+  if (sc.me === 'walk') { const ee = e; CUT.walk = k < 1; P.x = CUT.x0; P.z = lerp(CUT.z0, CUT.z1, ee); camPos.set(P.x + 4.5 - ee * 6, 3.2 + ee * 1.2, P.z + 5 - ee); camLook.set(P.x, 1.0, P.z - 1.2); $('cut').classList.toggle('showt', k > 0.25); if (k >= 1 && INTRO.full && (INTRO.hold += dt) > 1.6) endIntro(); }
+  else { CUT.walk = false; P.x = CUT.x0; P.z = CUT.z0; if (sc.cam) sc.cam(e); $('cut').classList.remove('showt'); }
+  P.ang = Math.PI; P.fx = 0; P.fz = -1; P.kx = P.kz = 0; P.roll = null; if (player) { player.obj.position.set(P.x, 0, P.z); player.obj.rotation.y = Math.PI; } }; }
+{ const base = endIntro; endIntro = function () { const el = $('cut'); if (el) { el.onclick = null; el.classList.remove('v27'); } INTRO.hold = 0; return base(); }; }
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -6783,4 +6872,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
