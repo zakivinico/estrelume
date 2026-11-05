@@ -979,6 +979,15 @@ body.calm *{animation-duration:0s!important;transition-duration:0s!important}
 #hudTL .dial .dstars{position:absolute;inset:6px;border-radius:50%;background-image:radial-gradient(1.5px 1.5px at 20% 30%,#fff,transparent),radial-gradient(1.5px 1.5px at 70% 20%,#fff,transparent),radial-gradient(1px 1px at 40% 60%,#fff,transparent),radial-gradient(1px 1px at 80% 55%,#fff,transparent),radial-gradient(1.5px 1.5px at 30% 80%,#fff,transparent);transition:opacity 2s}
 #hudTL .dial .orb{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;image-rendering:pixelated;filter:drop-shadow(0 0 6px rgba(255,230,150,.9));transition:transform .4s linear}
 #hudTL .pfw.ondial{position:relative;z-index:1;margin:12px 12px 12px 16px}
+/* v27: introdução com diálogos e FPS */
+#cut.v27{pointer-events:auto;cursor:pointer}
+#cut.v27 .cap{display:none}
+#cut .cbox{position:absolute;left:50%;bottom:calc(11vh + 14px);transform:translateX(-50%);width:min(760px,90vw);min-height:96px;background:#fffaf2;border:4px solid var(--ink);border-radius:28px;box-shadow:0 5px 0 var(--ink),inset 0 0 0 5px #fff,inset 0 0 0 8px #ffe2c6;padding:20px 26px 30px;font:600 20px/1.5 var(--f-ui,var(--font));color:var(--ink);pointer-events:auto}
+#cut .cbox .cbn{position:absolute;left:24px;top:-18px;transform:rotate(-4deg);background:#ff9fbd;color:#fff;border:3px solid var(--ink);border-radius:14px;padding:3px 14px;font-size:16px;text-shadow:0 2px 0 rgba(20,20,27,.35);box-shadow:0 3px 0 var(--ink)}
+#cut .cbox .cbm{position:absolute;right:20px;bottom:8px;font-style:normal;font-size:12px;color:#c0587f;opacity:0;transition:opacity .2s}
+#cut .cbox.done .cbm{opacity:1;animation:dmore .7s ease-in-out infinite alternate}
+#cut .cbox i{color:#c0587f}
+#fps27{position:fixed;left:50%;top:4px;transform:translateX(-50%);z-index:70;background:rgba(20,20,27,.7);color:#fff;font:600 12px var(--font);padding:2px 8px;border-radius:8px;pointer-events:none}
 </style>
 </head>
 <body class="ttl">
@@ -1058,7 +1067,7 @@ body.calm *{animation-duration:0s!important;transition-duration:0s!important}
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v26</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v27</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script>/*GAME*/</script>

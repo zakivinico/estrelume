@@ -130,3 +130,11 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Arena: `ARENA26` (achada por `arenaFind` num campo aberto da vila ou da praia, montada em `PRE_GH` para ficar plana). `RB` e `PVP` usam o centro e o raio dela; `RB.wall` é o anel de pétalas no chão.
 - Pulo: `P.jy`/`P.jv` (`JUMP.v0`, `JUMP.g`), `doJump()` (tecla C, LT no controle, botão `#tJ`), `jumpUpdate`. No ar o `moveC` deixa passar por cima de `LOW26`. A altura é aplicada só no desenho (embrulho do `renderer.render`).
 - Parkour: `PK26.plats` (`x`, `z`, `w`, `d`, `h`); `platTop` dá o chão em cima delas e `platBlock` barra quem está mais baixo. Recorde em `S.pk`.
+
+## Desempenho automático, título e introdução (v27)
+
+- `PERF27`: `perfTick` mede o quadro (no embrulho do `renderer.render`) e `perfGovern` (1×/s) muda `PERF27.scale` (resolução interna, mínimo 0,6, via `perfApplyScale`) e, com `SET.autoq`, desce a qualidade. `SET.fps` mostra `#fps27`. Nos testes headless use `?noauto=1` (ou `?admin=1`) para o governador não mexer na qualidade.
+- MSAA do composer (`samples`) só na Alta. `FOG27` esconde as camadas de `FOGR` quando não há região fechada perto da câmera. `shadowDiet()` tira a sombra de malhas pequenas depois do `buildWorld`. O `hud()` roda no máximo a cada 120 ms.
+- `DECKY` é a altura das tábuas do píer (`q_dock`, cerca de 0,39). A tela inicial usa `titlePose(t)` (Idle e Waving), porque o `sit` do Kenney é de cadeira.
+- Cabelos: as toucas variam por `capSide`, `capShort`, `capLong` e `capPuff`, e as franjas por `bangSwoop`, `bangCurtain`, `bangBlunt` e `bangSpiky` (em `fofaParts`). Penteado novo deve combinar touca, franja e enfeite de um jeito que ainda não exista.
+- Introdução: `INTRO_SC()` lista as cenas (`h` hora, `who`, `lines` com texto ou função, `cam(k)`, `me: 'read'|'walk'`); `introAdvance()` completa a fala e depois passa; `CUT.v27` marca a abertura nova (o `cutCamera` da v27 cuida da câmera e da máquina de escrever).
