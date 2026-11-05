@@ -19,6 +19,7 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
   ```
   Funções antigas substituídas costumam ficar com sufixo (`openCreator_v13`, `faceTab_v13`, `applyLook_v10`) e a nova chama a anterior.
 - Estado salvo: `S` (save do jogador), `SET` (configurações), `P` (posição e estado da personagem), `mode` (`'out'`, casa, caverna...).
+- Desde a v25 só existe a base Fofinha (`km`): `OLD_BASES` (rogue, knight, barbarian, mage, rogue_hooded) viram `km` no `Char` e no `cloneM`; as roupas antigas viram conjuntos em `OUT_KM` (`lookKM()` junta o visual). O `ch_rogue` continua carregado só como fonte de animações (`CLIPS`).
 - Visual da personagem: `S.look` / `crLook` com chaves como `sk` (pele), `hs`/`hc` (cabelo), `tint` (roupa), `acc` (cabeça), `gl`/`bk`/`wa` (rosto, costas, cintura), `acc_c`/`glc`/`bkc`/`wac` (cores) e `acc_p`/`glp`/`bkp`/`wap` (estampas).
 - Itens de graça ficam em `WARD_FREE[categoria]`; o resto se compra no Ateliê da Fifi (`owns(cat, k)`).
 
@@ -110,3 +111,13 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Lojas: `shopOpen()` (`SHOP_H`, 6h–20h); `enterShop` recusa quando está fechada. `npcAway(n)` diz se o morador está na loja (`KEEPER_SHOP`) ou em casa (`residentHome`); quem está fora some do mundo, dos nomes e do mapa.
 - Portas: `DOORGLOW` (plano e poça de luz aditivos por porta, criados no carregamento) acende conforme `shopOpen`/`residentHome`.
 - Adereços grandes (barraca, carrinho, chafariz, banco) via `dressProps` ficam a 2 tiles de caminho e água (`DRESS_NOPATH`) e reservam 3×3.
+
+## Interface, título, abertura e amigos (v25)
+
+- Menu principal = **Estrelofone** (`openPhone`, lista `APPS`; `phoneAct(k)` abre cada app). `openMenu('main')` fora do título cai nele; as outras abas (`save`, `load`, `settings`, `credits`) continuam do `openMenu_v12`.
+- Ajustes de interface em `SET.uis` (`UIS`: multiplica o `--hs`), `SET.bigtxt` (`--mscale`), `SET.calm` e `SET.glyph` (`body[data-input]`: kb, touch, pad). `uiApply()` aplica.
+- Controle: `padUpdate()` traduz o gamepad em `keys` (analógico) e em `keydown`/`keyup` sintéticos (`PADMAP`).
+- Roda de ferramentas: `RING` (segure X); usa `THUMB['t_' + id]`.
+- Tela inicial: `TSH` (triângulo de tela cheia com `ShaderMaterial` aditivo, `renderOrder` alto, sem teste de profundidade; aparece só com `titleOn`). Música do título: `cuteTitleSong()` renderiza com `OfflineAudioContext`, vira WAV e entra em `MUS.title.src`.
+- Abertura: `CSC()` lista as cenas (`d` duração, `h` hora, `n` nome, `txt`, `cam(k)`, `fx(dt)`, `me`); `cutCamera` conta o tempo com `dt` (`CUT.tt`).
+- Multiplayer: `PARTY.max = 4`; a presença leva `j` (hora de entrada), `lv` e `rg` (área). `partyOrder()` ordena por `j`; quem entrou depois dos 4 primeiros sai (`partyCheckFull`). Painel `#party` em `partyUpdate`.

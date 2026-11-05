@@ -335,7 +335,7 @@ const water = new THREE.Mesh(new THREE.PlaneGeometry(W + 240, H + 240, 90, 80).r
 const pickPlane = new THREE.Mesh(new THREE.PlaneGeometry(800, 800).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ visible: false })); scene.add(pickPlane);
 
 /* =================== modelos =================== */
-const MODEL_LIST = ['p_estela','p_morgana','p_selva','p_lirio','p_mariana','p_tati','p_clara','p_leo','p_tomas', 'ch_rogue', 'ch_knight', 'ch_barbarian', 'ch_mage', 'ch_rogue_hooded', 'k_barrel', 'k_cloud', 'k_crate', 'k_flag', 'k_hills', 'k_home_a', 'k_home_b', 'k_market', 'k_mountain', 'k_pine_a', 'k_pine_b', 'k_sack', 'k_well', 'k_wheelbarrow', 'k_windmill', 'k_bucket', 'k_tavern_red', 'k_blacksmith_yellow',
+const MODEL_LIST = ['p_estela','p_morgana','p_selva','p_lirio','p_mariana','p_tati','p_clara','p_leo','p_tomas', 'ch_rogue', 'k_barrel', 'k_cloud', 'k_crate', 'k_flag', 'k_hills', 'k_home_a', 'k_home_b', 'k_market', 'k_mountain', 'k_pine_a', 'k_pine_b', 'k_sack', 'k_well', 'k_wheelbarrow', 'k_windmill', 'k_bucket', 'k_tavern_red', 'k_blacksmith_yellow',
   'm_slime1', 'm_slime2', 'p_bigode', 'p_biscoito', 'p_brasa', 'p_lino', 'p_lola', 'p_luna', 'p_mel', 'p_nova', 'q_apple_item', 'q_berry_item', 'q_bush', 'q_bushb', 'q_carrot1', 'q_carrot3', 'q_carrot4', 'q_carrot_item', 'q_clover', 'q_dock', 'q_fence',
   'q_fish1', 'q_fish2', 'q_fish3', 'q_flower_r', 'q_flower_y', 'q_grass', 'q_lily', 'q_mush', 'q_pumpkin1', 'q_pumpkin3', 'q_pumpkin4', 'q_pumpkin_item', 'q_rock', 'q_rockm', 'q_rod', 'q_tomato2', 'q_tomato3', 'q_tomato4', 'q_tomato_h', 'q_tomato_item', 'st_tree1', 'st_tree5', 'st_tree7', 'st_tree9', 'st_tree10', 'un_palm1', 'un_palm3', 'k_tower', 'k_mine', 'k_market2', 'd_floor', 'd_floorr', 'd_torch', 'd_chest', 'd_rubble', 'd_pillar', 'gem_blue', 'gem_pink', 'gem_green', 'ore_rocks', 'ore_gold', 'w_sword', 'w_sword2', 'w_swordg', 'w_swordbig', 'w_pick', 'a_sheep', 'a_pig', 'a_cow', 'a_deer', 'a_alpaca',
   ...[...new Set(Object.values(FURN).map((f) => f.m))]];
@@ -405,7 +405,8 @@ function loadAll(onProgress) {
     sc.onload = () => { const data = window.__GLB && window.__GLB[k]; if (!data) { console.error('sem dados', k); return fin(res); } loader.parse(b64(data), '', (g) => { prepare(k, g); delete window.__GLB[k]; fin(res); }, (e) => { console.error('falhou', k, e); fin(res); }); };
     sc.onerror = () => { console.error('falhou', k); fin(res); }; document.head.appendChild(sc); })));
 }
-const cloneM = (k) => { const m = MODELS[k]; if (!m) return new THREE.Group(); return m.isChar ? SkeletonUtils.clone(m.root) : m.root.clone(true); };
+const cloneM = (k) => { const m = /^ch_(rogue|knight|barbarian|mage|rogue_hooded)$/.test(k) && MODELS.ch_km ? MODELS.ch_km : MODELS[k]; // v25: bases de aventureiro viram a Fofinha
+  if (!m) return new THREE.Group(); return m.isChar ? SkeletonUtils.clone(m.root) : m.root.clone(true); };
 /* ---------- instanciador em blocos ---------- */
 const CH = 16; // v17: blocos maiores = ~4× menos draw calls (o recorte por distância compensa)
 const BOUNDS_DIRTY = new Set(); const flushBounds = () => { if (!BOUNDS_DIRTY.size) return; for (const c of BOUNDS_DIRTY) c.bounds(); BOUNDS_DIRTY.clear(); };
@@ -971,8 +972,7 @@ function buildThumbs() {
   for (const [k, f] of Object.entries(FD)) THUMB['fd_' + k] = thumb(fdObj(k), { ry: -0.6 });
   THUMB.t_arar = emojiThumb('⛏️'); THUMB.t_grama = emojiThumb('🌱');
   for (const d of NPCDEF) { const o = cloneM('ch_' + d.m); npcTint(o, d); THUMB['npc_' + d.id] = thumb(o, { char: true, head: true, ry: -0.2 }); }
-  for (const o of OUTFITS) THUMB['o_' + o.id] = thumb('ch_' + o.id, { head: true, ry: -0.3 });
-  THUMB.o_rogue = thumb('ch_rogue', { head: true, ry: -0.3 }); THUMB.rosa = thumb('ch_mage', { head: true, ry: -0.2 }); THUMB.tico = thumb('ch_barbarian', { head: true, ry: -0.2 });
+  outfitThumbs(); THUMB.rosa = THUMB.rosa || ''; THUMB.tico = THUMB.tico || '';
   for (const [k, it] of Object.entries(ITEMS)) if (it.m) THUMB['i_' + k] = thumb(it.m);
   for (const t of TOOLS) THUMB['t_' + t.id] = t.seed ? THUMB['i_' + t.id] : t.m === '#sword' ? '' : thumb(t.m);
   THUMB.t_vara = emojiThumb('🎣'); THUMB.t_regador = thumb(heldObj('#can'), { ry: -1.2 }); THUMB.up_regador = THUMB.t_regador;
@@ -1446,7 +1446,7 @@ function drawOverlay() {
   // barras de vida dos slimes feridos
   if (mode !== 'in') for (const s of slimes) { if (s.dead || s.hp >= s.max) continue; const [x, y, fr] = toScr(s.x, 0.95 + s.y, s.z); if (!fr) continue; octx.fillStyle = C.ink; octx.fillRect(x - 22, y - 5, 44, 9); octx.fillStyle = s.elite ? '#ffcb2a' : '#e0394c'; octx.fillRect(x - 20, y - 3, 40 * clamp(s.hp / s.max, 0, 1), 5); if (s.lvl) { octx.font = '700 11px "Pixelify Sans", sans-serif'; octx.textAlign = 'right'; octx.fillStyle = '#fff'; octx.strokeStyle = C.ink; octx.lineWidth = 3; octx.strokeText('Nv' + s.lvl, x - 24, y + 4); octx.fillText('Nv' + s.lvl, x - 24, y + 4); octx.textAlign = 'left'; } }
   const st = TUT[S.tstep];
-  if (st && !dlg && !modalOpen() && (mode === 'out' || st.ev === 'decor')) { const [wx, wy, wz] = st.at(); let [x, y, front] = toScr(wx, wy, wz); const m = 70, on = front && x > m && y > m && x < innerWidth - m && y < innerHeight - m;
+  if (st && !CUT && !dlg && !modalOpen() && (mode === 'out' || st.ev === 'decor')) { const [wx, wy, wz] = st.at(); let [x, y, front] = toScr(wx, wy, wz); const m = 70, on = front && x > m && y > m && x < innerWidth - m && y < innerHeight - m;
     if (!on) { const cx = innerWidth / 2, cy = innerHeight / 2; if (!front) { x = cx * 2 - x; y = cy * 2 - y; } const a = Math.atan2(y - cy, x - cx); x = clamp(x, m + 220, innerWidth - m - 90); y = clamp(y, m + 80, innerHeight - m - 90);
       octx.save(); octx.translate(x, y); octx.rotate(a); const s = 6.5; octx.beginPath(); octx.moveTo(6 * s, 0); octx.lineTo(-2 * s, -5 * s); octx.lineTo(-2 * s, -2 * s); octx.lineTo(-7 * s, -2 * s); octx.lineTo(-7 * s, 2 * s); octx.lineTo(-2 * s, 2 * s); octx.lineTo(-2 * s, 5 * s); octx.closePath(); octx.fillStyle = '#ffe18d'; octx.strokeStyle = C.ink; octx.lineWidth = 4; octx.stroke(); octx.fill(); octx.restore(); } }
   if ((P.stShow > 0 || P.tired) && mode !== 'in' && !P.dead) { const [x, y] = toScr(P.x, 1.75, P.z), f = clamp(P.st / maxSt(), 0, 1), a = Math.min(1, P.stShow / 0.4 + (P.tired ? 1 : 0)), cx = x + 42, cy = y - 6; octx.globalAlpha = a; octx.lineWidth = 9; octx.strokeStyle = 'rgba(20,20,27,.75)'; octx.beginPath(); octx.arc(cx, cy, 15, 0, 7); octx.stroke(); octx.lineWidth = 6; octx.strokeStyle = P.tired ? '#ff6f6f' : f < 0.3 ? '#ffb347' : '#8fe36a'; octx.beginPath(); octx.arc(cx, cy, 15, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); octx.stroke(); octx.font = '700 13px "Pixelify Sans", sans-serif'; octx.lineWidth = 3; octx.strokeStyle = C.ink; octx.strokeText('💨', cx, cy + 5); octx.fillStyle = '#fff'; octx.fillText('💨', cx, cy + 5); octx.globalAlpha = 1; }
@@ -2909,7 +2909,7 @@ function makeHairPiece_v13(style, col) {
   if (style === 'longo') { add(new THREE.CapsuleGeometry(0.24, 0.3, 4, 12), 0, -0.45, -0.17, 1.05, 1, 0.42); }
   return g;
 }
-const genderBase = () => (S.gender === 'm' ? 'knight' : 'rogue');
+const genderBase = () => 'km'; // v25: só a base Fofinha
 const gA = (f, m) => (S.gender === 'm' ? m : f);
 /* ---------- inventário em grade ---------- */
 function openBag() {
@@ -2979,7 +2979,7 @@ function mpUpdate(dt) {
   if (!MP.on || !MP.room || titleOn) return; MP.t -= dt;
   if (MP.t <= 0) { MP.t = 0.1; try { MP.room.presence({ x: +P.x.toFixed(2), z: +P.z.toFixed(2), a: +P.ang.toFixed(2), m: mode, mv: P.moving ? 1 : 0, n: String(S.name || '').slice(0, 14), g: S.gender || 'f', o: S.outfit || genderBase(), lk: lookFull(), ...mpExtra() }).catch(() => {}); } catch (e) {} }
   const kp = 1 - Math.exp(-dt * 10), ka = 1 - Math.exp(-dt * 14);
-  for (const [id, p] of Object.entries(MP.peers)) { let c = MP.chars[id]; const ok = (MODELS['ch_' + p.o] && !String(p.o).startsWith('h_')) ? p.o : 'rogue';
+  for (const [id, p] of Object.entries(MP.peers)) { let c = MP.chars[id]; const ok = 'km';
     if (c && c.key !== ok) { scene.remove(c.obj); try { disposeSlots(c.obj); } catch (e) {} const lbl = c.lbl; c = null; MP.chars[id] = null; if (lbl) scene.remove(lbl); }
     if (!c) { try { c = MP.chars[id] = new Char(ok); c.lbl = nameSprite(String(p.n || 'Amiga').slice(0, 14)); scene.add(c.lbl); c.x = p.x; c.z = p.z; c.lkKey = ''; } catch (e) { continue; } }
     if (p.lk && typeof p.lk === 'object') { const key = JSON.stringify(p.lk); if (key !== c.lkKey) { c.lkKey = key; try { applyLook(c.obj, p.lk); applyBody(c.obj, p.lk); } catch (e) {} } }
@@ -5409,7 +5409,7 @@ const KM_BODIES = { fa: 'Moletom', fb: 'Blusinha', fc: 'Vestido', fd: 'Terninho'
 WARD_FREE.kh = ['fa', 'fb', 'fd', 'fe', 'ff', 'ma', 'md', 'mf']; WARD_PRICE.kh = { fc: 120, mb: 80, me: 150, mc: 220 };
 WARD_FREE.kb = ['fa', 'fb', 'fc', 'ma', 'mb', 'mf']; WARD_PRICE.kb = { ff: 160, fe: 180, me: 200, fd: 240, mc: 300, md: 320 };
 WARD_PRICE.kc = { roxo: 90, marinho: 90, carvao: 90, dourado: 220 }; WARD_FREE.kc = Object.keys(KCOL).filter((k) => !WARD_PRICE.kc[k]);
-const crIsKM = (fromTitle) => crModel === 'km' || (!crModel && !fromTitle && S.outfit === 'km');
+const crIsKM = (fromTitle) => !(crModel && String(crModel).startsWith('h_'));
 // a base nova também aparece como opção no criador clássico
 modelChips = function (cur) { return `<div class="crl">Base do corpo</div><div class="chips mdl">${[['km', 'Fofinha (nova)'], ['rogue', 'Aventureira'], ['knight', 'Aventureiro']].map(([k, n]) => `<button class="btn chip ${cur === k || (k === 'rogue' && cur !== 'knight' && cur !== 'km') ? 'on' : ''}" data-md="${k}">${n}</button>`).join('')}</div><p class="note">A base <b>Fofinha</b> troca penteado, roupa e rosto peça por peça. As aventureiras são as clássicas.</p>`; };
 function kmChips(fromTitle, key, cat, T, cur, sw, label = (v) => (typeof v === 'string' ? v : v.n)) {
@@ -6365,6 +6365,244 @@ function doorGlowUpdate(dt) { if (mode !== 'out') return; const night = isNightN
     if (on && rand() < dt * 2.5 && Math.abs(P.x - e.x) < 14 && Math.abs(P.z - e.z) < 10) emit(PG, { x: e.x + (rand() - 0.5) * 0.8, y: 0.2, z: e.z + 0.25, vx: 0, vz: 0.1, vy: 0.55, g: 0, life: 1.4, max: 1.4, c: night ? '#ffe18d' : '#fff3c4' }); } }
 { const base = v14Update; v14Update = function (dt) { base(dt); try { doorGlowUpdate(dt); } catch (e) {} }; }
 
+/* =================== v25: interface mais clara e adaptável, só a base Fofinha, título com shader e música, abertura com cenários, amigos no multiplayer =================== */
+// ---------- Estrelofone: o menu vira um celular com apps (inspirado no NookPhone e no menu do Pokémon Let's Go) ----------
+const APPS = [
+  { k: 'close', n: 'Continuar', ic: 'star', c: '#8fd16a', d: 'Voltar ao jogo' },
+  { k: 'bag', n: 'Mochila', ic: 'bag', c: '#ffb86b', d: 'Itens e valor de venda', key: 'I' },
+  { k: 'map', n: 'Mapa', ic: 'map', c: '#7cc4ff', d: 'Áreas, acampamentos e moradores', key: 'M' },
+  { k: 'diary', n: 'Diário', ic: 'scroll', c: '#d9a86c', d: 'Missões e histórias', key: 'J' },
+  { k: 'album', n: 'Álbum', ic: 'book', c: '#ff9fc8', d: 'Bichinhos e coleções', key: 'C' },
+  { k: 'skills', n: 'Habilidades', ic: 'sparkles', c: '#c9a2ff', d: 'Pontos de nível', key: 'K' },
+  { k: 'wish', n: 'Desejos', ic: 'wish', c: '#ffe18d', d: 'Poço dos Desejos', key: 'G' },
+  { k: 'char', n: 'Visual', ic: 'dress', c: '#ff8fa3', d: 'Mudar a sua personagem' },
+  { k: 'facade', n: 'Casa', ic: 'house', c: '#b6e07a', d: 'Fachada da casa' },
+  { k: 'mp', n: 'Amigos', ic: 'heart', c: '#ff7aa8', d: 'Jogar junto (até 4)' },
+  { k: 'save', n: 'Salvar', ic: 'chest', c: '#ffd45a', d: 'Guardar o progresso' },
+  { k: 'load', n: 'Carregar', ic: 'letter', c: '#f0c49a', d: 'Abrir outro save' },
+  { k: 'settings', n: 'Ajustes', ic: 'wand', c: '#9fd8e0', d: 'Som, imagem e interface' },
+  { k: 'help', n: 'Como jogar', ic: 'help', c: '#a8e0c8', d: 'Controles e dicas', key: 'H' },
+  { k: 'credits', n: 'Créditos', ic: 'heart', c: '#e8c0ff', d: 'Quem fez o vale' },
+  { k: 'title', n: 'Título', ic: 'moon', c: '#b0b8e8', d: 'Voltar à tela inicial' },
+];
+let phoneSel = 0;
+function phoneAct(k) { sfx('accept');
+  if (k === 'close') return closeModal(); if (k === 'bag') return openBag(); if (k === 'map') return openMap(); if (k === 'diary') return openDiary(); if (k === 'album') return openAlbum(); if (k === 'skills') return openSkills();
+  if (k === 'wish') { closeModal(); return openWish && openWish(); } if (k === 'char') return openCreator(false); if (k === 'facade') return openFacade(); if (k === 'mp') return openMP(); if (k === 'help') return openHelp();
+  if (k === 'title') { writeSlot('ve3d-auto'); closeModal(); return toTitle(); } return openMenu(k); }
+function openPhone() {
+  const h = hourNow(), hh = Math.floor(h) % 24, mm = Math.floor((h % 1) * 60), list = APPS.filter((a) => !(a.k === 'mp' && !MP.R && !MP.code));
+  openModal(`<div class="phone"><div class="phtop"><span>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}</span><b>Estrelofone</b><span>🪙${S.coins} · ⭐${S.stars}</span></div>
+    <div class="phwho"><img src="${THUMB.me || ''}"><div><b>${escapeHtml(S.name)}</b><small>Nível ${S.lv} · Dia ${S.day}${MP.code ? ' · Partida ' + MP.code : ''}</small></div></div>
+    <div class="apps">${list.map((a, i) => `<button class="app ${i === phoneSel ? 'sel' : ''}" data-app="${a.k}" data-i="${i}" title="${a.d}"><i style="--ac:${a.c}"><img src="${icon(a.ic, 48)}"></i><span>${a.n}</span>${a.key ? `<em>${a.key}</em>` : ''}</button>`).join('')}</div>
+    <div class="phfoot" id="phdesc">${list[phoneSel] ? list[phoneSel].d : ''}</div></div>`, 'phonem');
+  const els = [...document.querySelectorAll('.app')]; els.forEach((el) => { el.onclick = () => phoneAct(el.dataset.app); el.onmouseenter = () => { phoneSel = +el.dataset.i; phoneMark(); }; });
+  phoneMark(); }
+function phoneMark() { const els = [...document.querySelectorAll('.app')]; els.forEach((e, i) => e.classList.toggle('sel', i === phoneSel)); const d = $('phdesc'), a = els[phoneSel]; if (d && a) d.textContent = a.title; }
+addEventListener('keydown', (e) => { if (!document.querySelector('.phone') || !$('modal').classList.contains('on')) return; const els = [...document.querySelectorAll('.app')], cols = innerWidth < 560 ? 3 : 4; let s = phoneSel;
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') s++; else if (e.code === 'ArrowLeft' || e.code === 'KeyA') s--; else if (e.code === 'ArrowDown' || e.code === 'KeyS') s += cols; else if (e.code === 'ArrowUp' || e.code === 'KeyW') s -= cols;
+  else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { e.preventDefault(); e.stopImmediatePropagation(); const el = els[phoneSel]; if (el) phoneAct(el.dataset.app); return; } else return;
+  e.preventDefault(); e.stopImmediatePropagation(); phoneSel = (s + els.length) % els.length; phoneMark(); sfxP && sfxP('switch', 0.3, 1.2); }, true);
+{ const base = openMenu; openMenu = function (tab = 'main') { if (tab === 'main' && !titleOn) return openPhone(); base(tab); if (tab === 'settings') uiSettingsRows(); }; }
+
+// ---------- ajustes de interface: tamanho, texto grande, menos animação e quais botões mostrar ----------
+SET.uis = SET.uis || 'auto'; SET.bigtxt = !!SET.bigtxt; SET.calm = !!SET.calm; SET.glyph = SET.glyph || 'auto';
+const UIS = { p: 0.85, auto: 1, m: 1, g: 1.15, gg: 1.3 };
+function uiApply() { const b = document.body; b.classList.toggle('bigtxt', !!SET.bigtxt); b.classList.toggle('calm', !!SET.calm || matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const dev = SET.glyph === 'auto' ? (INPUT.pad ? 'pad' : matchMedia('(pointer:coarse)').matches ? 'touch' : 'kb') : SET.glyph; b.dataset.input = dev; document.documentElement.style.setProperty('--mscale', SET.bigtxt ? 1.12 : 1); layoutUI.s = 0; layoutUI(); }
+{ const base = layoutUI; layoutUI = function () { base(); const k = UIS[SET.uis] || 1; if (k !== 1) { const s = (layoutUI.s || 1) * k; document.documentElement.style.setProperty('--hs', s.toFixed(3)); } }; }
+function uiSettingsRows() { const sg = document.querySelector('.setg'); if (!sg) return; const ch = (key, val, lab) => `<button class="btn chip ${SET[key] === val ? 'on' : ''}" data-uis="${key}:${val}">${lab}</button>`;
+  sg.insertAdjacentHTML('beforeend', `<h4 class="seth">🖐️ Interface</h4>
+   <label>Tamanho da interface <span class="qbtns">${ch('uis', 'p', 'Pequena')}${ch('uis', 'auto', 'Automática')}${ch('uis', 'g', 'Grande')}${ch('uis', 'gg', 'Enorme')}</span></label>
+   <label>Texto grande <span class="qbtns">${ch('bigtxt', false, 'Não')}${ch('bigtxt', true, 'Sim')}</span></label>
+   <label>Menos animação <span class="qbtns">${ch('calm', false, 'Não')}${ch('calm', true, 'Sim')}</span></label>
+   <label>Dicas de botão para <span class="qbtns">${ch('glyph', 'auto', 'Automático')}${ch('glyph', 'kb', 'Teclado')}${ch('glyph', 'touch', 'Toque')}${ch('glyph', 'pad', 'Controle')}</span></label>`);
+  sg.querySelectorAll('[data-uis]').forEach((el) => (el.onclick = () => { const [k, v] = el.dataset.uis.split(':'); SET[k] = v === 'true' ? true : v === 'false' ? false : v; saveSettings(); uiApply(); sfx('switch'); openMenu('settings'); })); }
+
+// ---------- controle (gamepad): anda, usa, fala, esquiva, mochila e menu ----------
+const INPUT = { pad: false, prev: {}, t: 0 };
+const PADMAP = { 0: 'Space', 1: 'KeyQ', 2: 'KeyE', 3: 'KeyI', 4: 'BracketLeft', 5: 'BracketRight', 9: 'Escape', 8: 'KeyM', 12: 'ArrowUp', 13: 'ArrowDown', 14: 'ArrowLeft', 15: 'ArrowRight' };
+function padUpdate() { const gps = navigator.getGamepads ? navigator.getGamepads() : []; const gp = gps && [...gps].find((g) => g && g.connected); if (!gp) { if (INPUT.pad) { INPUT.pad = false; uiApply(); } return; }
+  if (!INPUT.pad) { INPUT.pad = true; uiApply(); toast('🎮 Controle conectado! <b>A</b> usar · <b>X</b> falar · <b>B</b> esquivar · <b>Y</b> mochila · <b>LB/RB</b> trocar item · <b>Start</b> menu'); }
+  const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0, dz = 0.35; keys.KeyD = ax > dz; keys.KeyA = ax < -dz; keys.KeyS = ay > dz; keys.KeyW = ay < -dz; keys.ShiftLeft = !!(gp.buttons[7] && gp.buttons[7].pressed) || Math.hypot(ax, ay) > 0.95;
+  for (const [i, code] of Object.entries(PADMAP)) { const on = !!(gp.buttons[i] && gp.buttons[i].pressed), was = !!INPUT.prev[i]; INPUT.prev[i] = on;
+    if (on && !was) { if (code === 'BracketLeft' || code === 'BracketRight') { setSlot(S.slot + (code === 'BracketLeft' ? -1 : 1)); continue; } dispatchEvent(new KeyboardEvent('keydown', { code, key: code === 'Space' ? ' ' : code, bubbles: true })); }
+    if (!on && was) dispatchEvent(new KeyboardEvent('keyup', { code, key: code === 'Space' ? ' ' : code, bubbles: true })); } }
+addEventListener('gamepadconnected', () => padUpdate());
+
+// ---------- roda de ferramentas (segure X, como o anel do Animal Crossing) ----------
+const RING = { on: false, sel: -1, el: null };
+function ringOpen() { if (RING.on || modalOpen() || decor || farmEd || titleOn || mode === 'in') return; const owned = TOOLS.map((t, i) => ({ t, i })).filter(({ t }) => ownsTool(t.id)); if (owned.length < 2) return;
+  let el = RING.el; if (!el) { el = RING.el = document.createElement('div'); el.id = 'ring'; document.body.appendChild(el); }
+  const R = Math.min(150, innerHeight * 0.26);
+  el.innerHTML = `<div class="rc"><b id="rname">${TOOLS[S.slot].n}</b><small>solte X para escolher</small></div>` + owned.map(({ t, i }, k) => { const a = (k / owned.length) * Math.PI * 2 - Math.PI / 2, src = THUMB['t_' + t.id] || ''; return `<div class="rs ${i === S.slot ? 'on' : ''}" data-i="${i}" style="left:calc(50% + ${Math.cos(a) * R}px);top:calc(50% + ${Math.sin(a) * R}px)"><img src="${src}"><em>${t.key || ''}</em></div>`; }).join('');
+  el.classList.add('on'); RING.on = true; RING.sel = S.slot; RING.list = owned; sfx('menu'); }
+function ringClose(apply = true) { if (!RING.on) return; RING.on = false; RING.el.classList.remove('on'); if (apply && RING.sel >= 0 && RING.sel !== S.slot) setSlot(RING.sel); }
+function ringPick(i) { RING.sel = i; RING.el.querySelectorAll('.rs').forEach((e) => e.classList.toggle('on', +e.dataset.i === i)); const n = $('rname'); if (n) n.textContent = TOOLS[i].n; }
+addEventListener('keydown', (e) => { if (e.code === 'KeyX' && !e.repeat && !decor && !farmEd && ready && !titleOn && !(e.target && e.target.tagName === 'INPUT')) ringOpen();
+  if (RING.on && /^(Arrow|Key[WASD])/.test(e.code)) { e.preventDefault(); e.stopImmediatePropagation(); const L = RING.list, k = L.findIndex((o) => o.i === RING.sel), d = e.code === 'ArrowRight' || e.code === 'KeyD' || e.code === 'ArrowDown' || e.code === 'KeyS' ? 1 : -1; ringPick(L[(k + d + L.length) % L.length].i); sfx('switch'); } }, true);
+addEventListener('keyup', (e) => { if (e.code === 'KeyX') ringClose(true); });
+addEventListener('mousemove', (e) => { if (!RING.on) return; const dx = e.clientX - innerWidth / 2, dy = e.clientY - innerHeight / 2; if (Math.hypot(dx, dy) < 40) return; const a = Math.atan2(dy, dx) + Math.PI / 2, L = RING.list, k = Math.round(((a / (Math.PI * 2)) * L.length + L.length) % L.length) % L.length; if (L[k].i !== RING.sel) ringPick(L[k].i); });
+document.addEventListener('click', (e) => { const s = e.target.closest && e.target.closest('#ring .rs'); if (s) { ringPick(+s.dataset.i); ringClose(true); } }, true);
+
+// ---------- avisos estilo balão (ícone + texto) e dica de ação mais clara ----------
+{ const base = v14Update; v14Update = function (dt) { base(dt); INPUT.t -= dt; if (INPUT.t <= 0) { INPUT.t = 0.05; try { padUpdate(); } catch (e) {} } }; }
+setTimeout(() => { try { uiApply(); } catch (e) {} }, 0);
+
+
+// ---------- amigos no multiplayer: painel com quem está na partida (até 4 jogadores) ----------
+const PARTY = { max: 4, el: null, t: 0, thumbs: {}, j: 0 };
+{ const base = mpExtra; mpExtra = function () { const o = base(); o.j = PARTY.j || 0; o.lv = S.lv || 1; o.rg = mode === 'out' ? (regionAt(P.x, P.z) || {}).n || '' : ''; return o; }; }
+{ const base = mpJoin; mpJoin = async function (code) { PARTY.j = Date.now(); const ok = await base(code); if (ok) setTimeout(partyCheckFull, 2500); return ok; }; }
+function partyOrder() { return Object.entries(MP.peers).map(([id, p]) => ({ id, p, j: p.j || 0 })).sort((a, b) => a.j - b.j || (a.id < b.id ? -1 : 1)); }
+function partyCheckFull() { if (!MP.code) return; const all = [...partyOrder().map((o) => o.j), PARTY.j].sort((a, b) => a - b), rank = all.indexOf(PARTY.j);
+  if (rank >= PARTY.max) { mpLeave(); toast(`😿 Essa partida já está cheia (${PARTY.max} jogadores). Crie uma nova e chame suas amigas!`); sfx('cancel'); } }
+function partyThumb(id, p) { const key = id + JSON.stringify(p.lk || {}).length + (p.o || ''); if (PARTY.thumbs[id] && PARTY.thumbs[id].k === key) return PARTY.thumbs[id].src;
+  let src = ''; try { src = kmThumb(Object.assign({}, KM_DEF, p.lk || {}), true); } catch (e) {} PARTY.thumbs[id] = { k: key, src }; return src; }
+function partyWhere(p) { const m = p.m || 'out'; if (m === 'out') return p.rg || 'No vale'; return m === 'in' ? 'Em casa' : m === 'cave' ? 'Na caverna' : m === 'shop' ? 'Numa loja' : 'Por aí'; }
+function partyUpdate(dt) {
+  PARTY.t -= dt; if (PARTY.t > 0) return; PARTY.t = 0.5; let el = PARTY.el; const list = MP.code ? partyOrder().slice(0, PARTY.max - 1) : [];
+  if (!list.length) { if (el) el.style.display = 'none'; return; } if (!el) { el = PARTY.el = document.createElement('div'); el.id = 'party'; document.body.appendChild(el); }
+  const tl = $('rTL'), r = tl ? tl.getBoundingClientRect() : { bottom: 110, left: 12 }; el.style.display = titleOn || document.body.classList.contains('incut') ? 'none' : ''; el.style.top = Math.round(r.bottom + 8) + 'px'; el.style.left = Math.round(r.left + 4) + 'px'; el.style.transform = 'none';
+  { const chip = $('mpchip'); if (chip) chip.style.display = 'none'; }
+  el.innerHTML = `<div class="pm" style="background:rgba(255,225,141,.95)"><b style="font-size:12px">👥 Partida ${MP.code} · ${list.length + 1}/${PARTY.max}</b></div>` + list.map(({ id, p }) => { const d = mode === 'out' && (p.m || 'out') === 'out' ? Math.hypot((p.x || 0) - P.x, (p.z || 0) - P.z) : 999, hp = p.mh ? clamp(p.hp / p.mh, 0, 1) : 1, src = partyThumb(id, p);
+    return `<div class="pm ${d > 25 ? 'far' : ''}">${src ? `<img src="${src}">` : '<img>'}<div><b>${escapeHtml(String(p.n || 'Amiga').slice(0, 14))} <small style="display:inline">Nv ${p.lv || 1}</small></b><small>${escapeHtml(partyWhere(p))}${d < 999 ? ' · ' + Math.round(d) + ' m' : ''}</small><div class="hpb" style="width:${Math.round(hp * 90)}px"></div></div><span class="dot"></span></div>`; }).join('');
+  // quem passou do limite não aparece no mundo
+  for (const { id } of partyOrder().slice(PARTY.max - 1)) { const c = MP.chars[id]; if (c && c.obj) c.obj.visible = false; }
+}
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { partyUpdate(dt); } catch (e) {} }; }
+{ const base = openMP; openMP = function () { base(); const box = document.querySelector('.mpbox'); if (box) box.insertAdjacentHTML('afterbegin', `<p class="note" style="margin-bottom:8px">👥 Até <b>${PARTY.max} jogadores</b> por partida. Quem está com você aparece no painel à esquerda, com nível, onde está e a vida.</p>`); }; }
+
+
+// ---------- só a base Fofinha: as bases de aventureiro saíram do jogo ----------
+// Jogadora, moradores, lojistas, quem está em casa, amigas do multiplayer e a tela inicial usam a base Fofinha.
+// As antigas "roupas" de aventureiro (Cavaleiro, Bárbaro, Mago, Andarilho) viraram conjuntos da Fofinha.
+// (O ch_rogue continua só como biblioteca de animações dos bichinhos-personagem; ele nunca aparece.)
+const OLD_BASES = ['rogue', 'knight', 'barbarian', 'mage', 'rogue_hooded'];
+const OUT_KM = { knight: { kb: 'mc', kh: 'mc', ct: 'carvao', cb: 'marinho', cs: 'carvao' }, barbarian: { kb: 'mb', kh: 'md', ct: 'laranja', cb: 'marrom', cs: 'marrom' }, mage: { kb: 'fc', kh: 'fe', ct: 'roxo', cb: 'lilas', cs: 'roxo', acc: 'estrela' }, rogue_hooded: { kb: 'fa', kh: 'mf', ct: 'verde', cb: 'marrom', cs: 'marrom' } };
+const lookKM = (outfit = S.outfit, lk = lookFull()) => { const base = Object.assign({}, KM_DEF, (S.gender === 'm' ? { kb: 'ma', kh: 'md' } : {}), lk || {}); if (!KM_VAR.includes(base.kb)) base.kb = S.gender === 'm' ? 'ma' : 'fb'; if (!KM_VAR.includes(base.kh)) base.kh = S.gender === 'm' ? 'md' : 'fb'; return Object.assign(base, OUT_KM[outfit] || {}); };
+{ const Base = Char; Char = class extends Base { constructor(key) { super(OLD_BASES.includes(key) ? 'km' : key); if (this.key !== 'km' && OLD_BASES.includes(key)) this.key = 'km'; if (OLD_BASES.includes(key) || key === 'km') this.obj.userData.ck = 'km'; } }; }
+setOutfit_v12 = function (force) { const k = S.outfit || 'km', key = k + JSON.stringify(OUT_KM[k] || 0); if (player && player.okey === key && !force) return; const old = player; player = new Char('km'); player.okey = key; player.obj.userData.ck = 'km'; applyLook(player.obj, lookKM(k)); refreshMeThumb();
+  if (old) { player.obj.position.copy(old.obj.position); player.obj.rotation.y = old.obj.rotation.y; scene.remove(old.obj); } handKey = null; updateHand(); };
+refreshMeThumb = function () { try { const o = cloneM('ch_km'); o.userData.ck = 'km'; applyLook(o, lookKM()); THUMB.me = thumb(o, { char: true, head: true }); const f = $('pface'); if (f) f.src = THUMB.me; } catch (e) { console.error(e); } };
+{ const base = applyState; applyState = function (d) { const r = base(d); if (!S.outfit || OLD_BASES.includes(S.outfit)) S.outfit = 'km'; if (S.look && !KM_VAR.includes(S.look.kb)) S.look = lookKM(null, S.look); return r; }; }
+// conjuntos de aventureiro no Ateliê e no Álbum: retrato da Fofinha vestida
+function outfitThumbs() { for (const o of OUTFITS) try { THUMB['o_' + o.id] = kmThumb(Object.assign({}, KM_DEF, OUT_KM[o.id] || {}), true); } catch (e) {} try { THUMB.o_rogue = kmThumb(Object.assign({}, KM_DEF), true); THUMB.o_km = THUMB.o_rogue; } catch (e) {} }
+// criador: só a base Fofinha
+modelChips = function () { return ''; };
+
+
+// ---------- tela inicial: shader sonhador por cima do vale (raios de sol, aurora, bolinhas de luz e brilhos) ----------
+const TSH = { mesh: null, u: { uT: { value: 0 }, uA: { value: 0 }, uAsp: { value: 1 } } };
+{ const mat = new THREE.ShaderMaterial({ uniforms: TSH.u, transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: 'varying vec2 vU; void main(){ vU = position.xy * 0.5 + 0.5; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: `uniform float uT, uA, uAsp; varying vec2 vU;
+      float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
+      void main(){ vec2 uv = vU, p = vec2(uv.x * uAsp, uv.y); vec3 col = vec3(0.0);
+        // raios de sol vindos do canto de cima
+        vec2 L = vec2(0.82 * uAsp, 1.08), d = p - L; float ang = atan(d.y, d.x), r = length(d);
+        float rays = pow(0.5 + 0.5 * sin(ang * 13.0 + uT * 0.25 + n(vec2(ang * 3.0, uT * 0.1)) * 2.0), 6.0) * smoothstep(1.3, 0.1, r);
+        col += vec3(1.0, 0.82, 0.55) * rays * 0.16 + vec3(1.0, 0.86, 0.62) * smoothstep(0.55, 0.0, r) * 0.18;
+        // aurora rosada no alto
+        float band = sin(p.x * 3.0 + uT * 0.35 + sin(p.x * 7.0 - uT * 0.2) * 0.6) * 0.05 + 0.86;
+        float au = smoothstep(0.12, 0.0, abs(uv.y - band)) * (0.6 + 0.4 * n(vec2(p.x * 4.0, uT * 0.3)));
+        col += mix(vec3(1.0, 0.55, 0.8), vec3(0.55, 0.85, 1.0), 0.5 + 0.5 * sin(p.x * 2.0 + uT * 0.4)) * au * 0.22;
+        // bolinhas de luz (bokeh) subindo devagar
+        for (int k = 0; k < 3; k++) { float fk = float(k); vec2 q = p * (5.0 + fk * 3.0) + vec2(fk * 7.3, -uT * (0.12 + fk * 0.05)); vec2 id = floor(q), f = fract(q) - 0.5; float rnd = h(id + fk);
+          if (rnd > 0.72) { vec2 off = (vec2(h(id + 3.1), h(id + 5.7)) - 0.5) * 0.6; float dd = length(f - off), s = 0.09 + 0.12 * h(id + 9.0); float tw = 0.55 + 0.45 * sin(uT * (1.5 + rnd * 2.0) + rnd * 30.0);
+            col += mix(vec3(1.0, 0.9, 0.6), vec3(1.0, 0.7, 0.9), h(id + 1.3)) * smoothstep(s, s * 0.4, dd) * tw * (0.16 - fk * 0.035); } }
+        // brilhinhos em cruz
+        vec2 q2 = p * 9.0 + vec2(0.0, -uT * 0.05); vec2 id2 = floor(q2), f2 = fract(q2) - 0.5; if (h(id2 + 4.4) > 0.93) { float tw = pow(max(0.0, sin(uT * 2.2 + h(id2) * 40.0)), 8.0); float cr = max(smoothstep(0.03, 0.0, abs(f2.x)) * smoothstep(0.4, 0.0, abs(f2.y)), smoothstep(0.03, 0.0, abs(f2.y)) * smoothstep(0.4, 0.0, abs(f2.x))); col += vec3(1.0, 0.95, 0.8) * cr * tw * 0.7; }
+        gl_FragColor = vec4(col * uA, 1.0); }` });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat); m.frustumCulled = false; m.renderOrder = 999; m.userData.noGH = 1; m.userData.keep = 1; scene.add(m); TSH.mesh = m; }
+function titleShaderUpdate(dt) { const on = titleOn && !document.body.classList.contains('incut'); TSH.u.uA.value = lerp(TSH.u.uA.value, on ? 1 : 0, 1 - Math.pow(0.02, dt)); TSH.mesh.visible = TSH.u.uA.value > 0.01; TSH.u.uT.value += dt; TSH.u.uAsp.value = innerWidth / Math.max(1, innerHeight); }
+{ let last = performance.now(); const base = titleCam; titleCam = function (dt) { base(dt); titleShaderUpdate(dt); last = performance.now(); }; const b2 = v14Update; v14Update = function (dt) { b2(dt); if (!titleOn) titleShaderUpdate(dt); }; }
+
+// ---------- música fofa da tela inicial: caixinha de música feita na hora (Web Audio, sem arquivo) ----------
+// Dó - Lá menor - Fá - Sol, 96 bpm, 16 compassos: melodia de caixinha de música, acordes macios, baixinho de pizzicato e sininhos.
+async function cuteTitleSong() {
+  const sr = 22050, bpm = 96, beat = 60 / bpm, bars = 16, dur = bars * 4 * beat, AC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!AC) return null;
+  const ctx = new AC(1, Math.ceil(sr * dur), sr), master = ctx.createGain(); master.gain.value = 0.55;
+  // reverb curtinho (impulso de ruído que some)
+  const rv = ctx.createConvolver(), il = Math.floor(sr * 1.6), ib = ctx.createBuffer(1, il, sr), id = ib.getChannelData(0); for (let i = 0; i < il; i++) id[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / il, 2.6); rv.buffer = ib;
+  const wet = ctx.createGain(); wet.gain.value = 0.28; master.connect(ctx.destination); master.connect(rv); rv.connect(wet); wet.connect(ctx.destination);
+  const f = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  const bell = (m, t, d = 1.2, v = 0.22) => { const o = ctx.createOscillator(), mo = ctx.createOscillator(), mg = ctx.createGain(), g = ctx.createGain(); o.frequency.value = f(m); mo.frequency.value = f(m) * 3.5; mg.gain.setValueAtTime(f(m) * 1.4, t); mg.gain.exponentialRampToValueAtTime(1, t + 0.6); mo.connect(mg); mg.connect(o.frequency);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0008, t + d); o.connect(g); g.connect(master); o.start(t); mo.start(t); o.stop(t + d + 0.05); mo.stop(t + d + 0.05); };
+  const pad = (ms, t, d, v = 0.05) => { for (const m of ms) { const o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter(); o.type = 'triangle'; o.frequency.value = f(m); o.detune.value = (Math.random() - 0.5) * 8; lp.type = 'lowpass'; lp.frequency.value = 1400;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.5); g.gain.setValueAtTime(v, t + d - 0.4); g.gain.linearRampToValueAtTime(0, t + d); o.connect(lp); lp.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05); } };
+  const pluck = (m, t, v = 0.16) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = f(m); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + 0.45); o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.5); };
+  const CH = [[60, 64, 67], [57, 60, 64], [53, 57, 60], [55, 59, 62]], BASS = [48, 45, 41, 43];
+  // melodia (notas MIDI por colcheia; 0 = pausa), 2 frases de 8 compassos
+  const A = [76, 0, 79, 76, 74, 72, 74, 0, 72, 0, 76, 72, 69, 0, 67, 0, 69, 72, 74, 72, 69, 0, 65, 67, 67, 0, 71, 74, 74, 72, 71, 0];
+  const B = [79, 0, 81, 79, 76, 0, 74, 76, 72, 0, 76, 79, 81, 0, 79, 0, 77, 76, 74, 72, 69, 72, 74, 0, 74, 0, 72, 71, 72, 0, 0, 0];
+  const mel = [...A, ...B, ...A, ...B.slice(0, 24), 79, 0, 84, 0, 0, 0, 0, 0];
+  for (let bar = 0; bar < bars; bar++) { const t0 = bar * 4 * beat, ci = Math.floor(bar / 2) % 4, ch = CH[ci]; if (bar % 2 === 0) pad(ch.map((m) => m - 12).concat([ch[0]]), t0, 8 * beat); pluck(BASS[ci], t0); pluck(BASS[ci] + 7, t0 + 2 * beat, 0.11); pluck(BASS[ci] + 12, t0 + 3 * beat, 0.07);
+    if (bar % 2 === 1) for (let k = 0; k < 4; k++) bell(ch[k % 3] + 24, t0 + 2 * beat + k * beat * 0.5, 0.7, 0.05); }
+  mel.forEach((m, i) => { if (m) bell(m, i * beat * 0.5, 1.4, 0.2); });
+  const buf = await ctx.startRendering(), ch0 = buf.getChannelData(0), n = ch0.length, out = new DataView(new ArrayBuffer(44 + n * 2)), ws = (o, s) => { for (let i = 0; i < s.length; i++) out.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0, 'RIFF'); out.setUint32(4, 36 + n * 2, true); ws(8, 'WAVE'); ws(12, 'fmt '); out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, 1, true); out.setUint32(24, sr, true); out.setUint32(28, sr * 2, true); out.setUint16(32, 2, true); out.setUint16(34, 16, true); ws(36, 'data'); out.setUint32(40, n * 2, true);
+  let pk = 0; for (let i = 0; i < n; i++) pk = Math.max(pk, Math.abs(ch0[i])); const g = pk > 0 ? 0.9 / pk : 1; for (let i = 0; i < n; i++) out.setInt16(44 + i * 2, Math.max(-1, Math.min(1, ch0[i] * g)) * 32767, true);
+  return URL.createObjectURL(new Blob([out.buffer], { type: 'audio/wav' }));
+}
+cuteTitleSong().then((url) => { if (!url || !MUS.title) return; const a = MUS.title, wasPlaying = !a.paused, v = a.volume; a.src = url; a.loop = true; a.volume = v; if (wasPlaying) { const p = a.play(); if (p) p.catch(() => {}); } }).catch((e) => console.error(e));
+
+
+// ---------- abertura com cenários: a história do vale em seis cenas ----------
+const CUT25 = { sc: -1, t0: 0, oldTime: 0 };
+const CSC = () => [
+  { d: 6.0, h: 22.5, n: 'I · A chuva de estrelas', txt: 'Há muito tempo, uma chuva de estrelas caiu sobre um vale escondido entre as montanhas.',
+    cam: (k) => { camPos.set(40 + k * 6, 4.5 + k * 3, 66 - k * 5); camLook.set(54, 15 - k * 3, 26); }, fx: (dt) => { if (rand() < dt * 9) { const x = 36 + rand() * 40, z = 20 + rand() * 20; for (let i = 0; i < 6; i++) emit(PG, { x: x - i * 0.35, y: 12 + rand() * 6 + i * 0.25, z, vx: 9, vz: 2, vy: -6, g: 0, life: 0.9 + i * 0.05, max: 1.1, c: i ? '#ffe18d' : '#ffffff' }); } } },
+  { d: 6.0, h: 23, n: 'II · Flores de luz', txt: 'Onde cada estrelinha tocava o chão, nascia uma flor que brilhava no escuro. O povo chamou o lugar de Vale Estrelinha.',
+    cam: (k) => { camPos.set(45 + k * 3, 6.5 - k * 1.5, 53 - k * 2); camLook.set(51, 0.4, 44); }, fx: (dt) => { if (rand() < dt * 18) emit(PG, { x: 49 + rand() * 10, y: 0.3 + rand() * 1.2, z: 42 + rand() * 9, vx: (rand() - 0.5) * 0.3, vz: 0, vy: 0.25, g: 0, life: 2.4, max: 2.4, c: pick(['#fff3a0', '#ffd0f0', '#bff0ff']), flick: true }); } },
+  { d: 6.0, h: 19.2, n: 'III · O Poço dos Desejos', txt: 'No coração da vila, o Poço dos Desejos guardava a luz das estrelas... e os pedidos de quem acreditava nelas.',
+    cam: (k) => { const a = 0.6 + k * 1.1, cx = SHRINE.x + 1, cz = SHRINE.y + 1; camPos.set(cx + Math.cos(a) * 7.5, 3.6 + k, cz + Math.sin(a) * 7.5); camLook.set(cx, 1.2, cz); }, fx: (dt) => { if (rand() < dt * 10) emit(PG, { x: SHRINE.x + 1 + (rand() - 0.5) * 1.2, y: 0.8, z: SHRINE.y + 1 + (rand() - 0.5) * 1.2, vx: 0, vz: 0, vy: 1.3, g: 0, life: 1.6, max: 1.6, c: pick(['#ffe18d', '#ff9fc8', '#ffffff']) }); } },
+  { d: 6.5, h: 17.4, n: 'IV · A névoa sonolenta', txt: 'Sua avó cuidou dessa fazenda por muitos anos. Mas, um dia, uma névoa sonolenta cobriu metade do vale, e as estrelas pararam de cair.',
+    cam: (k) => { camPos.set(30 + k * 6, 8 + k * 2, 44 - k * 3); camLook.set(40 + k * 8, 1.5, 14); }, fx: () => {} },
+  { d: 6.0, h: 7.2, n: 'V · Uma carta', txt: () => `Hoje, uma carta chegou para ${escapeHtml(S.name)}: <i>“Volte para casa, cuide da fazenda, faça amigos... e acorde as estrelas. — Vovó Rosa”</i>`,
+    cam: (k) => { camPos.set(CUT.x0 + 3.2 - k * 1.2, 1.9, CUT.z0 + 3.4 - k * 0.6); camLook.set(CUT.x0, 1.05, CUT.z0); }, fx: () => {}, me: 'read' },
+  { d: 9.0, h: 7.6, n: '', txt: '...e foi assim que a sua história no vale começou.', cam: null, fx: () => {}, me: 'walk' },
+];
+playIntro = function () {
+  for (const k in keys) keys[k] = false; P.charging = false; P.fishing && endFish(); CUT = { t: 0, t0: performance.now(), line: -1, x0: 42.5, z0: 51, x1: 42.5, z1: 38.5, done: false, v25: 1 }; CUT25.sc = -1; CUT25.oldTime = S.time;
+  P.x = CUT.x0; P.z = CUT.z0; P.ang = Math.PI; P.fx = 0; P.fz = -1;
+  let el = $('cut'); if (!el) { el = document.createElement('div'); el.id = 'cut'; document.body.appendChild(el); }
+  el.innerHTML = `<div class="bar t"></div><div class="bar b"></div><div class="cfl" id="cutfl"></div><div class="csn" id="cutsn"></div><div class="cap" id="cutcap"></div><div class="ttl"><div class="cgn">${GAME_NAME}</div><div class="cgs">Uma história do Vale Estrelinha</div></div><div class="cdots" id="cutdots">${CSC().map(() => '<i></i>').join('')}</div><button class="btn sm" id="cutskip">Pular ▶</button>`; el.classList.add('on');
+  $('cutskip').onclick = endIntro; document.body.classList.add('incut'); if (petObj) { pet.x = P.x + 0.7; pet.z = P.z; }
+  try { playMusic && playMusic('title'); } catch (e) {} };
+{ const base = cutMove; cutMove = function () { if (!CUT || !CUT.v25) return base(); return CUT.walk ? [0, -0.55] : [0, 0]; }; }
+cutCamera = function (dt) {
+  if (!CUT.v25) return; CUT.tt = (CUT.tt || 0) + Math.min(dt, 0.05); const t = CUT.tt; CUT.t = t; /* tempo do jogo: em computador lento a cena não pula */ const L = CSC(); let acc = 0, i = 0; for (; i < L.length; i++) { if (t < acc + L[i].d) break; acc += L[i].d; } if (i >= L.length) return endIntro();
+  const sc = L[i], k = clamp((t - acc) / sc.d, 0, 1), e = k * k * (3 - 2 * k);
+  if (CUT25.sc !== i) { CUT25.sc = i; const fl = $('cutfl'); if (fl) { fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on'); }
+    const c = $('cutcap'); c.classList.remove('on'); void c.offsetWidth; c.innerHTML = typeof sc.txt === 'function' ? sc.txt() : sc.txt; c.classList.add('on');
+    const sn = $('cutsn'); if (sn) { sn.classList.remove('on'); void sn.offsetWidth; sn.textContent = sc.n; if (sc.n) sn.classList.add('on'); }
+    document.querySelectorAll('#cutdots i').forEach((d, j) => d.classList.toggle('on', j <= i)); camera.position.copy(camPos); sfx(i === 0 ? 'magic3' : 'switch'); }
+  S.time = (DAYLEN * (sc.h - 6)) / 18; sc.fx(dt);
+  const showMe = sc.me === 'read' || sc.me === 'walk'; if (player) player.obj.visible = showMe;
+  if (sc.me === 'walk') { const kk = clamp((t - acc) / 7, 0, 1), ee = kk * kk * (3 - 2 * kk); P.x = CUT.x0; P.z = lerp(CUT.z0, CUT.z1, ee); CUT.walk = kk < 1; camPos.set(P.x + 4.5 - ee * 6, 3.2 + ee * 1.2, P.z + 5 - ee * 1); camLook.set(P.x, 1.0, P.z - 1.2); $('cut').classList.toggle('showt', k > 0.35); }
+  else { CUT.walk = false; P.x = CUT.x0; P.z = CUT.z0; if (sc.cam) sc.cam(e); $('cut').classList.remove('showt'); }
+  P.ang = Math.PI; P.fx = 0; P.fz = -1; P.kx = P.kz = 0; P.roll = null;
+  if (player) { player.obj.position.set(P.x, 0, P.z); player.obj.rotation.y = Math.PI; if (sc.me === 'read' && player.actions && player.actions.Interact && !CUT.readA) { CUT.readA = 1; player.play('Interact', true, 0.6); } }
+};
+{ const base = endIntro; endIntro = function () { if (CUT && CUT.v25) { S.time = Math.max(CUT25.oldTime || 0, (DAYLEN * (7.6 - 6)) / 18); if (player) player.obj.visible = true; } return base(); }; }
+
+// retratos dos moradores na base Fofinha (cabeça bem enquadrada)
+function npcPortraits() { try { for (const id of Object.keys(NPCKM)) { const t = kmThumb(NPCLOOK[id], true); if (!t) continue; if (id === 'rosa') THUMB.rosa = t; else if (id === 'tico') THUMB.tico = t; else THUMB['npc_' + id] = t; } } catch (e) { console.error(e); } }
+{ const base = buildNpcs; buildNpcs = function () { const r = base(); setTimeout(npcPortraits, 0); return r; }; }
+
+// retratos da Fofinha: enquadra só as peças redondas (as malhas antigas escondidas tinham até uma arma que afastava a câmera)
+kmThumb = function (lk, head, size = 160) { const key = JSON.stringify(lk) + head + size; KM.th = KM.th || {}; if (KM.th[key]) return KM.th[key];
+  try { if (!thumbR) thumb('#sword'); const o = cloneM('ch_km'); o.userData.ck = 'km'; applyLook(o, Object.assign({}, KM_DEF, lk));
+    const mx = new THREE.AnimationMixer(o), cl = kmClips().find((c) => c.name === 'Idle'); if (cl) { mx.clipAction(cl).play(); mx.update(0.3); }
+    const holder = new THREE.Group(); holder.add(o); holder.rotation.y = -0.25; thumbScene.add(holder); holder.updateMatrixWorld(true);
+    const b = new THREE.Box3(); for (const m of o.userData.fofa || []) b.expandByObject(m); if (b.isEmpty()) b.setFromObject(holder); const sz = b.getSize(new THREE.Vector3()), ctr = b.getCenter(new THREE.Vector3());
+    if (head) { ctr.y = b.max.y - sz.y * 0.3; sz.y *= 0.58; sz.x *= 0.85; } const r = Math.max(sz.x, sz.y, sz.z) * 1.05;
+    thumbCam.position.set(ctr.x, ctr.y + r * 0.3, ctr.z + r * 2.3); thumbCam.lookAt(ctr); thumbR.render(thumbScene, thumbCam); const url = thumbR.domElement.toDataURL(); thumbScene.remove(holder);
+    return (KM.th[key] = url); } catch (e) { console.error(e); return emojiThumb('👕'); } };
+refreshMeThumb = function () { try { THUMB.me = kmThumb(lookKM(), true); const f = $('pface'); if (f) f.src = THUMB.me; } catch (e) { console.error(e); } };
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -6408,4 +6646,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };

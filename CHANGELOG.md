@@ -2,6 +2,37 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v25: interface mais clara e adaptável, só a base Fofinha, título com shader e música, abertura com cenários e amigos
+**Interface (inspirada em Zelda: Breath of the Wild, Animal Crossing: New Horizons, Stardew Valley e Pokémon Let's Go)**
+- **Estrelofone**: o menu virou um celular com apps coloridos (Mochila, Mapa, Diário, Álbum, Habilidades, Desejos, Visual, Casa, Amigos, Salvar, Carregar, Ajustes, Como jogar, Créditos e Título). Cada app mostra a tecla de atalho e uma descrição, e dá para navegar com as setas ou o controle.
+- **Diálogo em balão**, como no Animal Crossing: cantos bem redondos, retrato redondo, nome numa etiqueta inclinada e setinha que pula.
+- **Roda de ferramentas**: segure <kbd>X</kbd> para escolher a ferramenta numa roda (com o mouse ou as setas) e solte para equipar.
+- **Ajustes de interface**: tamanho (pequena, automática, grande, enorme), texto grande, menos animação e qual tipo de dica de botão mostrar (automático, teclado, toque ou controle).
+- **Controle (gamepad)**: anda pelo analógico, A usa, X fala, B esquiva, Y abre a mochila, LB/RB trocam o item e Start abre o menu.
+- Avisos e a dica de ação ficaram em balões arredondados, mais fáceis de ler. Em tela estreita, a lista de tarefas começa recolhida.
+
+**Só a base Fofinha**
+- As bases de aventureiro (Cavaleiro, Bárbaro, Mago e Andarilho) saíram do jogo, inclusive da tela inicial e do criador. Jogadora, moradores, lojistas, quem está em casa e as amigas do multiplayer usam a Fofinha.
+- As antigas roupas de aventureiro viraram conjuntos da Fofinha: Cavaleiro (uniforme e quepe), Bárbaro, Mago (vestido e tiara) e Andarilho (moletom). Saves antigos passam para a Fofinha sozinhos.
+
+**Tela inicial**
+- Shader por cima do vale: raios de sol, aurora rosada, bolinhas de luz subindo e brilhinhos em cruz. O título flutua.
+- Música fofa nova, de caixinha de música (melodia de sininho, acordes macios, baixinho e brilhos), composta e gerada na hora com Web Audio.
+
+**Abertura com cenários**
+- A história agora tem seis cenas, com hora do dia e efeitos próprios:
+  1. a chuva de estrelas;
+  2. as flores de luz no lago;
+  3. o Poço dos Desejos ao entardecer;
+  4. a névoa sonolenta cobrindo o vale;
+  5. a carta da Vovó Rosa;
+  6. a chegada na vila.
+- Cada cena tem nome, transição em clarão e bolinhas de progresso. O tempo segue o jogo, então em computador lento nenhuma cena é pulada.
+
+**Multiplayer**
+- Até 4 jogadores por partida. Quem entra numa partida cheia recebe um aviso e sai.
+- Painel de amigos à esquerda, com retrato, nome, nível, onde cada um está (área, casa, caverna, loja), distância e vida.
+
 ## v24: base Fofinha redonda, moradores num lugar só e brilho nas portas
 **Base Fofinha nova**
 - O corpo quadradinho do Kenney deu lugar a um bonequinho redondo, tipo pelúcia: cabeça grande e redonda com orelhinhas e narizinho, corpinho de feijão, bracinhos curtos com mãozinha redonda e sapatinhos redondos.

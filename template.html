@@ -888,6 +888,71 @@ html,body,.btn,button,input{font-variant-ligatures:none;font-feature-settings:"l
 @keyframes areaT{0%{opacity:0;letter-spacing:12px}15%{opacity:1;letter-spacing:3px}75%{opacity:1}100%{opacity:0;letter-spacing:2px}}
 @media (max-width:600px){#areaT{font-size:22px}#areaT i{width:36px}}
 body.incut #areaT{display:none}
+/* ===== v25: interface mais clara e adaptável (Estrelofone, balões, roda de ferramentas, amigos) ===== */
+:root{--mscale:1}
+/* Estrelofone */
+#modal .mp.phonem{max-width:min(600px,95vw)!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;margin-top:4vh}
+#modal .mp.phonem>#mx{right:10px;top:10px;z-index:2}
+.phone{background:linear-gradient(180deg,#fff6ea,#ffe9d2);border:4px solid var(--ink);border-radius:34px;box-shadow:0 6px 0 var(--ink),inset 0 0 0 6px #fff,inset 0 0 0 9px #ffd9b8;padding:16px 18px 14px;zoom:var(--mscale)}
+.phtop{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px;padding:2px 10px 10px;color:var(--ink-2)}
+.phtop b{font-size:18px;color:var(--ink);letter-spacing:.5px}
+.phwho{display:flex;align-items:center;gap:10px;background:#fff;border:3px solid var(--ink);border-radius:18px;padding:8px 12px;margin:0 4px 12px;box-shadow:0 3px 0 rgba(20,20,27,.25)}
+.phwho img{width:44px;height:44px;border-radius:50%;border:3px solid var(--ink);background:var(--paper-2);object-fit:cover}
+.phwho b{display:block;font-size:17px}.phwho small{font-size:13px;color:var(--ink-2)}
+.apps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 8px;padding:4px}
+.app{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;cursor:pointer;font:600 14px var(--font);color:var(--ink);padding:6px 2px;border-radius:18px;transition:transform .12s}
+.app i{display:grid;place-items:center;width:64px;height:64px;border-radius:22px;background:var(--ac);border:3px solid var(--ink);box-shadow:inset 0 -6px 0 rgba(0,0,0,.14),inset 0 4px 0 rgba(255,255,255,.45),0 4px 0 var(--ink)}
+.app i img{width:40px;height:40px;image-rendering:pixelated}
+.app em{position:absolute;top:2px;right:10px;font-style:normal;font-size:11px;font-weight:700;background:#fff;border:2px solid var(--ink);border-radius:8px;padding:0 4px}
+.app:hover,.app.sel{transform:translateY(-3px) scale(1.06)}
+.app.sel i{outline:4px solid #fff;outline-offset:2px;box-shadow:inset 0 -6px 0 rgba(0,0,0,.14),inset 0 4px 0 rgba(255,255,255,.45),0 0 0 7px var(--ink),0 6px 0 7px var(--ink)}
+.phfoot{margin:12px 6px 2px;text-align:center;font-size:14px;color:var(--ink-2);min-height:18px}
+@media (max-width:560px){.apps{grid-template-columns:repeat(3,1fr)}.app i{width:58px;height:58px}}
+/* diálogo em balão, com nome inclinado (Animal Crossing) */
+#dlg{border-radius:30px!important;padding:20px 26px 18px 120px!important;background:#fffaf2!important;box-shadow:0 5px 0 var(--ink),inset 0 0 0 5px #fff,inset 0 0 0 8px #ffe2c6!important;zoom:var(--mscale)}
+#dlgface{border-radius:50%!important;left:18px!important;top:16px!important;width:88px!important;height:88px!important;box-shadow:0 3px 0 var(--ink)}
+#dlgname{transform:rotate(-4deg);border-radius:14px!important;padding:5px 16px!important;font-size:17px!important;top:-20px!important;left:116px!important;background:#ff9fbd!important;color:#fff!important;text-shadow:0 2px 0 rgba(20,20,27,.35);box-shadow:0 3px 0 var(--ink)!important;animation:none!important}
+#dlgtxt{font-size:19px!important;line-height:1.5!important}
+#dlgmore{color:#ff7aa8;animation:dmore .7s ease-in-out infinite alternate}@keyframes dmore{to{transform:translateY(5px)}}
+/* avisos em balão */
+#toast{border-radius:22px!important;padding:10px 18px!important;font-size:16px;box-shadow:0 4px 0 var(--ink),inset 0 0 0 4px #fff!important;background:#fffaf2!important}
+/* dica de ação: pílula clara com teclas */
+#hint{border-radius:999px!important;padding:6px 16px!important;background:rgba(255,250,242,.94)!important;box-shadow:0 3px 0 var(--ink)!important}
+#hint .key{border-radius:8px;min-width:24px;font-size:13px}
+body[data-input=touch] #hint .key,body[data-input=pad] #hint .key{border-radius:50%;min-width:24px;height:24px;line-height:18px;padding:0}
+body[data-input=pad] #hint .key{background:#ffe18d}
+/* roda de ferramentas */
+#ring{position:fixed;inset:0;z-index:45;display:none;background:radial-gradient(circle at 50% 50%,rgba(20,20,27,.15),rgba(20,20,27,.55));pointer-events:auto}
+#ring.on{display:block}
+#ring .rc{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:150px;height:150px;border-radius:50%;background:#fffaf2;border:4px solid var(--ink);display:grid;place-content:center;text-align:center;box-shadow:0 5px 0 var(--ink)}
+#ring .rc b{font-size:16px}#ring .rc small{font-size:11px;color:var(--ink-2)}
+#ring .rs{position:absolute;transform:translate(-50%,-50%);width:72px;height:72px;border-radius:50%;background:#fff;border:4px solid var(--ink);display:grid;place-items:center;box-shadow:0 4px 0 var(--ink);cursor:pointer;transition:transform .1s}
+#ring .rs img{width:46px;height:46px;image-rendering:pixelated}#ring .rs em{position:absolute;bottom:-8px;font-style:normal;font-size:11px;font-weight:700;background:var(--paper);border:2px solid var(--ink);border-radius:6px;padding:0 4px}
+#ring .rs.on{background:#ffe18d;transform:translate(-50%,-50%) scale(1.22)}
+/* amigos no multiplayer */
+#party{position:fixed;left:calc(12px + var(--hs,1) * 6px);top:calc(var(--hs,1) * 120px);z-index:12;display:flex;flex-direction:column;gap:6px;pointer-events:none;transform-origin:top left;transform:scale(var(--hs,1))}
+#party .pm{display:flex;align-items:center;gap:8px;background:rgba(255,250,242,.95);border:3px solid var(--ink);border-radius:16px;padding:4px 10px 4px 4px;box-shadow:0 3px 0 var(--ink);min-width:150px}
+#party .pm img{width:34px;height:34px;border-radius:50%;border:2px solid var(--ink);background:var(--paper-2);object-fit:cover}
+#party .pm b{display:block;font-size:13px}#party .pm small{display:block;font-size:11px;color:var(--ink-2)}
+#party .pm .dot{width:10px;height:10px;border-radius:50%;background:#8fd16a;border:2px solid var(--ink);margin-left:auto}
+#party .pm.far .dot{background:#ffcb2a}
+#party .pm .hpb{height:5px;border-radius:3px;background:#e0394c;margin-top:2px}
+/* texto grande e menos animação */
+body.bigtxt .modal,body.bigtxt #modal{font-size:110%}
+body.bigtxt #hint,body.bigtxt #toast{font-size:18px}
+body.calm *{animation-duration:0s!important;transition-duration:0s!important}
+.seth{margin:14px 0 4px;font-size:15px}
+@media (max-width:700px){#hudTR #qlist{display:none}#hudTR.open #qlist{display:block}}
+/* v25: abertura com cenas */
+#cut .cfl{position:absolute;inset:0;background:#fff8ee;opacity:0;pointer-events:none}
+#cut .cfl.on{animation:cfl 1.1s ease-out}@keyframes cfl{0%{opacity:.85}100%{opacity:0}}
+#cut .csn{position:absolute;left:6vw;top:calc(11vh + 18px);font:700 18px var(--font);color:#ffe9a8;text-shadow:0 2px 0 #2a1d2e;letter-spacing:1px;opacity:0}
+#cut .csn.on{animation:csn 5s ease both}@keyframes csn{0%{opacity:0;transform:translateX(-14px)}12%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+#cut .cdots{position:absolute;right:6vw;top:calc(11vh + 22px);display:flex;gap:8px}
+#cut .cdots i{width:10px;height:10px;border-radius:50%;border:2px solid #fff;opacity:.5}
+#cut .cdots i.on{background:#ffe18d;opacity:1}
+#cut .cap i{color:#ffe3ef}
+#title .tlogo{animation:tfloat 4.5s ease-in-out infinite}@keyframes tfloat{50%{transform:translateY(-6px) rotate(-1deg)}}
 </style>
 </head>
 <body class="ttl">
@@ -967,7 +1032,7 @@ body.incut #areaT{display:none}
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v24</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v25</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script>/*GAME*/</script>
