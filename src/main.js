@@ -5230,6 +5230,227 @@ function makeMailbox(col, vi = 0) { const g = new THREE.Group(), wood = sgMat('#
   const letter = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.02, 0.1), sgMat('#ffffff')); letter.position.set(0, 1.08, 0.02); letter.rotation.z = 0.2; letter.visible = vi % 2 === 0; g.add(letter);
   bakeVC(g); g.userData.dress = 1; return g; }
 
+/* =================== v21: base fofinha (Kenney Mini Characters) com peças trocáveis, poço estilo Genshin, barco e inconsistências =================== */
+// ---------- base nova: 12 personagens do Kenney com o mesmo esqueleto; cabeça (penteado) e corpo (roupa) se misturam ----------
+// Cada parte vira cor por vértice: pele, cabelo, blusa, calça/saia e sapato recebem a cor escolhida, mantendo o degradê original.
+// O rosto (olhos, sobrancelhas, boca, bochechas) é pintado numa placa presa ao osso da cabeça, como em Animal Crossing.
+const KM_VAR = ['fa', 'fb', 'fc', 'fd', 'fe', 'ff', 'ma', 'mb', 'mc', 'md', 'me', 'mf'];
+for (const v of KM_VAR) { MODEL_LIST.push('km_' + v); FIT['km_' + v] = { h: 1 }; }
+const KM = { S: 1.5, clips: null, aliased: null, pal: null, part: {}, geo: {}, face: {}, mat: null, faceMat: {} };
+{ const base = prepare; prepare = function (k, gltf) { base(k, gltf); if (!/^km_/.test(k)) return; const M = MODELS[k], root = M.root.children[0];
+  root.scale.setScalar(KM.S); root.position.set(0, 0, 0); M.isChar = true;
+  root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; o.frustumCulled = false; } if (o.name === 'torso') o.name = 'spine'; if (o.name === 'body-mesh') o.name = 'km_Body'; if (o.name === 'head-mesh') o.name = 'km_Head'; });
+  if (k === 'km_fa') { for (const c of gltf.animations) for (const t of c.tracks) t.name = t.name.replace(/^torso\./, 'spine.'); KM.clips = gltf.animations; MODELS.ch_km = M;
+    // mão: um ponto vazio no fim do braço direito, onde as ferramentas ficam (o Kenney não tem osso de mão)
+    let arm = null; root.traverse((o) => { if (o.name === 'arm-right') arm = o; }); if (arm) { const hs = new THREE.Object3D(); hs.name = 'handslot.r'; hs.position.set(-0.115, -0.012, 0.01); arm.add(hs); } } }; }
+const KM_ALIAS = { Idle: 'idle', Idle_A: 'idle', Walking_A: 'walk', Running_A: 'sprint', Cheer: 'emote-yes', Cheering: 'emote-yes', Waving: 'emote-yes', Interact: 'interact-right', Use_Item: 'interact-right', PickUp: 'pick-up',
+  '1H_Melee_Attack_Chop': 'attack-melee-right', '1H_Melee_Attack_Slice_Diagonal': 'attack-melee-right', '1H_Melee_Attack_Stab': 'attack-melee-right', '1H_Melee_Attack_Slice_Horizontal': 'attack-melee-right', '2H_Melee_Attack_Spin': 'attack-kick-right', Melee_1H_Attack_Chop: 'attack-melee-right', Melee_1H_Attack_Slice_Horizontal: 'attack-melee-right', Throw: 'attack-melee-right',
+  Spellcast_Raise: 'holding-both-shoot', Spellcast_Shoot: 'holding-right-shoot', Ranged_Magic_Spellcasting: 'holding-both', Ranged_Magic_Raise: 'holding-both-shoot', Ranged_Magic_Shoot: 'holding-right-shoot', Spellbook_open: 'holding-both', Spellbook: 'holding-both',
+  Hit_A: 'emote-no', Dodge_Forward: 'jump', Death_A: 'die', Death_B: 'die', Death_A_Pose: 'die', Lie_Idle: 'die', Sit_Floor_Idle: 'sit', Sit_Chair_Idle: 'sit', Jump_Full_Short: 'jump', Block_Hit: 'crouch', Melee_Block: 'crouch' };
+function kmClips() { if (KM.aliased) return KM.aliased; const by = {}; for (const c of KM.clips || []) by[c.name] = c; const out = [...(KM.clips || [])]; for (const [a, b] of Object.entries(KM_ALIAS)) if (by[b]) { const c = by[b].clone(); c.name = a; out.push(c); } return (KM.aliased = out); }
+{ const Base = Char; Char = class extends Base { constructor(key) { const km = key === 'km', sv = CLIPS; if (km) CLIPS = kmClips(); try { super(key); } finally { CLIPS = sv; } if (km) this.hand = this.nodes['handslot.r']; } }; }
+// paleta (colormap) de onde cada vértice tira a cor original
+function kmPalette() { if (KM.pal) return KM.pal; let img = null; MODELS.km_fa.root.traverse((o) => { if (!img && o.isMesh && o.material && o.material.map) img = o.material.map.image; });
+  const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0); return (KM.pal = { w: c.width, h: c.height, d: x.getImageData(0, 0, c.width, c.height).data }); }
+const kmTex = (u, v) => { const P = kmPalette(), px = Math.min(P.w - 1, Math.max(0, Math.floor(u * P.w))), py = Math.min(P.h - 1, Math.max(0, Math.floor(v * P.h))), i = (py * P.w + px) * 4; return new THREE.Color().setRGB(P.d[i] / 255, P.d[i + 1] / 255, P.d[i + 2] / 255, THREE.SRGBColorSpace); };
+// ilhas de geometria (peças separadas da malha), pelo índice e por posição igual
+function kmIslands(g) { const pos = g.attributes.position, n = pos.count, par = new Int32Array(n).map((_, i) => i), f = (i) => { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; }, un = (a, b) => { a = f(a); b = f(b); if (a !== b) par[a] = b; };
+  const key = new Map(); for (let i = 0; i < n; i++) { const k = pos.getX(i).toFixed(4) + ',' + pos.getY(i).toFixed(4) + ',' + pos.getZ(i).toFixed(4); if (key.has(k)) un(i, key.get(k)); else key.set(k, i); }
+  const idx = g.index; if (idx) for (let t = 0; t < idx.count; t += 3) { un(idx.getX(t), idx.getX(t + 1)); un(idx.getX(t), idx.getX(t + 2)); } else for (let t = 0; t < n; t += 3) { un(t, t + 1); un(t, t + 2); }
+  const id = new Int32Array(n); for (let i = 0; i < n; i++) id[i] = f(i); return id; }
+function kmOrder() { if (KM.order) return KM.order; let m = null; MODELS.km_fa.root.traverse((o) => { if (!m && o.isSkinnedMesh && o.name === 'km_Body') m = o; }); return (KM.order = m.skeleton.bones.map((b) => b.name)); }
+const KM_CAT = { keep: 0, skin: 1, hair: 2, top: 3, bottom: 4, shoes: 5, face: 6, drop: 7 };
+// análise de uma peça (cabeça ou corpo de uma variante): categoria e cor original de cada vértice
+function kmPart(v, which) { const key = v + which; if (KM.part[key]) return KM.part[key]; const M = MODELS['km_' + v]; if (!M) return null; let mesh = null; M.root.traverse((o) => { if (o.isSkinnedMesh && o.name === (which === 'h' ? 'km_Head' : 'km_Body')) mesh = o; }); if (!mesh) return null;
+  const g = mesh.geometry, pos = g.attributes.position, uv = g.attributes.uv, nrm = g.attributes.normal, n = pos.count, col = new Float32Array(n * 3), cat = new Uint8Array(n), isl = kmIslands(g); g.computeBoundingBox(); const bb = g.boundingBox;
+  for (let i = 0; i < n; i++) { const c = kmTex(uv.getX(i), uv.getY(i)); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+  const I = {}; for (let i = 0; i < n; i++) { const k = isl[i]; const o = I[k] || (I[k] = { n: 0, r: 0, g: 0, b: 0, x0: 1e9, x1: -1e9, y0: 1e9, y1: -1e9, z1: -1e9, nz: 0, j: g.attributes.skinIndex ? g.attributes.skinIndex.getX(i) : 0 }); o.n++; o.r += col[i * 3]; o.g += col[i * 3 + 1]; o.b += col[i * 3 + 2]; const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i); o.x0 = Math.min(o.x0, x); o.x1 = Math.max(o.x1, x); o.y0 = Math.min(o.y0, y); o.y1 = Math.max(o.y1, y); o.z1 = Math.max(o.z1, z); o.nz += nrm ? nrm.getZ(i) : 0; }
+  for (const o of Object.values(I)) { o.r /= o.n; o.g /= o.n; o.b /= o.n; o.nz /= o.n; }
+  const lum = (o) => 0.3 * o.r + 0.59 * o.g + 0.11 * o.b, dist = (a, b) => Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b), C = (i) => ({ r: col[i * 3], g: col[i * 3 + 1], b: col[i * 3 + 2] });
+  const mode = (ids) => { const h = {}; let best = null, bn = 0; for (const i of ids) { const c = C(i), k = Math.round(c.r * 12) + ',' + Math.round(c.g * 12) + ',' + Math.round(c.b * 12); const e = h[k] || (h[k] = { n: 0, r: 0, g: 0, b: 0 }); e.n++; e.r += c.r; e.g += c.g; e.b += c.b; if (e.n > bn) { bn = e.n; best = e; } } return best ? { r: best.r / best.n, g: best.g / best.n, b: best.b / best.n, n: best.n } : null; };
+  const all = [...Array(n).keys()], hy = bb.max.y - bb.min.y, dz = bb.max.z - bb.min.z, ref = {};
+  let skinRef;
+  if (which === 'h') {
+    // traços do rosto original: ilhas pequenas e escuras na frente
+    for (const o of Object.values(I)) if (o.n <= 40 && lum(o) < 0.12 && o.z1 > bb.max.z - dz * 0.35) o.c = 'face';
+    const fv = all.filter((i) => I[isl[i]].c === 'face'); let fx = 0, fy = 0, fz = -1e9; for (const i of fv) { fx += pos.getX(i); fy += pos.getY(i); fz = Math.max(fz, pos.getZ(i)); } fx /= Math.max(1, fv.length); fy /= Math.max(1, fv.length);
+    // pele: a cor mais comum logo em volta dos olhos e da boca
+    skinRef = mode(all.filter((i) => !I[isl[i]].c && nrm && nrm.getZ(i) > 0.7 && Math.abs(pos.getY(i) - fy) < hy * 0.35 && pos.getZ(i) > fz - dz * 0.12 && lum(C(i)) > 0.12)) || mode(all.filter((i) => !I[isl[i]].c && pos.getZ(i) > fz - dz * 0.2 && lum(C(i)) > 0.12)) || { r: 0.8, g: 0.55, b: 0.4 };
+    KM.face[v + 'pos'] = { fx, fy, fz };
+  } else skinRef = kmPart(v, 'h').skinRef;
+  for (let i = 0; i < n; i++) { if (I[isl[i]].c) { cat[i] = KM_CAT[I[isl[i]].c]; continue; } if (dist(C(i), skinRef) < 0.1) cat[i] = KM_CAT.skin; }
+  if (which === 'h') { const rest = all.filter((i) => !cat[i]), top = mode(rest.filter((i) => pos.getY(i) > bb.min.y + hy * 0.6)) || mode(rest); if (top) { ref.hair = top; for (const i of rest) if (dist(C(i), top) < 0.2) cat[i] = KM_CAT.hair; }
+    // cada peça (ilha) fica inteira com a categoria da maioria: a franja não vira pele quando o cabelo é parecido com o tom da pele
+    const tally = {}; for (let i = 0; i < n; i++) { const t = tally[isl[i]] || (tally[isl[i]] = { 1: 0, 2: 0 }); if (cat[i] === 1 || cat[i] === 2) t[cat[i]]++; }
+    for (let i = 0; i < n; i++) { const t = tally[isl[i]]; if ((cat[i] === 1 || cat[i] === 2) && t[1] + t[2] > 0) cat[i] = t[2] >= t[1] ? 2 : 1; } }
+  else {
+    const bones = mesh.skeleton.bones.map((b) => b.name), legJ = new Set(['leg-left', 'leg-right'].map((nm) => bones.indexOf(nm))), si = g.attributes.skinIndex, isLeg = (i) => legJ.has(si.getX(i));
+    if (v === 'fa') for (let i = 0; i < n; i++) if (Math.abs(pos.getX(i)) > 0.27 && !isLeg(i)) cat[i] = KM_CAT.drop; // a fa vem com uma arma na mão
+    const legs = all.filter((i) => !cat[i] && isLeg(i)), shoeY = bb.min.y + hy * 0.14;
+    const pants = mode(legs.filter((i) => pos.getY(i) > shoeY + hy * 0.04)), shoeC = mode(legs.filter((i) => pos.getY(i) < shoeY && (!pants || dist(C(i), pants) > 0.12)));
+    if (pants) { ref.bottom = pants; for (const i of legs) if (dist(C(i), pants) < 0.2 && (pos.getY(i) > shoeY - hy * 0.02 || !shoeC)) cat[i] = KM_CAT.bottom; }
+    if (shoeC) { ref.shoes = shoeC; for (const i of legs) if (!cat[i] && pos.getY(i) < shoeY + hy * 0.02 && dist(C(i), shoeC) < 0.2) cat[i] = KM_CAT.shoes; }
+    const tops = all.filter((i) => !cat[i] && !isLeg(i)), topC = mode(tops); if (topC) { ref.top = topC; for (const i of tops) if (dist(C(i), topC) < 0.2) cat[i] = KM_CAT.top; }
+  }
+  { const acc = {}; for (let i = 0; i < n; i++) { const c = cat[i]; if (c < 1 || c > 5) continue; const e = acc[c] || (acc[c] = { r: 0, g: 0, b: 0, n: 0 }); e.r += col[i * 3]; e.g += col[i * 3 + 1]; e.b += col[i * 3 + 2]; e.n++; } const nmOf = ['keep', 'skin', 'hair', 'top', 'bottom', 'shoes'];
+    for (const [c, e] of Object.entries(acc)) { const m = { r: e.r / e.n, g: e.g / e.n, b: e.b / e.n }; if (+c === 1) { if (which === 'h') skinRef = m; } else ref[nmOf[c]] = m; } }
+  return (KM.part[key] = { v, which, mesh, g, col, cat, ref, skinRef, bones: mesh.skeleton.bones.map((b) => b.name), isl, I }); }
+const KCOL = { branco: { n: 'Branco', c: '#f4f1ea' }, creme: { n: 'Creme', c: '#ffe9c4' }, amarelo: { n: 'Amarelo', c: '#ffd45a' }, laranja: { n: 'Laranja', c: '#ff9a4a' }, vermelho: { n: 'Vermelho', c: '#e8505b' }, rosa: { n: 'Rosa', c: '#ff8fb8' }, lilas: { n: 'Lilás', c: '#b79cff' }, roxo: { n: 'Roxo', c: '#8a5cd8' },
+  ceu: { n: 'Céu', c: '#9fd8ff' }, azul: { n: 'Azul', c: '#5f97f0' }, marinho: { n: 'Marinho', c: '#3b4f8f' }, menta: { n: 'Menta', c: '#8fe0b8' }, verde: { n: 'Verde', c: '#5cbf6a' }, bege: { n: 'Bege', c: '#d9bf94' }, marrom: { n: 'Marrom', c: '#8a5a3b' }, cinza: { n: 'Cinza', c: '#9aa0ad' }, carvao: { n: 'Carvão', c: '#3e3a48' }, dourado: { n: 'Dourado', c: '#e8b84a' } };
+const KM_HAIRC = { castanho: '#6b4428' };
+const kmHex = (T, v, def) => (v && v[0] === '#' ? v : (T[v] && T[v].c) || def || null);
+// geometria recolorida (cache por variante + cores): cor por vértice = cor escolhida × (degradê original / cor média da peça)
+function kmGeo(v, which, cols) { const key = v + which + JSON.stringify(cols); if (KM.geo[key]) return KM.geo[key]; const P = kmPart(v, which); if (!P) return null;
+  const g = P.g.clone(); for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'skinIndex', 'skinWeight'].includes(a)) g.deleteAttribute(a);
+  { const ord = kmOrder(); if (P.bones.join() !== ord.join()) { const map = P.bones.map((nm) => Math.max(0, ord.indexOf(nm))), si = g.attributes.skinIndex; for (let i = 0; i < si.count; i++) for (let c = 0; c < 4; c++) si.setComponent(i, c, map[si.getComponent(i, c)] ?? 0); si.needsUpdate = true; } }
+  const n = g.attributes.position.count, out = new Float32Array(n * 3), pos = g.attributes.position, T = {}; for (const [k, h] of Object.entries(cols)) if (h) T[k] = new THREE.Color(h);
+  const refOf = (nm) => (nm === 'skin' ? P.skinRef : P.ref[nm]), cx = (P.g.boundingBox.min.x + P.g.boundingBox.max.x) / 2, cy = (P.g.boundingBox.min.y + P.g.boundingBox.max.y) / 2, cz = (P.g.boundingBox.min.z + P.g.boundingBox.max.z) / 2;
+  const names = ['keep', 'skin', 'hair', 'top', 'bottom', 'shoes', 'face', 'drop'];
+  for (let i = 0; i < n; i++) { const c = P.cat[i], nm = names[c]; let r = P.col[i * 3], gg = P.col[i * 3 + 1], b = P.col[i * 3 + 2];
+    if (c === 6 || c === 7) { pos.setXYZ(i, cx, cy, cz); } // olhos e boca originais somem (o rosto novo é pintado); a arma da fa também
+    else if (T[nm] && refOf(nm)) { const R = refOf(nm), lr = (0.3 * r + 0.59 * gg + 0.11 * b) / Math.max(0.01, 0.3 * R.r + 0.59 * R.g + 0.11 * R.b), k = Math.max(0.62, Math.min(1.3, lr)); r = T[nm].r * k; gg = T[nm].g * k; b = T[nm].b * k; } // só a luz do degradê original, com o tom escolhido
+    out[i * 3] = r; out[i * 3 + 1] = gg; out[i * 3 + 2] = b; }
+  g.setAttribute('color', new THREE.BufferAttribute(out, 3)); pos.needsUpdate = true; g.computeBoundingSphere(); return (KM.geo[key] = g); }
+// ---------- rosto pintado ----------
+const KM_EYES = { redondo: 'Redondinhos', brilho: 'Brilhantes', feliz: 'Felizes', sono: 'Sonolentos', cilios: 'Com cílios', ponto: 'Pontinhos', estrela: 'Estrelas', coracao: 'Corações', pisca: 'Piscadinha', gato: 'De gatinho' };
+const KM_ECOL = { preto: { n: 'Preto', c: '#2a2230' }, castanho: { n: 'Castanho', c: '#6b4428' }, azul: { n: 'Azul', c: '#3f7fd6' }, verde: { n: 'Verde', c: '#3e9a5a' }, lilas: { n: 'Lilás', c: '#8a5cd8' }, rosa: { n: 'Rosa', c: '#e0608f' }, mel: { n: 'Mel', c: '#c98a2e' } };
+const KM_BROWS = { normal: 'Normais', grossa: 'Grossas', fina: 'Finas', brava: 'Bravinhas', triste: 'Preocupadas', nenhuma: 'Sem' };
+const KM_MOUTH = { sorriso: 'Sorriso', sorrisao: 'Sorrisão', gato: 'Gatinho', bico: 'Biquinho', linha: 'Tranquila', dente: 'Dentinho', lingua: 'Linguinha', surpresa: 'Surpresa' };
+const KM_CHEEK = { none: 'Nada', blush: 'Bochechas', sardas: 'Sardas', ambos: 'Bochechas e sardas', rubor: 'Rubor forte', bigodes: 'Bigodinhos', estrela: 'Estrelinha', coracao: 'Coraçãozinho' };
+const KM_DEF = { kb: 'fb', kh: 'fb', sk: 's2', hc: 'castanho', ct: 'amarelo', cb: 'lilas', cs: 'branco', ey: 'redondo', ec: 'preto', br: 'normal', mo: 'sorriso', fc: 'blush', acc: 'none', trail: 'none', sz: 'n', hd: 'n' };
+function kmFaceTex(lk) { const key = [lk.ey, lk.ec, lk.br, lk.mo, lk.fc, lk.hc].join('|'); if (KM.face[key]) return KM.face[key];
+  const S_ = 256, c = document.createElement('canvas'); c.width = c.height = S_; const x = c.getContext('2d'), ink = '#2a1d2e', ec = kmHex(KM_ECOL, lk.ec, '#2a2230'), brow = kmHex(HAIRC, lk.hc, KM_HAIRC.castanho) || '#6b4428';
+  x.lineCap = 'round'; x.lineJoin = 'round'; x.translate(128, 144); x.scale(1.12, 1.12); x.translate(-128, -128); /* um pouco maior e mais baixo: a franja cobre o alto da placa */ const L = 82, R = 174, EY = 118;
+  const eye = (cx, cy, mir) => { x.save(); x.translate(cx, cy); x.fillStyle = ink; x.strokeStyle = ink;
+    switch (lk.ey) {
+      case 'brilho': x.fillStyle = ink; x.beginPath(); x.ellipse(0, 0, 21, 27, 0, 0, 7); x.fill(); x.fillStyle = ec; x.beginPath(); x.ellipse(0, 5, 15, 19, 0, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-7, -10, 7, 0, 7); x.fill(); x.beginPath(); x.arc(7, 9, 3.5, 0, 7); x.fill(); break;
+      case 'feliz': x.lineWidth = 9; x.beginPath(); x.arc(0, 10, 17, Math.PI * 1.12, Math.PI * 1.88); x.stroke(); break;
+      case 'sono': x.lineWidth = 8; x.beginPath(); x.arc(0, -6, 17, Math.PI * 0.15, Math.PI * 0.85); x.stroke(); break;
+      case 'cilios': x.fillStyle = ec === '#2a2230' ? ink : ec; x.beginPath(); x.ellipse(0, 2, 14, 19, 0, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-4, -6, 5, 0, 7); x.fill(); x.lineWidth = 5; for (const a of [-0.5, 0, 0.5]) { x.beginPath(); x.moveTo(Math.sin(a) * 14 * mir, -16); x.lineTo(Math.sin(a) * 24 * mir + 6 * mir, -27); x.stroke(); } break;
+      case 'ponto': x.beginPath(); x.arc(0, 2, 9, 0, 7); x.fill(); break;
+      case 'estrela': x.fillStyle = ec === '#2a2230' ? '#ffb83c' : ec; x.beginPath(); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 - Math.PI / 2, r = i % 2 ? 9 : 22; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); } x.closePath(); x.fill(); x.lineWidth = 3; x.strokeStyle = ink; x.stroke(); break;
+      case 'coracao': x.fillStyle = '#ff5c8a'; x.beginPath(); x.moveTo(0, 16); x.bezierCurveTo(-26, -2, -14, -24, 0, -9); x.bezierCurveTo(14, -24, 26, -2, 0, 16); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-7, -8, 4, 0, 7); x.fill(); break;
+      case 'pisca': if (mir > 0) { x.lineWidth = 9; x.beginPath(); x.moveTo(-15, -6); x.lineTo(10, 2); x.lineTo(-15, 10); x.stroke(); } else { x.beginPath(); x.ellipse(0, 0, 14, 19, 0, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-4, -7, 5, 0, 7); x.fill(); } break;
+      case 'gato': x.fillStyle = ec === '#2a2230' ? '#e8b84a' : ec; x.beginPath(); x.ellipse(0, 0, 17, 20, 0, 0, 7); x.fill(); x.fillStyle = ink; x.beginPath(); x.ellipse(0, 0, 5, 17, 0, 0, 7); x.fill(); x.lineWidth = 4; x.beginPath(); x.ellipse(0, 0, 17, 20, 0, 0, 7); x.stroke(); break;
+      default: x.fillStyle = ec === '#2a2230' ? ink : ec; x.beginPath(); x.ellipse(0, 0, 14, 19, 0, 0, 7); x.fill(); if (ec !== '#2a2230') { x.lineWidth = 4; x.strokeStyle = ink; x.stroke(); } x.fillStyle = '#fff'; x.beginPath(); x.arc(-4, -7, 5.5, 0, 7); x.fill(); }
+    x.restore(); };
+  eye(L, EY, -1); eye(R, EY, 1);
+  // sobrancelhas
+  if (lk.br !== 'nenhuma') { x.strokeStyle = brow; x.lineWidth = lk.br === 'grossa' ? 12 : lk.br === 'fina' ? 4 : 7; for (const [cx, m] of [[L, -1], [R, 1]]) { x.beginPath(); if (lk.br === 'brava') { x.moveTo(cx - 18 * m, 74); x.lineTo(cx + 16 * m, 84); } else if (lk.br === 'triste') { x.moveTo(cx - 18 * m, 84); x.lineTo(cx + 16 * m, 74); } else { x.moveTo(cx - 18, 82); x.quadraticCurveTo(cx, 70, cx + 18, 82); } x.stroke(); } }
+  // bochechas e enfeites
+  const fc = lk.fc || 'none';
+  if (fc === 'blush' || fc === 'ambos' || fc === 'rubor') { x.fillStyle = fc === 'rubor' ? 'rgba(255,90,120,.62)' : 'rgba(255,120,150,.42)'; for (const cx of [56, 200]) { x.beginPath(); x.ellipse(cx, 160, 22, 13, 0, 0, 7); x.fill(); } }
+  if (fc === 'sardas' || fc === 'ambos') { x.fillStyle = 'rgba(150,80,50,.7)'; for (const [px, py] of [[48, 146], [60, 152], [52, 160], [196, 146], [208, 152], [202, 160]]) { x.beginPath(); x.arc(px, py, 3, 0, 7); x.fill(); } }
+  if (fc === 'bigodes') { x.strokeStyle = ink; x.lineWidth = 3; for (const m of [-1, 1]) for (const dy of [-6, 4]) { x.beginPath(); x.moveTo(128 + 52 * m, 166 + dy); x.lineTo(128 + 92 * m, 160 + dy * 1.6); x.stroke(); } }
+  if (fc === 'estrela') { x.fillStyle = '#ffb83c'; x.beginPath(); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 - Math.PI / 2, r = i % 2 ? 5 : 12; x.lineTo(205 + Math.cos(a) * r, 162 + Math.sin(a) * r); } x.fill(); }
+  if (fc === 'coracao') { x.fillStyle = '#ff5c8a'; x.beginPath(); x.moveTo(205, 172); x.bezierCurveTo(190, 162, 196, 148, 205, 156); x.bezierCurveTo(214, 148, 220, 162, 205, 172); x.fill(); }
+  // boca
+  x.strokeStyle = ink; x.fillStyle = ink; x.lineWidth = 7; const MY = 176;
+  switch (lk.mo) {
+    case 'sorrisao': x.beginPath(); x.moveTo(104, MY - 6); x.quadraticCurveTo(128, MY - 10, 152, MY - 6); x.quadraticCurveTo(128, MY + 34, 104, MY - 6); x.fill(); x.fillStyle = '#ff7f8f'; x.beginPath(); x.ellipse(128, MY + 12, 12, 7, 0, 0, 7); x.fill(); break;
+    case 'gato': x.beginPath(); x.moveTo(104, MY - 4); x.quadraticCurveTo(116, MY + 12, 128, MY - 2); x.quadraticCurveTo(140, MY + 12, 152, MY - 4); x.stroke(); break;
+    case 'bico': x.fillStyle = '#e8506f'; x.beginPath(); x.ellipse(128, MY, 9, 8, 0, 0, 7); x.fill(); break;
+    case 'linha': x.beginPath(); x.moveTo(112, MY); x.lineTo(144, MY); x.stroke(); break;
+    case 'dente': x.beginPath(); x.moveTo(104, MY - 6); x.quadraticCurveTo(128, MY + 22, 152, MY - 6); x.stroke(); x.fillStyle = '#fff'; x.fillRect(120, MY - 1, 10, 9); x.strokeStyle = ink; x.lineWidth = 2; x.strokeRect(120, MY - 1, 10, 9); break;
+    case 'lingua': x.beginPath(); x.moveTo(104, MY - 6); x.quadraticCurveTo(128, MY + 18, 152, MY - 6); x.stroke(); x.fillStyle = '#ff7f8f'; x.beginPath(); x.ellipse(136, MY + 8, 9, 10, 0, 0, 7); x.fill(); break;
+    case 'surpresa': x.beginPath(); x.ellipse(128, MY + 2, 10, 13, 0, 0, 7); x.fill(); break;
+    default: x.beginPath(); x.moveTo(106, MY - 6); x.quadraticCurveTo(128, MY + 16, 150, MY - 6); x.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return (KM.face[key] = t); }
+// placa do rosto: na frente da pele da cabeça, no espaço do osso da cabeça
+function kmFace(obj, head, lk) { let hb = null; obj.traverse((o) => { if (!hb && o.isBone && o.name === 'head') hb = o; }); if (!hb) return;
+  if (obj.userData.kmFace) { obj.userData.kmFace.parent && obj.userData.kmFace.parent.remove(obj.userData.kmFace); obj.userData.kmFace = null; }
+  const P = kmPart(lk.kh, 'h'); if (!P) return; const sk = head.skeleton, hi = sk.bones.findIndex((b) => b.name === 'head'); if (hi < 0) return;
+  const M = sk.boneInverses[hi].clone().multiply(head.bindMatrix), pos = P.g.attributes.position, v = new THREE.Vector3(); let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9, z1 = -1e9;
+  for (let i = 0; i < pos.count; i++) { if (P.cat[i] !== KM_CAT.skin && P.cat[i] !== KM_CAT.face) continue; v.fromBufferAttribute(pos, i); if (P.cat[i] === KM_CAT.skin && P.g.attributes.normal && P.g.attributes.normal.getZ(i) < 0.7) continue; v.applyMatrix4(M); x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y); z1 = Math.max(z1, v.z); }
+  if (!isFinite(x0)) return; const w = (x1 - x0) * 0.96, h = Math.min(w, (y1 - y0) * 1.0);
+  const mat = KM.faceMat[kmFaceTex(lk).uuid] || (KM.faceMat[kmFaceTex(lk).uuid] = new THREE.MeshLambertMaterial({ map: kmFaceTex(lk), transparent: true, alphaTest: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); m.position.set((x0 + x1) / 2, y0 + (y1 - y0) * 0.5, z1 + 0.0015); m.renderOrder = 2; m.castShadow = false; hb.add(m); obj.userData.kmFace = m; }
+function kmLook(obj, look) { const lk = Object.assign({}, KM_DEF, look || {}); if (!KM_VAR.includes(lk.kb)) lk.kb = KM_DEF.kb; if (!KM_VAR.includes(lk.kh)) lk.kh = KM_DEF.kh;
+  let body = null, head = null; obj.traverse((o) => { if (o.isSkinnedMesh && o.name === 'km_Body') body = o; if (o.isSkinnedMesh && o.name === 'km_Head') head = o; }); if (!body || !head) return;
+  if (!KM.mat) KM.mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const skin = kmHex(SKINS, lk.sk, null), hair = kmHex(HAIRC, lk.hc, KM_HAIRC[lk.hc] || null) || KM_HAIRC.castanho;
+  const gb = kmGeo(lk.kb, 'b', { skin, top: kmHex(KCOL, lk.ct), bottom: kmHex(KCOL, lk.cb), shoes: kmHex(KCOL, lk.cs) }), gh = kmGeo(lk.kh, 'h', { skin, hair });
+  obj.userData.kmKey = lk.kb + lk.kh;
+  if (gb) { body.geometry = gb; body.material = KM.mat; } if (gh) { head.geometry = gh; head.material = KM.mat; }
+  try { kmFace(obj, head, lk); } catch (e) { console.error(e); }
+  ACC_TINT.hex = accCol(lk.acc_c); ACC_TINT.pat = lk.acc_p || 'lisa'; try { attachHead(obj, null, lk.acc); } finally { ACC_TINT.hex = null; ACC_TINT.pat = 'lisa'; }
+  try { equipSlots(obj, lk); } catch (e) { console.error(e); } }
+{ const base = applyLook; applyLook = function (obj, look) { if (obj && obj.userData.ck === 'km') return kmLook(obj, look); return base(obj, look); }; }
+{ const base = applyBody; applyBody = function (o, lk) { if (o && o.userData.ck === 'km') return base(o, Object.assign({}, lk || {}, { fc: 'none' })); return base(o, lk); }; }
+{ const base = accAnchors; accAnchors = function (obj, ck) { return base(obj, ck === 'km' ? 'km:' + (obj.userData.kmKey || '') : ck); }; }
+{ const base = scMount; scMount = function (el, obj, opt) { if (obj && obj.userData.ck === 'km') { const sv = CLIPS; CLIPS = kmClips(); try { return base(el, obj, opt); } finally { CLIPS = sv; } } return base(el, obj, opt); }; }
+// espada básica: a base nova não tem espada embutida no modelo
+{ const base = updateHand; updateHand = function () { base(); if (!player || player.key !== 'km' || !player.hand) return; const t = TOOLS[S.slot].id, sw = SWORDS[gear().sword || 0]; if (handProp && !handProp.userData.kmS) { handProp.userData.kmS = 1; handProp.scale.multiplyScalar(1.6); } // corpo chibi: ferramentas maiores
+  if (t === 'espada' && !sw.m && !handProp && mode !== 'in' && !P.bike && !fighting()) { const g = heldObj('w:w_sword'); player.obj.updateMatrixWorld(true); const inv = 1 / player.hand.getWorldScale(new THREE.Vector3()).x; g.scale.multiplyScalar(inv * 0.95 * 1.6); g.userData.kmS = 1; g.rotation.set(HELD_ROT.x, HELD_ROT.y, HELD_ROT.z); player.hand.add(g); handProp = g; handKey = 'w:w_sword'; } }; }
+
+// retratos: a base nova usa as próprias animações (sem isso ficava em T, minúscula no retrato)
+{ const base = thumb; thumb = function (k, opt = {}) { if (k && typeof k !== 'string' && k.userData && k.userData.ck === 'km' && opt.char) { const sv = CLIPS; CLIPS = kmClips(); try { return base(k, opt.head ? Object.assign({ zoom: 0.78 }, opt) : opt); } finally { CLIPS = sv; } } return base(k, opt); }; }
+// ---------- criador estilo Animal Crossing para a base nova ----------
+const KM_HEADS = { fa: 'Coque alto', fb: 'Coquinhos', fc: 'Coque com faixa', fd: 'Coque redondo', fe: 'Liso comprido', ff: 'Chiquinhas', ma: 'Cacheadinho', mb: 'Careca e barba', mc: 'Quepe', md: 'Espetado', me: 'Topete e óculos', mf: 'Bagunçado' };
+const KM_BODIES = { fa: 'Moletom', fb: 'Blusinha', fc: 'Vestido', fd: 'Terninho', fe: 'Jaleco', ff: 'Jaqueta', ma: 'Camiseta', mb: 'Camisetão', mc: 'Uniforme', md: 'Terno', me: 'Colete', mf: 'Jardineira' };
+WARD_FREE.kh = ['fa', 'fb', 'fd', 'fe', 'ff', 'ma', 'md', 'mf']; WARD_PRICE.kh = { fc: 120, mb: 80, me: 150, mc: 220 };
+WARD_FREE.kb = ['fa', 'fb', 'fc', 'ma', 'mb', 'mf']; WARD_PRICE.kb = { ff: 160, fe: 180, me: 200, fd: 240, mc: 300, md: 320 };
+WARD_PRICE.kc = { roxo: 90, marinho: 90, carvao: 90, dourado: 220 }; WARD_FREE.kc = Object.keys(KCOL).filter((k) => !WARD_PRICE.kc[k]);
+const crIsKM = (fromTitle) => crModel === 'km' || (!crModel && !fromTitle && S.outfit === 'km');
+// a base nova também aparece como opção no criador clássico
+modelChips = function (cur) { return `<div class="crl">Base do corpo</div><div class="chips mdl">${[['km', 'Fofinha (nova)'], ['rogue', 'Aventureira'], ['knight', 'Aventureiro']].map(([k, n]) => `<button class="btn chip ${cur === k || (k === 'rogue' && cur !== 'knight' && cur !== 'km') ? 'on' : ''}" data-md="${k}">${n}</button>`).join('')}</div><p class="note">A base <b>Fofinha</b> troca penteado, roupa e rosto peça por peça. As aventureiras são as clássicas.</p>`; };
+function kmChips(fromTitle, key, cat, T, cur, sw, label = (v) => (typeof v === 'string' ? v : v.n)) {
+  return Object.entries(T).map(([k, v]) => { const own = !cat || (fromTitle ? (WARD_FREE[cat] || []).includes(k) : owns(cat, k)); return `<button class="btn chip ${cur === k ? 'on' : ''} ${own ? '' : 'locked'}" data-kl="${key}:${k}" ${own ? '' : 'title="Compre no Ateliê da Fifi"'}>${sw ? `<i style="background:${sw(k, v)}"></i>` : ''}${label(v)}${own ? '' : ' 🔒'}</button>`; }).join(''); }
+function kmTabBody(tab, lk, fromTitle) { const C = (k, v) => v.c, row = (t, h) => `<div class="crl">${t}</div><div class="chips">${h}</div>`;
+  if (tab === 'corpo') return `${modelChips('km')}${row('Jeito de falar', [['f', 'Ela'], ['m', 'Ele']].map(([k, n]) => `<button class="btn chip ${(crGender || 'f') === k ? 'on' : ''}" data-kgd="${k}">${n}</button>`).join(''))}`
+    + row('Tom de pele', kmChips(fromTitle, 'sk', null, SKINS, lk.sk, (k, v) => v.c || '#f4c29b') + cpick('sk', lk.sk)) + row('Altura', kmChips(fromTitle, 'sz', null, Object.fromEntries(Object.entries(SIZES).map(([k, v]) => [k, v[0]])), lk.sz || 'n')) + row('Cabeça', kmChips(fromTitle, 'hd', null, Object.fromEntries(Object.entries(HEADS).map(([k, v]) => [k, v[0]])), lk.hd || 'n'));
+  if (tab === 'rosto') return row('Olhos', kmChips(fromTitle, 'ey', null, KM_EYES, lk.ey)) + row('Cor dos olhos', kmChips(fromTitle, 'ec', null, KM_ECOL, lk.ec, C)) + row('Sobrancelhas', kmChips(fromTitle, 'br', null, KM_BROWS, lk.br)) + row('Boca', kmChips(fromTitle, 'mo', null, KM_MOUTH, lk.mo)) + row('Bochechas e enfeites', kmChips(fromTitle, 'fc', null, KM_CHEEK, lk.fc || 'none'));
+  if (tab === 'cabelo') return row('Penteado', kmChips(fromTitle, 'kh', 'kh', KM_HEADS, lk.kh)) + row('Cor do cabelo', kmChips(fromTitle, 'hc', 'hc', HAIRC, lk.hc, (k, v) => v.c || KM_HAIRC[k] || '#6b4428') + cpick('hc', lk.hc));
+  if (tab === 'roupa') return row('Roupa', kmChips(fromTitle, 'kb', 'kb', KM_BODIES, lk.kb)) + row('Cor da blusa', kmChips(fromTitle, 'ct', 'kc', KCOL, lk.ct, C) + cpick('ct', lk.ct)) + row('Cor da calça ou saia', kmChips(fromTitle, 'cb', 'kc', KCOL, lk.cb, C) + cpick('cb', lk.cb)) + row('Cor dos sapatos', kmChips(fromTitle, 'cs', 'kc', KCOL, lk.cs, C) + cpick('cs', lk.cs));
+  return null; }
+{ const base = openCreator; openCreator = function (fromTitle) {
+  const fresh = !crLook; base(fromTitle);
+  if (fresh && fromTitle && crModel !== 'km') { crModel = 'km'; crLook = Object.assign({}, KM_DEF, { acc: 'none', trail: 'none' }); return openCreator(fromTitle); } // jogo novo começa na base fofinha
+  if (!crIsKM(fromTitle)) return; for (const [k, v] of Object.entries(KM_DEF)) if (crLook[k] === undefined || (k === 'sk' && crLook.sk === 'orig')) crLook[k] = v;
+  const h = kmTabBody(crTab, crLook, fromTitle), box = document.querySelector('.crbody'); if (!h || !box) return; box.innerHTML = h;
+  const redo = () => { sfx('accept'); openCreator(fromTitle); setTimeout(scPower, 60); };
+  box.querySelectorAll('[data-kl]').forEach((el) => (el.onclick = () => { if (el.classList.contains('locked')) { sfx('cancel'); toast('🔒 Isso fica à venda no <b>Ateliê da Fifi</b> (Vila Girassol).'); return; } const [k, v] = el.dataset.kl.split(':'); crLook[k] = v; redo(); }));
+  box.querySelectorAll('[data-kgd]').forEach((el) => (el.onclick = () => { crGender = el.dataset.kgd; if (!fromTitle) S.gender = crGender; redo(); }));
+  box.querySelectorAll('[data-md]').forEach((el) => (el.onclick = () => { const k = el.dataset.md; sfx('accept'); if (k === 'km') return; crGender = k === 'knight' ? 'm' : 'f'; crModel = k; if (!fromTitle) { S.gender = crGender; S.outfit = k; setOutfit(true); } openCreator(fromTitle); setTimeout(scPower, 60); }));
+  box.querySelectorAll('[data-cp]').forEach((el) => { el.onclick = (e) => e.stopPropagation(); el.onchange = () => { crLook[el.dataset.cp] = el.value; redo(); }; });
+  box.querySelectorAll('[data-cplock]').forEach((el) => (el.onclick = (e) => { e.preventDefault(); sfx('cancel'); toast('🔒 A <b>Paleta mágica</b> (cor livre) fica à venda no <b>Ateliê da Fifi</b>, na Vila Girassol.'); }));
+}; }
+// Ateliê: penteados, roupas e tecidos da base nova
+function kmThumb(lk, head) { const key = JSON.stringify(lk) + head; KM.th = KM.th || {}; if (KM.th[key]) return KM.th[key]; try { const o = cloneM('ch_km'); o.userData.ck = 'km'; applyLook(o, Object.assign({}, KM_DEF, lk)); return (KM.th[key] = thumb(o, { char: true, head, ry: -0.25 })); } catch (e) { return emojiThumb('👕'); } }
+{ const base = openAtelie; openAtelie = function () { base(); const grid = document.querySelector('.sgrid'), tab = document.querySelector('[data-at].on'); if (!grid || !tab) return; const at = tab.dataset.at;
+  const card = (img, n, d, price, owned, code) => `<div class="sitem ${owned ? 'own' : ''}"><img src="${img}"><b>${n}</b><span>${d}</span><button class="btn ${owned ? '' : 'candy pink'} sm" ${owned || S.coins < price ? 'disabled' : ''} data-wb="${code}">${owned ? 'Já é seu ✓' : price + '🪙'}</button></div>`;
+  let add = ''; if (at === 'roupas') add = Object.entries(WARD_PRICE.kb).map(([k, p]) => card(kmThumb({ kb: k }, false), KM_BODIES[k], 'Roupa da base fofinha', p, owns('kb', k), 'kb:' + k)).join('');
+  if (at === 'cabelo') add = Object.entries(WARD_PRICE.kh).map(([k, p]) => card(kmThumb({ kh: k }, true), KM_HEADS[k], 'Penteado da base fofinha', p, owns('kh', k), 'kh:' + k)).join('');
+  if (at === 'cores') add = Object.entries(WARD_PRICE.kc).map(([k, p]) => card(swatchThumb(KCOL[k].c), 'Tecido ' + KCOL[k].n, 'Cor de roupa (base fofinha)', p, owns('kc', k), 'kc:' + k)).join('');
+  if (!add) return; grid.insertAdjacentHTML('afterbegin', add);
+  grid.querySelectorAll('[data-wb]').forEach((el) => { const [cat, k] = el.dataset.wb.split(':'); if (!['kb', 'kh', 'kc'].includes(cat)) return; el.onclick = () => { const price = WARD_PRICE[cat][k]; if (S.coins < price) return sfx('cancel'); S.coins -= price; giveWard(cat, k); sfx('coin'); toast(`👗 Comprou <b>${(cat === 'kb' ? KM_BODIES : cat === 'kh' ? KM_HEADS : { [k]: KCOL[k].n })[k]}</b>! Vista em Menu → Personagem.`); lastHud = ''; hud(); openAtelie(); }; }); }; }
+
+// ---------- moradores na base nova (mesmo estilo da jogadora) ----------
+const NPCKM = {
+  rosa: { kh: 'fc', hc: 'branco', kb: 'fc', ct: 'rosa', cb: 'lilas', cs: 'marrom', sk: 's2', ey: 'feliz', mo: 'sorriso', br: 'fina', fc: 'blush', gl: 'redondo', glc: 'lilas', sz: 'p' },
+  tico: { kh: 'md', hc: 'ruivo', kb: 'mb', ct: 'amarelo', cb: 'azul', cs: 'marrom', sk: 's3', ey: 'redondo', mo: 'sorrisao', fc: 'sardas', acc: 'palha' },
+  bento: { kh: 'mb', hc: 'branco', kb: 'mf', ct: 'ceu', cb: 'marrom', cs: 'carvao', sk: 's4', ey: 'sono', mo: 'linha', br: 'grossa', acc: 'gorro', acc_c: 'ceu', sz: 'a' },
+  pipo: { kh: 'mf', hc: 'preto', kb: 'ma', ct: 'vermelho', cb: 'azul', cs: 'branco', sk: 's2', ey: 'brilho', ec: 'castanho', mo: 'lingua', fc: 'sardas', acc: 'boina', acc_c: 'coral', sz: 'p', hd: 'f' },
+  iris: { kh: 'fe', hc: 'lilas', kb: 'fe', ct: 'branco', cb: 'lilas', cs: 'roxo', sk: 's1', ey: 'cilios', ec: 'lilas', mo: 'sorriso', gl: 'redondo', glc: 'lilas', acc: 'estrela' },
+  duda: { kh: 'ff', hc: 'ruivo', kb: 'ff', ct: 'carvao', cb: 'marrom', cs: 'carvao', sk: 's4', ey: 'redondo', br: 'grossa', mo: 'dente', fc: 'blush', wa: 'cinto', wac: 'sol' },
+  otto: { kh: 'me', hc: 'castanho', kb: 'md', ct: 'marinho', cb: 'marinho', cs: 'carvao', sk: 's3', ey: 'ponto', br: 'grossa', mo: 'linha', acc: 'boina', acc_c: 'grafite', sz: 'a' },
+  lia: { kh: 'fd', hc: 'loiro', kb: 'ma', ct: 'menta', cb: 'bege', cs: 'marrom', sk: 's1', ey: 'brilho', ec: 'verde', mo: 'sorrisao', fc: 'sardas', gl: 'sol', glc: 'coral', bk: 'aljava' },
+  fifi: { kh: 'fb', hc: 'rosa', kb: 'fc', ct: 'rosa', cb: 'lilas', cs: 'branco', sk: 's2', ey: 'cilios', ec: 'rosa', mo: 'bico', fc: 'blush', acc: 'laco', acc_c: 'lilas', gl: 'gatinho', glc: 'rosa' },
+  tome: { kh: 'ma', hc: 'branco', kb: 'me', ct: 'azul', cb: 'marinho', cs: 'marrom', sk: 's5', ey: 'sono', mo: 'sorriso', acc: 'gorro', acc_c: 'ceu', sz: 'a' },
+  marina: { kh: 'fa', hc: 'preto', kb: 'mc', ct: 'marinho', cb: 'branco', cs: 'carvao', sk: 's5', ey: 'redondo', br: 'brava', mo: 'sorriso', gl: 'sol', glc: 'ceu', acc: 'palha' },
+};
+for (const [id, lk] of Object.entries(NPCKM)) NPCLOOK[id] = Object.assign({}, KM_DEF, lk);
+for (const d of NPCDEF) if (NPCKM[d.id]) { d.m = 'km'; d.hue = 0; }
+for (const sh of Object.values(SHOPS)) if (sh.keeper) sh.keeper[0] = 'km';
+{ const base = residentOf; residentOf = function (D) { const r = base(D); if (r && r.lid && NPCKM[r.lid]) r.key = 'km'; return r; }; }
+// a Vovó Rosa e o Tico são criados antes dos moradores: troco os dois pela base nova
+{ const base = buildNpcs; buildNpcs = function () {
+  for (const nm of ['rosa', 'tico']) { const old = nm === 'rosa' ? rosaC : ticoC; if (!old) continue; const c = new Char('km'); c.obj.position.copy(old.obj.position); c.obj.rotation.copy(old.obj.rotation); scene.remove(old.obj); if (nm === 'rosa') rosaC = c; else ticoC = c; }
+  return base(); }; }
+
+{ const base = dressNpc; dressNpc = function (obj, id, key) { if (obj && obj.userData.ck === 'km') key = 'km'; return base(obj, id, key); }; }
+{ const base = npcThumb; npcThumb = function (id, key) { return base(id, NPCKM[id] ? 'km' : key); }; }
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -5273,4 +5494,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
