@@ -95,3 +95,10 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Pesca: fase `'reel'` em `P.fishing` (barra `by`/`zb`, peixe `fy`, medidor `pr`, brilho `tr`); segurar = `keys.Space` ou `FISH22.hold`. A câmera usa `FISH22.w` para aproximar.
 - Casa: a bancada é construída no canto de obra (`BENCH22`, `S.bench22`) e vira o móvel `workbench`. Piso/parede: `homeCycle('wall'|'floor')`, chamado ao clicar na parede (`HOME22.walls`) ou no chão vazio no modo decorar.
 - Fazenda: terrenos em `LOTS22` (retângulos `r`, `price`); `S.farm22 = { lots, deb }` guarda os terrenos comprados e o mato/galho/pedrinha/toco (`obj.t === 'debris'`). `FARM.U` é o conjunto de tiles da fazenda e `inFarm` usa ele; `FARM.x0..y1` vira só a caixa em volta. A cerca contorna a união dos terrenos, com porteira em x 33–34 e a placa `lotsign` de cada terreno vizinho à venda.
+
+## Relevo, inimigos e áreas (v23)
+
+- Relevo: `GH(x, z)` dá a altura do chão (grade de cantos `GH23.c`, feita por `ghBuild` com a máscara `ghMask`: 0 em caminho, construção, água, fazenda, zonas, arenas e perto dos marcos). O chão tem a altura nos vértices (`ghGround`). **A lógica continua plana**: o embrulho de `renderer.render` soma `GH` no `position.y` de cada objeto do mundo só durante o desenho e tira depois (`ghCollect`); grupos na origem são percorridos por dentro, objetos com raio > 7 ficam parados e instâncias (`InstancedMesh`) sobem uma vez (`ghIM`), com `Instancer.set` já somando a altura. `toScr` e `emit` também somam `GH`. Objeto que não deve subir leva `userData.noGH = 1`.
+- Para algo precisar de chão plano, coloque um `obj` sólido no tile **antes** do relevo: funções em `PRE_GH` rodam antes de `ghBuild` (os acampamentos usam isso).
+- Inimigos novos em `EN` (`caranguejo`, `pedrolho`), com IA em `newFoeUpdate`. Elites: `makeElite(s)` (aura `ELITE`, `s.elite`, prêmio no `damageSlime`).
+- Acampamentos: `CAMPS.list` (fogueira, barracas, baú `d_chest`), monstros em `campSpawn` (`s.camp`), baú uma vez por dia (`S.campDay`). Mirantes: `VIEWS` no ponto mais alto de cada área (`S.views`).

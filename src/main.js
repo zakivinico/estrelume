@@ -5987,6 +5987,250 @@ function areaTitle(n) {
 }
 { const base = v14Update; v14Update = function (dt) { base(dt); try { areaUpdate(dt); } catch (e) {} }; }
 
+/* =================== v23: terreno irregular, inimigos e áreas com mais vida =================== */
+// ---------- relevo: colinas suaves na grama selvagem; caminhos, praças, fazenda, praia e beiras de água continuam planos ----------
+// A altura GH(x, z) vem de um ruído suave multiplicado por uma máscara (1 = grama livre ou natureza, 0 = caminho, construção, água...).
+// O chão ganha a altura nos vértices. Os objetos não mudam de posição na lógica do jogo: só na hora de desenhar eles sobem
+// GH da posição deles (e descem de volta depois), então colisão, cliques e saves continuam em 2D como antes.
+const GH23 = { ready: false, c: null, camH: 0, last: 0, ims: new WeakSet(), lo: [], lg: [], n: 0 };
+const GH_AMP = { vila: 0.95, praia: 0.5, girassol: 1.25, norte: 2.3, sul: 1.5, leste: 2.0 };
+function ghMask() {
+  const m = new Float32Array(W * H), HARD = new Set([...SOLID].filter((t) => !NATURE.test(t)));
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = I(x, y), o = obj[i]; m[i] = tile[i] === GR && !(o && (HARD.has(o.t) || o.t === 'fdecor' || o.t === 'debris')) ? 1 : 0; if (x < 3 || y < 3 || x >= W - 3 || y >= H - 3) m[i] = 0; }
+  const flat = (x0, y0, x1, y1) => { for (let y = Math.max(0, y0); y <= Math.min(H - 1, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++) m[I(x, y)] = 0; };
+  flat(20, 33, 43, 53); // fazenda inteira (todos os terrenos) e a barraca
+  for (const z of Object.values(ZONES)) { try { const r = z.rect(); flat(r.x0 - 2, r.y0 - 2, r.x1 + 2, r.y1 + 2); } catch (e) {} }
+  for (const A of [PVP, RB]) flat(Math.floor(A.cx - A.R - 3), Math.floor(A.cz - A.R - 3), Math.ceil(A.cx + A.R + 3), Math.ceil(A.cz + A.R + 3));
+  for (const L of [SHRINE, BOX, BOARD, MILL, SHOP, H1, H2, SMITH, VWELL, VH1, VH2, ATELIE, MINE]) if (L) flat(L.x - 3, L.y - 3, L.x + 6, L.y + 6);
+  // erode 1 tile (borda plana em volta do que é plano) e suaviza
+  let a = m.slice(); for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { let mn = 1; for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) mn = Math.min(mn, m[I(x + k, y + j)]); a[I(x, y)] = mn; }
+  for (let pass = 0; pass < 2; pass++) { const b = new Float32Array(W * H); for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { let s = 0, n = 0; for (let j = -2; j <= 2; j++) for (let k = -2; k <= 2; k++) { const xx = x + k, yy = y + j; if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue; s += a[I(xx, yy)]; n++; } b[I(x, y)] = Math.min(a[I(x, y)] > 0 ? 1 : 0.0, s / n) ; } a = b; }
+  return a;
+}
+function ghBuild() {
+  const m = ghMask(), CW = W + 1, c = new Float32Array(CW * (H + 1)), ss = (e0, e1, v) => { const t = clamp((v - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+  for (let cy = 0; cy <= H; cy++) for (let cx = 0; cx <= W; cx++) {
+    let s = 0, n = 0; for (const [dx, dy] of [[-1, -1], [0, -1], [-1, 0], [0, 0]]) { const x = cx + dx, y = cy + dy; if (x < 0 || y < 0 || x >= W || y >= H) { n++; continue; } s += m[I(x, y)]; n++; }
+    const mk = s / n; if (mk <= 0.001) continue;
+    const r = regionAt(cx, cy), amp = (r && GH_AMP[r.id]) || 0.9, big = ss(0.32, 0.78, fbm(cx * 0.07, cy * 0.07, 23)), bump = (fbm(cx * 0.32, cy * 0.32, 29) - 0.5) * 0.22;
+    c[cy * CW + cx] = Math.max(0, (big * amp + bump * big + Math.max(0, bump) * 0.3) * mk);
+  }
+  GH23.c = c;
+}
+function GH(x, z) { const c = GH23.c; if (!c || x <= 0 || z <= 0 || x >= W || z >= H) return 0; const CW = W + 1, x0 = Math.floor(x), z0 = Math.floor(z), fx = x - x0, fz = z - z0, i = z0 * CW + x0;
+  return (c[i] * (1 - fx) + c[i + 1] * fx) * (1 - fz) + (c[i + CW] * (1 - fx) + c[i + CW + 1] * fx) * fz; }
+function ghGround() { // sobe os vértices do chão e refaz as normais
+  let mesh = GCV.mesh; if (!mesh) world.traverse((o) => { if (o.isMesh && o.geometry && o.geometry.attributes.color === TERR.col) mesh = o; }); if (!mesh) return;
+  const geo = mesh.geometry, pos = geo.attributes.position, CW = W + 1, c = GH23.c;
+  for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), z = pos.getZ(i), y = pos.getY(i); if (y > -0.15 && x >= 0 && z >= 0 && x <= W && z <= H) pos.setY(i, y + c[Math.round(z) * CW + Math.round(x)]); }
+  pos.needsUpdate = true; geo.computeBoundingSphere(); geo.computeBoundingBox();
+  // sombreado do relevo: topo de colina mais claro e quente, encostas mais escuras (dá leitura de altura vista de cima)
+  const mat = mesh.material, ob = mat.onBeforeCompile; mat.onBeforeCompile = (sh, r) => { ob(sh, r);
+    sh.vertexShader = 'varying float vGY; varying float vGS;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vGY = (modelMatrix * vec4(transformed, 1.0)).y; vGS = 1.0 - normal.y;');
+    sh.fragmentShader = 'varying float vGY; varying float vGS;\n' + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n  { float hk = smoothstep(0.0, 2.2, vGY); diffuseColor.rgb *= mix(vec3(0.84, 0.9, 0.86), vec3(1.14, 1.1, 0.94), hk); diffuseColor.rgb *= 1.0 - smoothstep(0.02, 0.28, vGS) * 0.34; }'); };
+  mat.customProgramCacheKey = () => 'chao-shader-v23'; mat.needsUpdate = true;
+  const hg = new Map(); for (let i = 0; i < pos.count; i++) hg.set(pos.getX(i) + ',' + pos.getZ(i), pos.getY(i)); const hA = (x, z) => hg.get(x + ',' + z) ?? 0;
+  const nr = geo.attributes.normal, v = new THREE.Vector3(); for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), z = pos.getZ(i); v.set(hA(x - 1, z) - hA(x + 1, z), 2, hA(x, z - 1) - hA(x, z + 1)).normalize(); nr.setXYZ(i, v.x, v.y, v.z); } nr.needsUpdate = true;
+}
+function ghIM(im) { // instâncias (árvores, flores, cercas...) sobem uma vez
+  GH23.ims.add(im); const m = new THREE.Matrix4(); let any = false;
+  for (let i = 0; i < im.count; i++) { im.getMatrixAt(i, m); const g = GH(m.elements[12], m.elements[14]); if (g > 0.001) { m.elements[13] += g; im.setMatrixAt(i, m); any = true; } }
+  if (any) { im.instanceMatrix.needsUpdate = true; if (im.boundingSphere) { im.computeBoundingSphere(); im.boundingSphere.radius += 3; } }
+}
+{ const base = Instancer.prototype.set; Instancer.prototype.set = function (i, m) { if (GH23.ready && this.done) { const g = GH(m.elements[12], m.elements[14]); if (g > 0.001) { m = m.clone(); m.elements[13] += g; } } return base.call(this, i, m); }; }
+const PRE_GH = []; // coisas que precisam estar no mapa antes de calcular o relevo (acampamentos)
+{ const base = buildWorld; buildWorld = function () { const r = base(); try { for (const f of PRE_GH) { try { f(); } catch (e) { console.error(e); } } const t0 = performance.now(); ghBuild(); ghGround(); world.traverse((o) => { if (o.isInstancedMesh) ghIM(o); }); GH23.ready = true; GH23.ms = Math.round(performance.now() - t0); } catch (e) { console.error(e); } return r; }; }
+// na hora de desenhar: tudo o que está no mundo sobe a altura do chão na sua posição
+function ghCollect(list, depth) {
+  for (const o of list) {
+    if (!o.visible || o.userData.noGH || o.isPoints || o.isDirectionalLight || o.isHemisphereLight || o.isAmbientLight || o === sky) continue;
+    if (o.isInstancedMesh) { if (!GH23.ims.has(o)) ghIM(o); continue; }
+    const p = o.position; if (p.x === 0 && p.z === 0 && p.y === 0) { if (o.children.length && depth < 3) ghCollect(o.children, depth + 1); continue; }
+    let r = o.userData.ghR; if (r === undefined) { r = 0; try { if (o.isMesh && !o.children.length) { const gg = o.geometry; if (!gg.boundingSphere) gg.computeBoundingSphere(); r = gg.boundingSphere ? gg.boundingSphere.radius * Math.max(o.scale.x, o.scale.z) : 0; } else if (!o.isLight && !o.isSprite) { const bb = new THREE.Box3().setFromObject(o); if (!bb.isEmpty()) { const sz = bb.getSize(new THREE.Vector3()); r = Math.hypot(sz.x, sz.z) / 2; } } } catch (e) {} o.userData.ghR = r; }
+    if (r > 7) continue; // água, planos grandes e grupos espalhados ficam onde estão
+    const g = GH(p.x, p.z); if (g > 0.002) { GH23.lo[GH23.n] = o; GH23.lg[GH23.n++] = g; }
+  }
+}
+{ const base = renderer.render.bind(renderer); renderer.render = function (sc, cam) {
+  if (sc !== scene || !GH23.ready || mode !== 'out') { GH23.camH = 0; return base(sc, cam); }
+  const now = performance.now(), dt = Math.min(0.1, (now - GH23.last) / 1000); GH23.last = now; GH23.camH = lerp(GH23.camH, GH(P.x, P.z) * 0.6, 1 - Math.exp(-dt * 4)); // a câmera sobe só um pouco: dá para sentir a subida
+  GH23.n = 0; ghCollect(scene.children, 0); const n = GH23.n, lo = GH23.lo, lg = GH23.lg;
+  for (let i = 0; i < n; i++) lo[i].position.y += lg[i]; const ch = cam === camera ? GH23.camH : 0; cam.position.y += ch;
+  try { return base(sc, cam); } finally { for (let i = 0; i < n; i++) lo[i].position.y -= lg[i]; cam.position.y -= ch; lo.length = Math.min(lo.length, n + 64); }
+}; }
+// textos e barras na tela acompanham o relevo
+{ const base = toScr; toScr = function (x, y, z) { return base(x, y + (mode === 'out' && GH23.ready ? GH(x, z) : 0), z); }; }
+// partículas nascem na altura do chão
+{ const base = emit; emit = function (L, p) { if (mode === 'out' && GH23.ready && p) p.y += GH(p.x, p.z); return base(L, p); }; }
+
+
+// ---------- inimigos novos: Caranguejo (praia) e Pedrolho (rochas do norte e do leste) ----------
+function makeCrab() {
+  const g = new THREE.Group(), sh = lam('#ff7a59'), lt = lam('#ffc9a3'), dk = new THREE.MeshBasicMaterial({ color: '#2a1d2e' }), wh = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 10), sh); body.scale.set(1.25, 0.55, 0.9); body.position.y = 0.24; g.add(body);
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 8), lt); belly.scale.set(1.15, 0.32, 0.8); belly.position.y = 0.17; g.add(belly);
+  for (const sx of [-1, 1]) {
+    const st = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.16, 6), sh); st.position.set(sx * 0.1, 0.4, 0.14); g.add(st);
+    const e = new THREE.Mesh(new THREE.SphereGeometry(0.058, 10, 8), wh); e.position.set(sx * 0.1, 0.49, 0.15); g.add(e);
+    const pu = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 6), dk); pu.position.set(sx * 0.1, 0.495, 0.197); g.add(pu);
+    for (let k = 0; k < 3; k++) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.026, 0.28, 5), sh); l.position.set(sx * (0.33 + k * 0.015), 0.11, -0.13 + k * 0.13); l.rotation.z = sx * 1.05; g.add(l); }
+  }
+  const cl = []; for (const sx of [-1, 1]) { const c = new THREE.Group(), arm = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.2, 6), sh); arm.rotation.x = Math.PI / 2; arm.position.z = 0.08; c.add(arm);
+    const pin = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 8), sh); pin.scale.set(0.8, 0.7, 1.15); pin.position.z = 0.24; c.add(pin); const tip = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 6), lt); tip.rotation.x = Math.PI / 2; tip.position.set(sx * 0.03, 0.04, 0.34); c.add(tip);
+    c.position.set(sx * 0.31, 0.26, 0.17); c.rotation.y = -sx * 0.45; g.add(c); cl.push(c); }
+  const bk = bakeGroup(g); g.userData.mats = bk.lam ? [bk.lam, sh] : [sh]; g.userData.cl = cl; return g;
+}
+function makeRock() {
+  const g = new THREE.Group(), st = lam('#8f95a3'), dkS = lam('#6f7482'), moss = lam('#7fb069'), dk = new THREE.MeshBasicMaterial({ color: '#2a1d2e' }), wh = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+  const body = new THREE.Mesh(new THREE.DodecahedronGeometry(0.36, 0), st); body.position.y = 0.36; body.scale.set(1, 0.92, 0.95); g.add(body);
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2.4), moss); m.position.y = 0.5; m.scale.set(1.05, 0.55, 1); g.add(m);
+  for (let i = 0; i < 3; i++) { const sp = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.16, 5), moss); const a = i * 2.1 + 0.3; sp.position.set(Math.cos(a) * 0.12, 0.66, Math.sin(a) * 0.12 - 0.04); g.add(sp); }
+  for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.062, 10, 8), wh); e.position.set(sx * 0.12, 0.42, 0.3); e.scale.z = 0.6; g.add(e); const pu = new THREE.Mesh(new THREE.SphereGeometry(0.034, 8, 6), dk); pu.position.set(sx * 0.12, 0.42, 0.335); g.add(pu);
+    const br = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.035, 0.04), dkS); br.position.set(sx * 0.12, 0.51, 0.31); br.rotation.z = -sx * 0.35; g.add(br); const f = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.22), dkS); f.position.set(sx * 0.17, 0.05, 0.04); g.add(f); }
+  const bk = bakeGroup(g); g.userData.mats = bk.lam ? [bk.lam] : []; return g;
+}
+EN.caranguejo = { n: 'Caranguejo', hp: 4, dmg: 6, xp: 7, loot: [['concha', 1]], cols: ['#ff7a59', '#ffe1c8'], mk: makeCrab, sc: 1.2 };
+EN.pedrolho = { n: 'Pedrolho', hp: 8, dmg: 10, xp: 13, loot: [['pedra', 2]], cols: ['#8f95a3', '#d8dce4'], mk: makeRock, sc: 1.15 };
+{ const base = enemyFor; enemyFor = function (x, y, i) { const e = base(x, y, i); if (!e) return e; const r = regionAt(x, y);
+  if (r.id === 'praia' && i % 3 === 0) return { kind: 'caranguejo', mult: e.mult };
+  if ((r.id === 'norte' && i % 5 === 2) || (r.id === 'leste' && i % 4 === 2)) return { kind: 'pedrolho', mult: e.mult };
+  return e; }; }
+// linha de aviso (rolada do Pedrolho)
+function teleLine(x, z, ang, len, dur) { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.9, len).rotateX(-Math.PI / 2).translate(0, 0, len / 2), new THREE.MeshBasicMaterial({ color: '#ff4060', transparent: true, opacity: 0.25, depthWrite: false }));
+  m.position.set(x, 0.04, z); m.rotation.y = ang; scene.add(m); let t = 0; fxList.push({ o: m, t: 0, dur, upd: (f, k) => { m.material.opacity = 0.18 + Math.sin(k * 30) * 0.08 + k * 0.2; } }); return m; }
+function newFoeUpdate(s, dt, dx, dz, d) {
+  s.ph = (s.ph || 0) + dt; s.cd = Math.max(0, (s.cd || 0) - dt); const flash = s.flash > 0;
+  for (const m of s.mats) if (m.emissive) { if (s.state === 'wind' || s.state === 'aim') m.emissive.setRGB(0.35 + Math.sin(gtime * 30) * 0.25, 0.02, 0); else m.emissive.setScalar(flash ? 0.45 : s.elite ? 0.12 + Math.sin(gtime * 4) * 0.06 : 0); }
+  let mvx = 0, mvz = 0, sp = 0, face = Math.atan2(dx, dz);
+  if (s.kind === 'caranguejo') {
+    const cl = s.o.userData.cl || [];
+    if (s.state === 'wind') { s.wt -= dt; for (const c of cl) c.rotation.x = -0.6 + Math.sin(gtime * 28) * 0.25; if (s.wt <= 0) { s.state = 'dash'; s.wt = 0.34; const l = d || 1; s.vx = (dx / l) * 8.5; s.vz = (dz / l) * 8.5; sfx('swing'); } }
+    else if (s.state === 'dash') { s.wt -= dt; moveC(s, s.vx * dt, s.vz * dt, 0.22); face = Math.atan2(s.vx, s.vz); if (d < 0.6) { hurtPlayer(s.edmg, dx / (d || 1), dz / (d || 1)); s.state = 'rest'; s.wt = 0.9; } if (s.wt <= 0) { s.state = 'rest'; s.wt = 0.9; } }
+    else if (s.state === 'rest') { s.wt -= dt; for (const c of cl) c.rotation.x = 0.35; if (rand() < dt * 6) emit(PG, { x: s.x + Math.cos(gtime * 7) * 0.3, y: 0.7, z: s.z + Math.sin(gtime * 7) * 0.3, vx: 0, vz: 0, vy: 0, g: 0, life: 0.3, max: 0.3, c: '#ffe18d' }); if (s.wt <= 0) { s.state = null; s.cd = 1.2 + rand(); } }
+    else if (d < 6.5 && !P.dead && !P.fishing) { // anda de lado em volta de você
+      const side = Math.sin(s.ph * 0.9 + s.sx) > 0 ? 1 : -1, l = d || 1; mvx = (-dz / l) * side + (dx / l) * (d > 2.6 ? 0.6 : -0.4); mvz = (dx / l) * side + (dz / l) * (d > 2.6 ? 0.6 : -0.4); sp = 2.4;
+      for (const c of cl) c.rotation.x = Math.sin(s.ph * 12) * 0.25; if (s.cd <= 0 && d < 3.4) { s.state = 'wind'; s.wt = 0.5; sfx('fx'); }
+    } else { mvx = Math.cos(s.ph * 0.5 + s.sx); mvz = Math.sin(s.ph * 0.4 + s.sz); sp = Math.hypot(s.x - s.sx, s.z - s.sz) > 4 ? 0 : 1.0; if (sp === 0) { mvx = s.sx - s.x; mvz = s.sz - s.z; const l = Math.hypot(mvx, mvz) || 1; mvx /= l; mvz /= l; sp = 1.2; } }
+    s.y = sp ? Math.abs(Math.sin(s.ph * 14)) * 0.03 : 0;
+  } else { // pedrolho
+    if (s.state === 'aim') { s.wt -= dt; s.o.position.x = s.x + Math.sin(gtime * 60) * 0.04; face = s.ra; if (s.wt <= 0) { s.state = 'roll'; s.wt = 1.25; sfx('boom'); shake = Math.max(shake, 0.08); } }
+    else if (s.state === 'roll') { s.wt -= dt; const x0 = s.x, z0 = s.z, vx = Math.sin(s.ra) * 9, vz = Math.cos(s.ra) * 9; moveC(s, vx * dt, vz * dt, 0.26); face = s.ra; s.spin = (s.spin || 0) + dt * 14;
+      if (rand() < dt * 20) burst(s.x, 0.1, s.z, ['#c8b89a', '#9aa0ac'], 2, 1.2);
+      if (d < 0.75 && !s.hitP) { s.hitP = true; hurtPlayer(s.edmg, dx / (d || 1), dz / (d || 1)); }
+      const moved = Math.hypot(s.x - x0, s.z - z0); if (moved < 9 * dt * 0.35) { s.state = 'stun'; s.wt = 2.0; s.spin = 0; sfx('impact'); shake = Math.max(shake, 0.18); burst(s.x, 0.5, s.z, ['#d8dce4', '#ffffff', '#9aa0ac'], 18, 2.8); fxRing(s.x, 0.08, s.z, '#ffffff', 1.4, 0.35); floatText(s.x, 1.4, s.z, 'Atordoado! Bata agora!', '#ffe18d', true); }
+      else if (s.wt <= 0) { s.state = 'rest'; s.wt = 0.7; s.spin = 0; } }
+    else if (s.state === 'stun' || s.state === 'rest') { s.wt -= dt; if (s.state === 'stun' && rand() < dt * 10) { const a = gtime * 6; emit(PG, { x: s.x + Math.cos(a) * 0.3, y: 1.05, z: s.z + Math.sin(a) * 0.3, vx: 0, vz: 0, vy: 0, g: 0, life: 0.25, max: 0.25, c: '#ffe18d' }); } if (s.wt <= 0) { s.state = null; s.cd = 1.6 + rand() * 1.2; s.hitP = false; } }
+    else if (d < 7 && !P.dead && !P.fishing) { const l = d || 1; mvx = dx / l; mvz = dz / l; sp = d > 2 ? 1.1 : 0; if (s.cd <= 0 && d < 6.5 && d > 1.6) { s.state = 'aim'; s.wt = 0.8; s.ra = Math.atan2(dx, dz); teleLine(s.x, s.z, s.ra, 7, 0.8); sfx('alert'); } }
+    else { mvx = Math.cos(s.ph * 0.3 + s.sx); mvz = Math.sin(s.ph * 0.35); sp = Math.hypot(s.x - s.sx, s.z - s.sz) > 3 ? 0 : 0.5; }
+    s.y = s.state === 'stun' ? 0 : sp ? Math.abs(Math.sin(s.ph * 7)) * 0.04 : 0;
+  }
+  if (sp) moveC(s, mvx * sp * dt, mvz * sp * dt, 0.22);
+  if (s.kx || s.kz) { moveC(s, s.kx * dt, s.kz * dt, 0.22); s.kx *= 0.82; s.kz *= 0.82; if (Math.abs(s.kx) + Math.abs(s.kz) < 0.05) s.kx = s.kz = 0; }
+  if (s.state !== 'aim') s.o.position.set(s.x, s.y, s.z); else s.o.position.z = s.z;
+  s.o.rotation.set(s.kind === 'pedrolho' && s.state === 'roll' ? s.spin : s.state === 'stun' ? Math.sin(gtime * 9) * 0.12 : 0, face, 0);
+  s.o.scale.setScalar(s.sc * (flash ? 1.15 : 1) * (s.state === 'stun' ? 0.95 : 1));
+  if (s.kind === 'caranguejo' && d < 0.55 && s.state !== 'rest') hurtPlayer(Math.round(s.edmg * 0.5), dx / (d || 1), dz / (d || 1));
+}
+{ const base = enemyUpdate; enemyUpdate = function (s, dt, dx, dz, d) { if (s.kind === 'caranguejo' || s.kind === 'pedrolho') return newFoeUpdate(s, dt, dx, dz, d); return base(s, dt, dx, dz, d); }; }
+
+// ---------- elites (★): maiores, mais fortes, com aura dourada e prêmio melhor ----------
+const ELITE = { geo: new THREE.RingGeometry(0.55, 0.72, 32).rotateX(-Math.PI / 2), mat: new THREE.MeshBasicMaterial({ color: '#ffd45a', transparent: true, opacity: 0.6, depthWrite: false, side: THREE.DoubleSide }) };
+{ const w = new THREE.Mesh(ELITE.geo, ELITE.mat); w.visible = false; w.userData.keep = 1; scene.add(w); } // shader pronto no carregamento
+function makeElite(s) { if (s.elite) return; s.elite = true; s.hp *= 2.6; s.max = s.hp; s.sc *= 1.28; s.edmg = Math.round((s.edmg || 6) * 1.4); s.xp = Math.round((s.xp || 4) * 3); s.lvl = (s.lvl || 1) + '★';
+  const r = new THREE.Mesh(ELITE.geo, ELITE.mat); r.position.y = 0.03; r.scale.setScalar(0.6); r.userData.eliteRing = 1; s.o.add(r); s.ring = r; }
+{ const base = spawnSlimes; spawnSlimes = function () { base(); try { slimes.forEach((s, i) => { if (s.zone === 'cave' || s.isBoss || s.minion) return; const r = regionAt(s.sx, s.sz); if (r.lv >= 2 && hash22(i * 7 + S.day, 13) < 0.13) makeElite(s); }); campSpawn(); } catch (e) { console.error(e); } }; }
+{ const base = damageSlime; damageSlime = function (s, dmg, dx, dz, col, byPlayer, byPet, opt = {}) {
+  if (!s || s.dead) return base(s, dmg, dx, dz, col, byPlayer, byPet, opt);
+  if (s.kind === 'pedrolho') { if (s.state === 'stun') { dmg *= 2; if (byPlayer) floatText(s.x, 1.5, s.z, 'Ponto fraco!', '#ffcb2a', true); } else { dmg *= 0.4; if (byPlayer && (!s.tink || gtime - s.tink > 0.8)) { s.tink = gtime; floatText(s.x, 1.5, s.z, 'Duro! Espere ele bater', '#c9d6ff'); sfx('impact'); } } }
+  if (s.kind === 'caranguejo' && s.state === 'rest') dmg *= 1.5;
+  const r = base(s, dmg, dx, dz, col, byPlayer, byPet, opt);
+  if (s.dead && s.elite && !s.eliteDone) { s.eliteDone = true; const c = 20 + ((rand() * 25) | 0); S.coins += c; floatText(s.x, 1.8, s.z, `★ Elite! +${c}🪙`, C.gold, true); drop(s.x, s.z, 'star', null, 2); for (const [it, q] of s.loot || []) drop(s.x, s.z, 'item', it, q); sfx('secret'); burst(s.x, 0.8, s.z, ['#ffd45a', '#ffffff'], 24, 3.5, true, true); lastHud = ''; hud(); }
+  if (s.dead && s.camp) campCheck(s.camp);
+  return r;
+}; }
+// aura dos elites gira e pulsa
+function eliteUpdate(dt) { for (const s of slimes) if (s.ring && !s.dead) { s.ring.rotation.y += dt * 1.5; s.ring.scale.setScalar(0.6 * (1 + Math.sin(gtime * 4) * 0.08)); if (rand() < dt * 3 && s.o.visible) emit(PG, { x: s.x + (rand() - 0.5) * 0.8, y: 0.2, z: s.z + (rand() - 0.5) * 0.8, vx: 0, vz: 0, vy: 0.8, g: 0, life: 0.7, max: 0.7, c: '#ffd45a' }); } }
+
+// ---------- acampamentos de monstros: um por região, com chefe elite e baú de prêmio (1 por dia) ----------
+const CAMPS = { list: [] };
+const CAMP_LOOT = { praia: [['concha', 3], ['peixe', 1]], norte: [['madeira', 6], ['cogumelo', 2]], sul: [['mel', 2], ['trevo', 3]], leste: [['cristal', 1], ['ferro', 2]], girassol: [['flor', 6], ['mel', 1]] };
+const CAMP_N = { praia: 'Acampamento da Maré', norte: 'Acampamento do Musgo', sul: 'Acampamento dos Campos', leste: 'Acampamento das Pedras', girassol: 'Acampamento das Pétalas' };
+function campBuild() {
+  CAMPS.list.length = 0; const RP = rng(2323);
+  for (const rid of ['praia', 'girassol', 'norte', 'sul', 'leste']) { let best = null;
+    for (let k = 0; k < 8000 && !best; k++) { const x = 6 + ((RP() * (W - 12)) | 0), y = 6 + ((RP() * (H - 12)) | 0); if (regionAt(x, y).id !== rid || Math.hypot(x - 42, y - 32) < 22) continue;
+      const R = k < 3000 ? 3 : 2; let ok = true; for (let j = -R; j <= R && ok; j++) for (let i = -R; i <= R && ok; i++) { const t = tAt(x + i, y + j); if ((t !== GR && t !== SA) || obj[I(x + i, y + j)] || inFarm(x + i, y + j, 2) || zoneAt(x + i, y + j, 2)) ok = false; }
+      if (ok) best = [x, y]; }
+    if (!best) continue; const [x, y] = best, cx = x + 0.5, cz = y + 0.5, g = new THREE.Group(); g.userData.keep = 1;
+    const add = (k, px, pz, ry, s = 1) => { if (!MODELS[k]) return null; const o = cloneM(k); o.position.set(px, 0, pz); o.rotation.y = ry; o.scale.multiplyScalar(s); o.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); world.add(o); o.userData.keep = 1; return o; };
+    add('kn_campfire', cx, cz, 0); put(x, y, { t: 'part', camp: rid });
+    add('kn_tent', cx - 2, cz - 1.2, 0.5); put(x - 2, y - 1, { t: 'part' }); add('kn_tent', cx + 2, cz - 1.2, -0.5); put(x + 2, y - 1, { t: 'part' });
+    add(MODELS.pk_flag_pennant ? 'pk_flag_pennant' : 'k_flag', cx, cz - 2.4, 0); put(x, y - 2, { t: 'part' });
+    const chest = add('d_chest', cx, cz + 1.6, Math.PI); if (chest) chest.visible = false;
+    const L = new THREE.PointLight(0xff9a4a, 1.3, 7, 1.6); L.position.set(cx, 0.9, cz); world.add(L);
+    CAMPS.list.push({ id: rid, n: CAMP_N[rid], x: cx, z: cz, chest, L, foes: [], ready: false, seen: -1 });
+  }
+}
+PRE_GH.push(campBuild);
+function campSpawn() {
+  for (const c of CAMPS.list) { c.foes = []; c.ready = false; if (c.chest) c.chest.visible = false; if ((S.campDay || {})[c.id] === S.day) continue;
+    for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2 + 0.4, x = c.x + Math.cos(a) * 2.6, z = c.z + Math.sin(a) * 2.6 + 0.6, e0 = enemyFor(Math.floor(x), Math.floor(z), k * 3 + 1) || { kind: 'slime', jelly: 'verde', mult: 1.4 };
+      const e = mkEnemy(e0.kind, x, z, { big: false, jelly: e0.jelly || 'verde', mult: (e0.mult || 1) * 1.15 }); e.lvl = regionAt(x, z).lv; e.camp = c; world.add(e.o); slimes.push(e); c.foes.push(e); if (k === 0) makeElite(e); } }
+}
+function campCheck(c) { for (const s of c.foes) if (s.dead) s.rt = 1e9; if (c.ready || !c.foes.length || c.foes.some((s) => !s.dead)) return;
+  c.ready = true; if (c.chest) { c.chest.visible = true; c.chest.scale.setScalar(0.01); let t = 0; const it = setInterval(() => { t += 0.05; const k = Math.min(1, t / 0.4); c.chest.scale.setScalar(Math.max(0.01, k * (1 + Math.sin(k * Math.PI) * 0.3))); if (k >= 1) clearInterval(it); }, 30); }
+  sfx('quest'); burst(c.x, 1, c.z + 1.6, ['#ffe18d', '#ffffff'], 30, 3, true, true); fxRing(c.x, 0.06, c.z + 1.6, '#ffe18d', 2.4, 0.6); toast(`🏕️ <b>${c.n}</b> limpo! Abra o baú. 🎁`); }
+function campOpen(c) {
+  if (!c.ready) return; c.ready = false; S.campDay = S.campDay || {}; S.campDay[c.id] = S.day; const lv = regionAt(c.x, c.z).lv, coins = 50 + lv * 30 + ((rand() * 30) | 0);
+  S.coins += coins; for (const [it, q] of CAMP_LOOT[c.id] || []) drop(c.x, c.z + 1.6, 'item', it, q); drop(c.x, c.z + 1.6, 'star', null, 2);
+  anim('PickUp', 1.6); sfx('secret'); setTimeout(() => sfx('coin'), 200); shake = 0.15; burst(c.x, 0.9, c.z + 1.6, ['#ffe18d', '#ffcb8d', '#ffffff'], 36, 3.5, true, true);
+  floatText(c.x, 1.9, c.z + 1.6, `+${coins}🪙`, C.gold, true); gainXp(10 + lv * 4); setTimeout(() => { if (c.chest) c.chest.visible = false; }, 900); lastHud = ''; hud(); writeSlot('ve3d-auto');
+}
+{ const base = craftSpecials; craftSpecials = function (list) { base(list); if (mode !== 'out') return; for (const c of CAMPS.list) if (c.ready) list.push({ d: Math.hypot(P.x - c.x, P.z - (c.z + 1.6)) - 0.6, label: '🎁 Abrir o baú do acampamento', act: () => campOpen(c) }); }; }
+function campUpdate(dt) {
+  if (mode !== 'out') return;
+  for (const c of CAMPS.list) { c.L.intensity = 1.1 + Math.sin(gtime * 11 + c.x) * 0.15 + Math.sin(gtime * 23) * 0.1; const d = Math.hypot(P.x - c.x, P.z - c.z);
+    if (d < 14 && rand() < dt * 5) emit(PG, { x: c.x + (rand() - 0.5) * 0.3, y: 0.5, z: c.z + (rand() - 0.5) * 0.3, vx: (rand() - 0.5) * 0.2, vz: 0, vy: 1.1, g: 0, life: 0.9, max: 0.9, c: rand() < 0.5 ? '#ffb347' : '#ffe18d', flick: true });
+    if (d < 9 && c.seen !== S.day && c.foes.some((s) => !s.dead)) { c.seen = S.day; toast(`⚔️ <b>${c.n}</b>! Derrote os ${c.foes.filter((s) => !s.dead).length} monstros (o ★ é o chefe) para abrir o baú.`); sfx('alert'); }
+    if (c.ready && c.chest && rand() < dt * 4) emit(PG, { x: c.x + (rand() - 0.5) * 0.8, y: 0.6, z: c.z + 1.6, vx: 0, vz: 0, vy: 0.9, g: 0, life: 0.8, max: 0.8, c: '#ffe18d' }); }
+}
+
+// ---------- ambiência de cada área: folhas no norte, pólen na Vila Girassol, brilho do mar na praia... ----------
+const AMBP = { norte: ['#9cc95a', '#d9a441', '#7fb069'], girassol: ['#ffe18d', '#fff3c4'], praia: ['#ffffff', '#bfefff'], sul: ['#ffffff', '#f4f0e0'], leste: ['#c79bff', '#9fe8ff'] };
+function ambParticles(dt) {
+  if (mode !== 'out' || modalOpen() || SET.quality === 'baixa') return; const r = regionAt(P.x, P.z), cols = r && AMBP[r.id]; if (!cols) return; const night = isNightNow();
+  if (rand() > dt * (night ? 3 : 7)) return; const x = P.x + (rand() - 0.5) * 18, z = P.z + (rand() - 0.5) * 12 - 2, c = pick(cols);
+  if (r.id === 'norte') emit(PG, { x, y: 3 + rand() * 1.5, z, vx: 0.4 + rand() * 0.3, vz: 0.1, vy: -0.45, g: 0, life: 5, max: 5, c });
+  else if (r.id === 'praia') emit(PG, { x, y: 0.2, z, vx: 0, vz: 0, vy: 0.25, g: 0, life: 1.2, max: 1.2, c, flick: true });
+  else emit(PG, { x, y: 0.4 + rand() * 1.5, z, vx: 0.35, vz: 0.05, vy: 0.15, g: 0, life: 4, max: 4, c, flick: r.id === 'leste' });
+}
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { eliteUpdate(dt); campUpdate(dt); ambParticles(dt); } catch (e) {} }; }
+
+// acampamentos no mapa (M)
+{ const base = openMap; openMap = function () { base(); try { const c = $('mapc'); if (!c || mode !== 'out') return; const x = c.getContext('2d'), s = 8;
+  for (const cp of CAMPS.list) { const done = (S.campDay || {})[cp.id] === S.day, px = cp.x * s, pz = cp.z * s; x.fillStyle = done ? '#9aa0ac' : '#ff7a59'; x.strokeStyle = '#14141b'; x.lineWidth = 3; x.beginPath(); x.moveTo(px, pz - 11); x.lineTo(px + 11, pz + 8); x.lineTo(px - 11, pz + 8); x.closePath(); x.fill(); x.stroke();
+    x.font = 'bold 12px sans-serif'; x.textAlign = 'center'; x.lineWidth = 3; x.strokeStyle = '#fff'; const lb = done ? 'Acampamento (limpo)' : 'Acampamento'; x.strokeText(lb, px, pz + 22); x.fillStyle = '#14141b'; x.fillText(lb, px, pz + 22); } } catch (e) {} }; }
+
+// ---------- mirantes: o ponto mais alto de cada área tem uma bandeirinha; aprecie a vista para ganhar um prêmio (1 vez cada) ----------
+const VIEWS = { list: [], t: 0, d0: 1 };
+function viewsBuild() {
+  VIEWS.list.length = 0; const best = {};
+  for (let y = 4; y < H - 4; y++) for (let x = 4; x < W - 4; x++) { if (tile[I(x, y)] !== GR || obj[I(x, y)]) continue; const h = GH(x + 0.5, y + 0.5); if (h < 1.1) continue; const r = regionAt(x, y); if (!r || r.id === 'vila') continue; if (!best[r.id] || h > best[r.id].h) best[r.id] = { x, y, h, r }; }
+  for (const b of Object.values(best)) { const g = new THREE.Group(); g.position.set(b.x + 0.5, 0, b.y + 0.5); g.userData.keep = 1;
+    const k = MODELS.pk_flag_pennant ? 'pk_flag_pennant' : 'k_flag'; if (MODELS[k]) { const f = cloneM(k); f.traverse((n) => { if (n.isMesh) n.castShadow = true; }); g.add(f); }
+    const st = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.4, 0.12, 10), lam('#c9b48a')); st.position.y = 0.06; g.add(st); world.add(g);
+    VIEWS.list.push({ id: b.r.id, n: 'Mirante: ' + b.r.n, x: b.x + 0.5, z: b.y + 0.5, g }); }
+}
+{ const base = buildWorld; buildWorld = function () { const r = base(); try { viewsBuild(); } catch (e) { console.error(e); } return r; }; }
+function viewEnjoy(v) {
+  S.views = S.views || {}; const first = !S.views[v.id]; S.views[v.id] = 1; VIEWS.t = 4; VIEWS.d0 = camDist; camDist = 1.6; areaTitle(v.n); sfx('secret'); anim('Cheer', 1.2);
+  burst(v.x, 1.4, v.z, ['#ffe18d', '#ffffff', '#9fe8ff'], 26, 3, true, true);
+  if (first) { S.stars += 5; gainXp(20); floatText(P.x, 2.1, P.z, 'Vista nova! +5⭐ +20 XP', C.gold, true); toast(`🔭 Que vista! Você descobriu o <b>${v.n.replace('Mirante: ', 'mirante da ')}</b>. (${Object.keys(S.views).length}/${VIEWS.list.length})`); lastHud = ''; hud(); }
+}
+{ const base = craftSpecials; craftSpecials = function (list) { base(list); if (mode !== 'out') return; for (const v of VIEWS.list) list.push({ d: Math.hypot(P.x - v.x, P.z - v.z) - 0.8, label: (S.views && S.views[v.id] ? '🔭 Apreciar a vista' : '🔭 Apreciar a vista (novo!)'), act: () => viewEnjoy(v) }); }; }
+{ const base = v14Update; v14Update = function (dt) { base(dt); if (VIEWS.t > 0) { VIEWS.t -= dt; if (VIEWS.t <= 0 || mode !== 'out') { VIEWS.t = 0; camDist = VIEWS.d0; } }
+  for (const v of VIEWS.list) if (!(S.views && S.views[v.id]) && mode === 'out' && Math.abs(P.x - v.x) < 16 && Math.abs(P.z - v.z) < 12 && rand() < dt * 3) emit(PG, { x: v.x + (rand() - 0.5) * 0.6, y: 1.2 + GH(v.x, v.z) * 0, z: v.z, vx: 0, vz: 0, vy: 0.9, g: 0, life: 1, max: 1, c: '#ffe18d' }); }; }
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -6030,4 +6274,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
