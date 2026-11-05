@@ -816,7 +816,7 @@ function petAI(dt) {
 }
 /* ---------- pesca ---------- */
 let bobber = null, line = null;
-function startFishing(x, y) { P.fishing = { phase: 'cast', t: 0, bx: x + 0.5, bz: y + 0.5, wait: (2 + rand() * 3.5) * PERK.bite() }; anim('Throw', 1.4); sfx('swing'); toast('🎣 Espere o <b>❗</b> aparecer e aperte <span class="key">Espaço</span>'); }
+function startFishing(x, y) { P.fishing = { phase: 'cast', t: 0, bx: x + 0.5, bz: y + 0.5, wait: (2 + rand() * 3.5) * PERK.bite() }; anim('Throw', 1.4); sfx('swing'); toast('🎣 Espere o <b>!</b> aparecer e aperte <span class="key">Espaço</span>'); }
 function fishPress() {
   const f = P.fishing; if (!f) return;
   if (f.phase === 'cast' || f.phase === 'wait') { endFish(); toast('Puxou cedo demais... espere o ❗ 🐟'); sfx('cancel'); return; }
@@ -935,14 +935,14 @@ function talkRosa_v12() {
   rosa.wait = 4; if (S.tstep >= 1 && questTalk('rosa', null)) return; sayWho = rosaC;
   const face = THUMB.rosa;
   if (S.tstep === 0) return say('Vovó Rosa', face, [
-    `Oi, ${S.name}! Bem-vinda ao Vale Estrelinha! Eu sou a Vovó Rosa. 🌸`,
+    `Oi, ${S.name}! ${gA('Bem-vinda', 'Bem-vindo')} ao Vale Estrelinha! Eu sou a Vovó Rosa. 🌸`,
     'Aqui a gente vive de plantar, pescar e cuidar dos bichinhos mágicos. A seta amarela vai te mostrar o caminho!',
-    'Na barra de baixo ficam suas ferramentas. Aperte 1 a 7 para trocar, e Espaço para usar no quadradinho branco à sua frente.',
+    'Na barra de baixo ficam suas ferramentas. Aperte 1 a 8 para trocar, e Espaço para usar no quadradinho branco à sua frente.',
     'Para falar com as pessoas ou pegar coisas, chegue perto e aperte E. O mapa fica na tecla M e o menu no Esc. Os moradores do vale adoram ajuda: procure o ! em cima deles. Vai lá, comece plantando uma cenoura!',
   ], () => ev('talk'));
   const tips = ['Árvores com maçãs vermelhas podem ser sacudidas! Aperte E de frente pra elas.', 'Seu bichinho luta sozinho contra os slimes. Cada um tem um ataque diferente!', 'À noite os vaga-lumes saem para dançar perto do lago.', 'Depois das 18h você pode dormir na sua cama para começar um novo dia.', 'O Tico vende móveis lindos. Sua casa merece!', 'A cada 10 desejos no Poço, um bichinho 4★ ou melhor é garantido!', 'O Tomate cresce de novo depois de colhido. Muito prático!', 'Não esqueça de salvar no menu (Esc). Eu também salvo sozinha de vez em quando!'];
   const lines = [pick(tips)];
-  if (S.gift !== S.day) { S.gift = S.day; lines.push('Ah, e tome um presentinho do dia! 🍪 (+25🪙)'); return say('Vovó Rosa', face, lines, () => { S.coins += 25; sfx('coin'); floatText(P.x, 2, P.z, '+25🪙', C.yellow); hud(); }); }
+  if (S.gift !== S.day) { S.gift = S.day; lines.push('Ah, e tome um presentinho do dia! 🍪 (+25⭐)'); return say('Vovó Rosa', face, lines, () => { S.stars += 25; sfx('coin'); floatText(P.x, 2, P.z, '+25⭐', C.yellow); hud(); }); }
   say('Vovó Rosa', face, lines);
 }
 
@@ -998,7 +998,7 @@ function grant(o) {
 const itemInfo = (o) => (o.type === 'pet' ? petById(o.id) : outById(o.id));
 const itemImg = (o) => (o.type === 'pet' ? THUMB['p_' + o.id] : THUMB['o_' + o.id]);
 function doWish_v12(n) {
-  if (S.stars < WISH * n) { toast('Desejos insuficientes! Venda itens e complete tarefas. ⭐'); return; }
+  if (S.stars < WISH * n) { toast('Faltam Desejos ⭐! Complete as tarefas do dia e junte as estrelas caídas pelo vale.'); return; }
   S.stars -= WISH * n; S.wishes += n; const b = BANNERS[S.banner]; const res = [];
   for (let i = 0; i < n; i++) { const o = roll(b); o.tag = grant(o); res.push(o); }
   S.wishLog = (S.wishLog || []).concat(res.map((o) => ({ t: o.type, id: o.id, d: S.day }))).slice(-60);
@@ -1128,7 +1128,7 @@ function buy(code) {
   const [t, k] = code.split(':'); if (t === 'xp') { const pr = [1500, 3000][S.farmLv || 0]; if (S.coins < pr) return sfx('cancel'); S.coins -= pr; expandFarm(); hud(); openShop(); return; } const price = t === 'fd' ? FD[k].price : t === 'f' ? FURN[k].price : t === 'fl' ? FLOORS[k].price : t === 'wl' ? WALLS[k].price : t === 'up' ? UPGRADES[k].price : SNACKS[k].price;
   if (S.coins < price) { sfx('cancel'); return; } S.coins -= price;
   if (t === 'f') S.furn[k] = (S.furn[k] || 0) + 1; if (t === 'fl') S.floorsOwned[k] = 1; if (t === 'wl') S.wallsOwned[k] = 1; if (t === 'up') S.up[k] = 1; if (t === 's') S.snacks[k] = (S.snacks[k] || 0) + 1; if (t === 'fd') S.fd[k] = (S.fd[k] || 0) + 1;
-  sfx('coin'); ticoC && ticoC.play('Cheer', true, 1.3); hud(); ev('shop'); openShop(); toast(`🛍️ Comprou! <b>-${price}⭐</b>`);
+  sfx('coin'); ticoC && ticoC.play('Cheer', true, 1.3); hud(); ev('shop'); openShop(); toast(`🛍️ Comprou! <b>-${price}🪙</b>`);
 }
 /* ---------- mapa ---------- */
 function openMap() { openMap12(); mapZoomInit(); }
@@ -1146,11 +1146,11 @@ function openMap_v9() {
   const px = mode === 'in' ? HOME.x : P.x, pz = mode === 'in' ? HOME.z : P.z; x.save(); x.translate(px * s, pz * s); x.rotate(-P.ang + Math.PI); x.fillStyle = '#e0394c'; x.strokeStyle = '#fff'; x.lineWidth = 2; x.beginPath(); x.moveTo(0, -10); x.lineTo(7, 7); x.lineTo(0, 3); x.lineTo(-7, 7); x.closePath(); x.fill(); x.stroke(); x.restore();
 }
 /* ---------- menu, saves e configurações ---------- */
-function slotInfo(k) { const d = readSlot(k); if (!d) return null; const s = d.S; return { day: s.day, stars: s.stars, pets: Object.keys(s.pets || {}).length, t: new Date(d.t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) }; }
+function slotInfo(k) { const d = readSlot(k); if (!d) return null; const s = d.S; return { day: s.day, stars: s.stars, coins: s.coins, pets: Object.keys(s.pets || {}).length, t: new Date(d.t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) }; }
 function slotList(modeS) {
   return SLOTS.map((sl) => { const inf = slotInfo(sl.k); if (modeS === 'save' && sl.k === 've3d-auto') return '';
     return `<div class="srow"><div class="grow"><b>${sl.n}</b><br><span>${inf ? `Dia ${inf.day} · ${inf.stars}⭐ · ${inf.pets} bichinho(s) · ${inf.t}` : 'Vazio'}</span></div>
-      ${modeS === 'save' ? `<button class="btn gold sm" data-save="${sl.k}">${inf ? 'Sobrescrever' : 'Salvar aqui'}</button>` : `<button class="btn green sm" data-load="${sl.k}" ${inf ? '' : 'disabled'}>Carregar</button>${inf && sl.k !== 've3d-auto' ? `<button class="btn sm" data-del="${sl.k}">🗑</button>` : ''}`}</div>`; }).join('');
+      ${modeS === 'save' ? `<button class="btn gold sm" data-save="${sl.k}">${inf ? 'Sobrescrever' : 'Salvar aqui'}</button>` : `<button class="btn green sm" data-load="${sl.k}" ${inf ? '' : 'disabled'}>Carregar</button>${inf && sl.k !== 've3d-auto' ? `<button class="btn sm" data-del="${sl.k}">Apagar</button>` : ''}`}</div>`; }).join('');
 }
 function openMenu_v12(tab = 'main') {
   let body = '';
@@ -1172,23 +1172,28 @@ function openHelp() {
   const ic = (u) => `<img class="hi" src="${u}">`;
   openModal(`<h2>❓ Como jogar</h2>
   <div class="help">
-   <div class="hc"><h4>${ic(THUMB.t_espada)} Controles</h4><p><span class="key">WASD</span> andar · <span class="key">Shift</span> correr · <span class="key">Espaço</span>/<span class="key">clique</span> usar item no <b>quadrado branco</b> · <span class="key">E</span> falar, colher, entrar · <span class="key">Q</span> esquiva · segure <span class="key">Espaço</span> golpe giratório · <span class="key">1</span>–<span class="key">7</span> trocar item · <span class="key">Z</span> bicicleta · <span class="key">J</span> diário (missões, histórias, amigos) · <span class="key">M</span> mapa · <span class="key">B</span> fazenda · <span class="key">Esc</span> menu · <span class="key">+</span>/<span class="key">−</span> zoom</p></div>
+   <div class="hc"><h4>${ic(THUMB.t_espada)} Controles</h4><p><span class="key">WASD</span> andar · <span class="key">Shift</span> correr · <span class="key">Espaço</span>/<span class="key">clique</span> usar item no <b>quadrado branco</b> · <span class="key">E</span> falar, colher, entrar · <span class="key">Q</span> esquiva · segure <span class="key">Espaço</span> golpe giratório · <span class="key">1</span>–<span class="key">8</span> trocar item · <span class="key">R</span> <span class="key">F</span> <span class="key">T</span> habilidades · <span class="key">U</span> comer · <span class="key">Z</span> bicicleta · <span class="key">G</span> poço · <span class="key">C</span> álbum · <span class="key">I</span> mochila · <span class="key">K</span> habilidades · <span class="key">J</span> diário (missões, histórias, amigos) · <span class="key">M</span> mapa · <span class="key">B</span> fazenda · <span class="key">Esc</span> menu · <span class="key">+</span>/<span class="key">−</span> zoom</p></div>
    <div class="hc"><h4>${ic(THUMB.i_ametista)} Caverna e mineração</h4><p>A <b>Caverna Cintilante</b> fica ao norte da floresta. Compre a picareta (4) na <b>Forja da Duda</b> e minere pedra, cobre, ferro, cristais, ametista e ouro. A porta de cristal no fundo guarda o <b>Rei Slime</b>: fale com a Mestra Íris na torre para conseguir a chave.</p></div>
-   <div class="hc"><h4>${ic(THUMB.i_ferro)} Forja e Ateliê</h4><p>A <b>Forja da Duda</b> troca ⭐ e minérios por espadas, picaretas, bicicleta, botas e amuleto. No <b>Ateliê da Fifi</b> você compra roupas, acessórios, penteados, tintas de cabelo e rastros.</p></div>
+   <div class="hc"><h4>${ic(THUMB.i_ferro)} Forja e Ateliê</h4><p>A <b>Forja da Duda</b> troca 🪙 Moedas e minérios por espadas, picaretas, bicicleta, botas e amuleto. No <b>Ateliê da Fifi</b> você compra roupas, acessórios, penteados, tintas de cabelo e rastros.</p></div>
    <div class="hc"><h4>${ic(THUMB.i_leite)} Fôlego, animais e histórias</h4><p>Correr e minerar gastam <b>fôlego</b> (anel verde em volta da personagem); ele volta quando você anda devagar. Faça carinho nos animais do pasto para ganhar lã, leite e trufas. Procure <b>pergaminhos</b> brilhando pelo vale: eles contam a história do Vale Estrelinha (diário, <span class="key">J</span>).</p></div>
    <div class="hc"><h4>${ic(THUMB.i_cenoura)} Fazenda</h4><p>Escolha uma semente (5, 6, 7) e plante nos canteiros dentro da cerca. Regue (2) para crescer 2× mais rápido. Quando a planta brilhar, colha com <span class="key">E</span>.</p></div>
-   <div class="hc"><h4>${ic(THUMB.market)} Vender</h4><p>Tudo que você coleta vai para a mochila (<span class="key">I</span>). Venda na Barraca ao lado da fazenda para ganhar estrelinhas ⭐.</p></div>
+   <div class="hc"><h4>${ic(THUMB.market)} Vender</h4><p>Tudo que você coleta vai para a mochila (<span class="key">I</span>). Venda na Barraca ao lado da fazenda para ganhar 🪙 Moedas.</p></div>
    <div class="hc"><h4>${ic(THUMB.shop)} Lojinha do Tico</h4><p>Compre móveis, pisos, papéis de parede, melhorias de ferramentas e lanches. Fica a leste da praça.</p></div>
    <div class="hc"><h4>${ic(THUMB.f_couch)} Sua casa</h4><p>Entre pela porta (<span class="key">E</span>). Aperte <span class="key">V</span> para decorar: escolha um móvel, clique no chão, <span class="key">R</span> gira, clique num móvel para pegar e <span class="key">X</span> guarda. Durma na cama depois das 18h.</p></div>
-   <div class="hc"><h4>${ic(THUMB.t_vara)} Pesca</h4><p>Com a vara (3), fique de frente para a água e aperte Espaço. Espere o <b>❗</b>, aperte de novo e acerte a zona colorida.</p></div>
+   <div class="hc"><h4>${ic(THUMB.t_vara)} Pesca</h4><p>Com a vara (3), fique de frente para a água e aperte Espaço. Espere o <b>!</b>, aperte de novo e acerte a zona colorida.</p></div>
    <div class="hc"><h4>${ic(THUMB.slime)} Combate e habilidades</h4><p>Golpes seguidos fazem um <b>combo de 3</b>. Segure <span class="key">Espaço</span> para o <b>giro</b>. <span class="key">Q</span> esquiva (fica invulnerável por um instante). Habilidades com recarga, na barra acima dos itens: <span class="key">R</span> Estocada Estelar, <span class="key">F</span> Chuva de Estrelas (nível 3) e <span class="key">T</span> Abraço da Flor, que cura (nível 5). Inimigos: slimes de várias cores, abelhas, cogumelos bravos, morcegos na caverna e fantasminhas que só aparecem à noite.</p></div>
    <div class="hc"><h4>${ic(THUMB.well)} Explorar o vale</h4><p>O vale ficou muito maior! A leste ficam o <b>Bosque das Fadas</b>, as <b>Ruínas Estelares</b>, o <b>Observatório</b> e o <b>Farol das Estrelas</b>; ao sul, os <b>Campos de Lavanda</b> e o <b>Pomar</b>. Toque nas <b>Pedras do Vento</b> 🪨 para despertá-las e depois viajar entre elas. As histórias do vale são contadas pelos moradores e pelos lugares que você visita.</p></div>
    <div class="hc"><h4>${ic(THUMB.slime)} Slimes e bichinhos</h4><p>Golpeie slimes com a espada (1). Seu bichinho luta junto: cada um tem um ataque, como bola de fogo, esporos, estrelas, arranhão, espinhos e latido.</p></div>
-   <div class="hc"><h4>${ic(THUMB.well)} Desejos</h4><p>No Poço da praça (ou <span class="key">G</span>), troque ⭐ por bichinhos e roupas. Equipe no Álbum (<span class="key">C</span>).</p></div>
+   <div class="hc"><h4>${ic(THUMB.well)} Desejos</h4><p>No Poço da praça (ou <span class="key">G</span>), troque ⭐ Desejos por bichinhos, amigas e peças do Ateliê. Há pity como no Genshin (★5 garantido no 80º desejo), banners de evento e o banner padrão; repetidos viram Pó Estelar para a Troca. Equipe no Álbum (<span class="key">C</span>).</p></div>
    <div class="hc"><h4>👑 Rei Slime</h4><p>No fim da trilha ao norte, na floresta, mora o Rei Slime. Ele pula em círculos vermelhos, chama ajudantes e, com raiva, cospe bolhas em roda. Vença para ganhar 180🪙, 100⭐, XP e uma estátua para a fazenda. Ele volta todo dia!</p></div>
    <div class="hc"><h4>🌾 Minha fazenda</h4><p>Dentro da cerca, aperte <span class="key">B</span>: are a grama para criar canteiros novos, desfaça canteiros e coloque enfeites (espantalho, postes, flores, cercas...). Compre enfeites na aba Fazenda da Lojinha.</p></div>
    <div class="hc"><h4>🧑‍🤝‍🧑 Moradores</h4><p>Seu Bento (píer), Pipo (praça), Mestra Íris (lagoinha), Duda e Prefeito Otto (Vila Girassol, a leste) e Lia (Praia do Sol, ao sul). Cada um faz um pedido por dia: entregue com <span class="key">E</span> e ganhe ⭐ e amizade. Com 3 ♥ eles te dão um presente!</p></div>
-   <div class="hc"><h4>👤 Visual</h4><p>Mude nome, cor da roupa, acessório e rastro em Menu → Personagem. Bichinhos ★5 têm cor, acessório e aura no Álbum.</p></div>
+   <div class="hc"><h4>👤 Visual</h4><p>Em Menu → Personagem, a base <b>Fofinha</b> troca penteado, roupa, cores, olhos, sobrancelhas, boca e bochechas peça por peça. Mais peças no Ateliê da Fifi. Bichinhos ★5 têm cor, acessório e aura no Álbum.</p></div>
+   <div class="hc"><h4>🍎 Saciedade</h4><p>A barra de maçã é a <b>saciedade</b>: ela desce com o tempo e, vazia, deixa você mais lenta. Aperte <span class="key">U</span> para comer o melhor lanche da mochila.</p></div>
+   <div class="hc"><h4>🔨 Bancada e reforma</h4><p>Na <b>Bancada de Trabalho</b> ao lado de casa você faz móveis, enfeites e lanches com madeira, pedra, minérios, flores e lã. Dentro de casa, a bancada também abre a <b>reforma</b>: a casa fica maior e ganha varanda, lanternas e jardim.</p></div>
+   <div class="hc"><h4>⛵ Barco e Kraken</h4><p>A partir do nível 4, embarque no <b>píer da praia</b>. Segure <span class="key">Espaço</span> para disparar estrelas (a mira puxa de leve para o alvo). Bem ao sul, no Mar Estrelado, mora o <b>Kraken</b>: desvie dos círculos e mire nos tentáculos. Uma vez por dia.</p></div>
+   <div class="hc"><h4>⚔️ Duelos</h4><p>No multiplayer, clique numa amiga para desafiar. Escolha a arma (espada, machado ou arco) em <b>Armas de duelo</b>, pela Forja. Melhor de 3, com prêmio uma vez por dia.</p></div>
+   <div class="hc"><h4>🌳 Natureza que volta</h4><p>Árvores cortadas viram toco, muda e árvore jovem, e voltam adultas no 3º dia. Pedras quebradas voltam depois de 2 dias.</p></div>
    <div class="hc"><h4>💾 Saves</h4><p>No menu (<span class="key">Esc</span>) há 3 espaços de save, além do salvamento automático a cada 30 s, ao dormir e ao entrar ou sair de casa.</p></div>
   </div>
   <p class="note">Modelos 3D: <b>KayKit</b> (Kay Lousberg: Adventurers, Medieval Hexagon, Furniture Bits) e <b>Quaternius</b>, CC0 — do GitHub. Música e efeitos: <b>Ninja Adventure</b> (Pixel-boy &amp; AAA) e <b>Kenney</b> (RPG, UI e Jingles), CC0. Motor: <b>three.js</b>.</p>`);
@@ -1202,7 +1207,7 @@ function buildHotbar_v9() {
 function setSlot_v9(i) { S.slot = (i + TOOLS.length) % TOOLS.length; sfx('menu'); buildHotbar(); updateHand(); }
 let lastHud = '';
 function hud() {
-  const hp = Math.max(0, P.hp), hs = [`<div class="bars"><div class="bl" title="Vida"><b><img src="${icon('heart', 32)}" width="20" height="20"></b><div class="bar hp"><i style="width:${(hp / maxHp()) * 100}%"></i><span>${Math.ceil(hp)} / ${maxHp()}</span></div></div><div class="bl" title="Fôlego (correr, esquivar, minerar e habilidades)"><b><img src="${icon('boots', 32)}" width="20" height="20"></b><div class="bar st"><i id="stbar" style="width:${(P.st / maxSt()) * 100}%"></i><span id="sttxt">${Math.round(P.st)} / ${maxSt()}</span></div></div><div class="bl" title="Fome (aperte U para comer)"><b><img src="${icon('apple', 32)}" width="20" height="20"></b><div class="bar fd"><i style="width:${Math.round(S.food ?? 100)}%"></i><span>${Math.round(S.food ?? 100)} / 100</span></div></div><div class="bl" title="Experiência"><b style="font-size:10px;font-weight:700;color:#8f63d8">XP</b><div class="bar xp"><i style="width:${(S.xp / xpNeed()) * 100}%"></i></div></div></div>`];
+  const hp = Math.max(0, P.hp), hs = [`<div class="bars"><div class="bl" title="Vida"><b><img src="${icon('heart', 32)}" width="20" height="20"></b><div class="bar hp"><i style="width:${(hp / maxHp()) * 100}%"></i><span>${Math.ceil(hp)} / ${maxHp()}</span></div></div><div class="bl" title="Fôlego (correr, esquivar, minerar e habilidades)"><b><img src="${icon('boots', 32)}" width="20" height="20"></b><div class="bar st"><i id="stbar" style="width:${(P.st / maxSt()) * 100}%"></i><span id="sttxt">${Math.round(P.st)} / ${maxSt()}</span></div></div><div class="bl" title="Saciedade (aperte U para comer)"><b><img src="${icon('apple', 32)}" width="20" height="20"></b><div class="bar fd"><i style="width:${Math.round(S.food ?? 100)}%"></i><span>${Math.round(S.food ?? 100)} / 100</span></div></div><div class="bl" title="Experiência"><b style="font-size:10px;font-weight:700;color:#8f63d8">XP</b><div class="bar xp"><i style="width:${(S.xp / xpNeed()) * 100}%"></i></div></div></div>`];
   const h = hourNow(), tic = h >= 19 || h < 6.5 ? '🌙' : h >= 17 ? '🌇' : '☀️';
   const key = hs.join('') + '|' + S.stars + '|' + fmtClock() + S.day + JSON.stringify(S.quests) + S.pet + (P.boost > 0) + mode + S.name + S.lv + S.xp + (THUMB.me || '').length + inFarm(Math.floor(P.x), Math.floor(P.z), 2);
   if (key === lastHud) return; lastHud = key;
@@ -1217,7 +1222,7 @@ function hintUI() {
   const box = $('hint'); if (titleOn || dlg || modalOpen()) { box.classList.remove('on'); return; }
   let html = '';
   if (P.fishing) { const ph = P.fishing.phase; html = ph === 'bite' ? '<span class="key">Espaço</span> <b>Agora! Puxe!</b>' : ph === 'mini' ? '<span class="key">Espaço</span> quando o ponteiro estiver na cor' : '<span class="key">Espaço</span> cancelar · espere o ❗'; cursorOK = false; }
-  else if (farmEd) html = farmEd.tool === 'arar' ? '<span class="hrow"><span class="key">Clique</span> arar a grama (20⭐)</span>' : farmEd.tool === 'grama' ? '<span class="hrow"><span class="key">Clique</span> desfazer canteiro</span>' : farmEd.sel ? `<span class="hrow"><span class="key">Clique</span> colocar ${FD[farmEd.sel].n}</span><span class="hrow"><span class="key">R</span> girar</span>` : '<span class="hrow"><span class="key">Clique</span> num enfeite para pegar</span><span class="hrow"><span class="key">X</span> guardar</span>';
+  else if (farmEd) html = farmEd.tool === 'arar' ? '<span class="hrow"><span class="key">Clique</span> arar a grama (20🪙)</span>' : farmEd.tool === 'grama' ? '<span class="hrow"><span class="key">Clique</span> desfazer canteiro</span>' : farmEd.sel ? `<span class="hrow"><span class="key">Clique</span> colocar ${FD[farmEd.sel].n}</span><span class="hrow"><span class="key">R</span> girar</span>` : '<span class="hrow"><span class="key">Clique</span> num enfeite para pegar</span><span class="hrow"><span class="key">X</span> guardar</span>';
   else if (decor) html = decor.sel ? `<span class="hrow"><span class="key">Clique</span> colocar ${FURN[decor.sel].n}</span><span class="hrow"><span class="key">R</span> girar</span>` : '<span class="hrow"><span class="key">Clique</span> num móvel para pegar</span><span class="hrow"><span class="key">X</span> guardar</span>';
   else { const sp = nearestSpecial(), sh = spaceHint(); cursorOK = sh.ok; if (sp) html += `<span class="hrow"><span class="key">E</span> ${sp.label}</span>`; if (mode === 'out' || !sp) html += `<span class="hrow ${sh.ok ? '' : 'dim'}"><span class="key">${mode === 'in' ? 'V' : 'Espaço'}</span> ${sh.t}</span>`; if (mode === 'out' && inFarm(Math.floor(P.x), Math.floor(P.z))) html += '<span class="hrow"><span class="key">B</span> Personalizar fazenda</span>'; }
   box.innerHTML = html; box.classList.add('on');
@@ -1237,7 +1242,7 @@ addEventListener('keydown', (e) => {
   if (k === 'KeyJ' && !e.repeat && !keys.Space) return tog(openDiary);
   if (k === 'KeyK' && !e.repeat) return tog(openSkills);
   if (k === 'Tab') { e.preventDefault(); $('hudBR').classList.toggle('open'); sfx('switch'); return; }
-  if (!e.repeat && (k === 'KeyR' || k === 'KeyF' || k === 'KeyT') && !modalOpen()) { useSkill(k === 'KeyR' ? 0 : k === 'KeyF' ? 1 : 2); return; }
+  if (!e.repeat && (k === 'KeyR' || k === 'KeyF' || k === 'KeyT') && !modalOpen() && !(k === 'KeyR' && (decor || farmEd))) { useSkill(k === 'KeyR' ? 0 : k === 'KeyF' ? 1 : 2); return; }
   if (k === 'KeyG') return tog(openWish); if (k === 'KeyC') return tog(openAlbum); if (k === 'KeyI' || k === 'Tab') return tog(openBag); if (k === 'KeyH') return tog(openHelp); if (k === 'KeyM') return tog(openMap);
   if (k === 'Equal' || k === 'NumpadAdd') camDist = clamp(camDist - 0.15, 0.55, 1.6); if (k === 'Minus' || k === 'NumpadSubtract') camDist = clamp(camDist + 0.15, 0.55, 1.6);
   if (modalOpen()) return;
@@ -1247,7 +1252,7 @@ addEventListener('keydown', (e) => {
   if (farmEd && (k === 'KeyX' || k === 'Delete')) { farmStore(); return; }
   if (decor && k === 'KeyR') { decor.r = (decor.r + 1) % 4; sfx('flip'); return; }
   if (decor && (k === 'KeyX' || k === 'Delete')) { decorStore(); return; }
-  if (k === 'Space') { useTool(); if (TOOLS[S.slot].id === 'espada' && mode !== 'in' && !farmEd && !P.fishing && !P.dead && !P.bike) { P.charging = true; P.chargeT = 0; P.chargeOk = false; } }
+  if (k === 'Space') { useTool(); if (TOOLS[S.slot].id === 'espada' && mode !== 'in' && !farmEd && !P.fishing && !P.dead && !P.bike && !P.boat) { P.charging = true; P.chargeT = 0; P.chargeOk = false; } }
   if (k === 'KeyE') interact();
   if (/^Digit[1-8]$/.test(k) && mode !== 'in' && mode !== 'shop') slotByKey(+k.slice(5));
   if (k === 'KeyZ') toggleBike();
@@ -1265,7 +1270,7 @@ canvas.addEventListener('pointerdown', (e) => {
   if (farmEd) { updateFarmGhost(); if (e.button === 2) farmStore(); else farmAction(); return; }
   mv.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(mv, camera); const hit = ray.intersectObject(pickPlane)[0];
   if (hit && !P.fishing) { const dx = hit.point.x - P.x, dz = hit.point.z - P.z; if (Math.hypot(dx, dz) > 0.2) { const a = Math.atan2(dx, dz), s8 = Math.round(a / (Math.PI / 4)) * (Math.PI / 4); P.fx = Math.sin(s8); P.fz = Math.cos(s8); P.ang = s8; } }
-  if (e.button === 2) interact(); else { useTool(); if (TOOLS[S.slot].id === 'espada' && mode !== 'in' && !farmEd && !P.dead && !P.bike) { P.charging = true; P.chargeT = 0; P.chargeOk = false; } }
+  if (e.button === 2) interact(); else { useTool(); if (TOOLS[S.slot].id === 'espada' && mode !== 'in' && !farmEd && !P.dead && !P.bike && !P.boat) { P.charging = true; P.chargeT = 0; P.chargeOk = false; } }
 });
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 addEventListener('wheel', (e) => { if (!modalOpen() && mode === 'out') setSlot(S.slot + (e.deltaY > 0 ? 1 : -1)); }, { passive: true });
@@ -1305,7 +1310,7 @@ function update(dt) {
     let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + stick.dx, iz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0) + stick.dy;
     if (CUT) { const cv = cutMove(); ix = cv[0]; iz = cv[1]; }
     const len = Math.hypot(ix, iz); if (len > 1) { ix /= len; iz /= len; }
-    P.moving = false; P.run = !!(keys.ShiftLeft || keys.ShiftRight);
+    P.moving = false; P.run = !P.boat && !!(keys.ShiftLeft || keys.ShiftRight);
     P.inv = Math.max(0, P.inv - dt); P.stT -= dt; if (P.stT <= 0 && !P.roll) P.st = Math.min(maxSt(), P.st + dt * 21 * (gear().boots ? 1.4 : 1) * hungerMul()); if (P.tired && P.st > maxSt() * 0.35) P.tired = false; { const sb = $('stbar'); if (sb) { sb.style.width = (P.st / maxSt()) * 100 + '%'; sb.classList.toggle('tired', !!P.tired); } const stt = $('sttxt'); if (stt) stt.textContent = `${Math.round(P.st)} / ${maxSt()}`; } if (P.st < maxSt() - 0.5) P.stShow = 1.2; else P.stShow = Math.max(0, (P.stShow || 0) - dt);
     if (P.buf > 0) { P.buf -= dt; if (P.useT <= 0) { P.buf = 0; useTool(); } }
     if (P.charging) { P.chargeT += dt; if (P.chargeT > 0.2 && rand() < 0.7) { const a = rand() * 6.28; emit(PG, { x: P.x + Math.cos(a) * 0.7, y: 0.3 + rand() * 0.6, z: P.z + Math.sin(a) * 0.7, vx: -Math.cos(a) * 1.2, vz: -Math.sin(a) * 1.2, vy: 0.3, g: 0, life: 0.45, max: 0.45, c: P.chargeT > 0.55 ? '#ffe18d' : '#ffffff' }); } if (P.chargeT > 0.55 && !P.chargeOk) { P.chargeOk = true; sfx('powerup2'); fxRing(P.x, 0.06, P.z, '#ffe18d', 1.1, 0.3); } }
@@ -1380,7 +1385,7 @@ function update(dt) {
     if (Math.floor(gtime * 2) !== Math.floor((gtime - dt) * 2)) hud();
   }
   // modelos
-  if (player) { player.obj.position.set(P.x, P.boat ? 0.14 + Math.sin(gtime * 2) * 0.05 : mode === 'out' && tAt(Math.floor(P.x), Math.floor(P.z)) === DK ? DECKY : 0, P.z); player.obj.rotation.y = angLerp(player.obj.rotation.y, P.ang, Math.min(1, dt * 14)); player.obj.visible = !(P.hurt > 0 && Math.floor(gtime * 16) % 2); player.update(paused ? 0 : dt, P.boat ? 'Sit_Floor_Idle' : P.bike ? 'Sit_Chair_Idle' : P.moving ? (P.run && !P.tired ? 'Running_A' : 'Walking_A') : 'Idle'); if (P.bike && bikeObj) { player.obj.position.y = 0.36; bikeObj.position.set(P.x, 0, P.z); bikeObj.rotation.y = player.obj.rotation.y; player.obj.position.x -= Math.sin(player.obj.rotation.y) * 0.12; player.obj.position.z -= Math.cos(player.obj.rotation.y) * 0.12; } }
+  if (player) { player.obj.position.set(P.x, P.boat ? 0.74 + Math.sin(gtime * 2) * 0.05 : mode === 'out' && tAt(Math.floor(P.x), Math.floor(P.z)) === DK ? DECKY : 0, P.z); player.obj.rotation.y = angLerp(player.obj.rotation.y, P.ang, Math.min(1, dt * 14)); player.obj.visible = !(P.hurt > 0 && Math.floor(gtime * 16) % 2); player.update(paused ? 0 : dt, P.boat ? 'Sit_Floor_Idle' : P.bike ? 'Sit_Chair_Idle' : P.moving ? (P.run && !P.tired ? 'Running_A' : 'Walking_A') : 'Idle'); if (P.bike && bikeObj) { player.obj.position.y = 0.36; bikeObj.position.set(P.x, 0, P.z); bikeObj.rotation.y = player.obj.rotation.y; player.obj.position.x -= Math.sin(player.obj.rotation.y) * 0.12; player.obj.position.z -= Math.cos(player.obj.rotation.y) * 0.12; } }
   if (rosaC) { rosaC.obj.visible = mode === 'out'; rosaC.obj.position.set(rosa.x, 0, rosa.z); rosaC.obj.rotation.y = angLerp(rosaC.obj.rotation.y, dlg ? Math.atan2(P.x - rosa.x, P.z - rosa.z) : rosa.ang, Math.min(1, dt * 8)); rosaC.update(paused ? 0 : dt, rosa.moving ? 'Walking_A' : 'Idle'); }
   for (const n of npcs) { const vis = mode === 'out' && Math.abs(n.x - P.x) < 34 && Math.abs(n.z - P.z) < 26; n.c.obj.visible = vis; const st = npcSt(n.d.id); n.emo.visible = vis && (st.d !== S.day || n.hidden || SQ.some((q) => q.giver === n.d.id && !S.sq[q.id] && q.need())) && !dlg; n.emo.position.set(n.x, 1.85 * (n.d.sc || 1) + 0.1 + Math.sin(gtime * 4 + n.x) * 0.05, n.z); if (!vis) continue; n.c.obj.position.set(n.x, 0, n.z); const talking = dlg && dlg.name === n.d.n; n.c.obj.rotation.y = angLerp(n.c.obj.rotation.y, talking ? Math.atan2(P.x - n.x, P.z - n.z) : n.ang, Math.min(1, dt * 8)); n.c.update(paused ? 0 : dt, n.moving ? (n.d.fast ? 'Running_A' : 'Walking_A') : n.evAnim || 'Idle'); }
   if (ticoC) { ticoC.obj.visible = mode === 'out'; ticoC.obj.rotation.y = angLerp(ticoC.obj.rotation.y, Math.hypot(P.x - ticoC.obj.position.x, P.z - ticoC.obj.position.z) < 5 ? Math.atan2(P.x - ticoC.obj.position.x, P.z - ticoC.obj.position.z) : 0, Math.min(1, dt * 5)); ticoC.update(paused ? 0 : dt, 'Idle'); }
@@ -1561,7 +1566,7 @@ function openCreator_old(fromTitle) {
   document.querySelectorAll('[data-cl]').forEach((el) => (el.onclick = () => set('tint', el.dataset.cl)));
   document.querySelectorAll('[data-ac]').forEach((el) => (el.onclick = () => set('acc', el.dataset.ac)));
   document.querySelectorAll('[data-tr]').forEach((el) => (el.onclick = () => set('trail', el.dataset.tr)));
-  $('crOk').onclick = () => { const nm = (crName || '').trim().slice(0, 14) || 'Estrela', lk = crLook; crLook = null; closeModal(); if (fromTitle) startFrom(null); S.name = nm; S.look = lk; S.gender = crGender; setOutfit(true); lastHud = ''; hud(); sfx('quest'); if (!fromTitle) toast(`✨ Visual salvo, ${escapeHtml(nm)}!`); else toast(`Bem-vinda ao vale, <b>${escapeHtml(nm)}</b>! Siga a <b>seta amarela</b>. <span class="key">M</span> mapa · <span class="key">Esc</span> menu`); };
+  $('crOk').onclick = () => { const nm = (crName || '').trim().slice(0, 14) || 'Estrela', lk = crLook; crLook = null; closeModal(); if (fromTitle) startFrom(null); S.name = nm; S.look = lk; S.gender = crGender; setOutfit(true); lastHud = ''; hud(); sfx('quest'); if (!fromTitle) toast(`✨ Visual salvo, ${escapeHtml(nm)}!`); else toast(`${gA('Bem-vinda', 'Bem-vindo')} ao vale, <b>${escapeHtml(nm)}</b>! Siga a <b>seta amarela</b>. <span class="key">M</span> mapa · <span class="key">Esc</span> menu`); };
 }
 
 /* =================== moradores =================== */
@@ -1669,7 +1674,7 @@ function closeFarm() { farmEd = null; $('decor').classList.remove('on'); $('deco
 function renderFarmPanel_old() {
   const own = Object.entries(S.fd).filter(([, n]) => n > 0);
   $('decor').innerHTML = `<div class="dhead"><b>🌾 Minha fazenda</b><span>Are a grama para criar canteiros novos. Escolha um enfeite e clique na grama. <span class="key">R</span> gira · clique num enfeite para pegar · <span class="key">X</span> guarda</span><button class="btn xb2" id="dclose">Pronto ✓</button></div>
-   <div class="drow"><div class="dslot ${farmEd.tool === 'arar' ? 'on' : ''}" data-tool="arar"><img src="${THUMB.t_arar}"><b>Arar terra</b><span>20⭐</span></div><div class="dslot ${farmEd.tool === 'grama' ? 'on' : ''}" data-tool="grama"><img src="${THUMB.t_grama}"><b>Voltar a grama</b><span>grátis</span></div>
+   <div class="drow"><div class="dslot ${farmEd.tool === 'arar' ? 'on' : ''}" data-tool="arar"><img src="${THUMB.t_arar}"><b>Arar terra</b><span>20🪙</span></div><div class="dslot ${farmEd.tool === 'grama' ? 'on' : ''}" data-tool="grama"><img src="${THUMB.t_grama}"><b>Voltar a grama</b><span>grátis</span></div>
    ${own.map(([id, n]) => `<div class="dslot ${farmEd.sel === id ? 'on' : ''}" data-fd="${id}"><img src="${THUMB['fd_' + id]}"><b>${FD[id].n}</b><span>×${n}</span></div>`).join('')}${own.length ? '' : '<p class="dnote">Compre enfeites na aba <b>Fazenda</b> da Lojinha do Tico.</p>'}</div>`;
   $('dclose').onclick = closeFarm;
   document.querySelectorAll('[data-tool]').forEach((el) => (el.onclick = () => { farmEd.tool = farmEd.tool === el.dataset.tool ? null : el.dataset.tool; farmEd.sel = null; sfx('menu'); renderFarmPanel(); }));
@@ -1758,7 +1763,7 @@ function showDeath(lost) {
   const tips = ['Aperte Q para dar uma esquiva: você fica invencível por um instante!', 'Quando um slime pisca vermelho e se encolhe, ele vai pular em você. Esquive!', 'Os slimes azuis gigantes fazem um círculo vermelho no chão antes de esmagar. Saia de dentro!', 'Segure Espaço para carregar um golpe giratório.', 'O terceiro golpe seguido (combo) causa muito mais dano.', 'Bolinhos da Lojinha do Tico recuperam vida.', 'Subir de nível aumenta sua vida máxima e seu dano.', 'Depois de pular, o slime fica tontinho: é a hora de atacar!'];
   const p = S.pet ? petById(S.pet) : null;
   $('death').innerHTML = `${floaters(10)}<div class="dcard panel"><div class="dz">💫</div><h2>Você desmaiou...</h2><p class="dsub">${p ? `<img src="${THUMB['p_' + p.id]}"> ${p.n} ficou do seu lado o tempo todo.` : 'Um passarinho foi voando chamar a Vovó Rosa.'}</p>
-   <div class="dstats"><div><b>-${lost}🪙</b><span>estrelinhas perdidas</span></div><div><b>Nv ${S.lv}</b><span>seu nível</span></div><div><b>Dia ${S.day}</b><span>no vale</span></div></div>
+   <div class="dstats"><div><b>-${lost}🪙</b><span>moedas perdidas</span></div><div><b>Nv ${S.lv}</b><span>seu nível</span></div><div><b>Dia ${S.day}</b><span>no vale</span></div></div>
    <div class="dtip">💡 ${pick(tips)}</div><div class="dbtns"><button class="btn green big" id="dWake">🏠 Acordar em casa</button><button class="btn big" id="dLoad">📂 Carregar save</button></div></div>`;
   $('death').classList.add('on'); sfx('voice');
   $('dWake').onclick = respawn; $('dLoad').onclick = () => { $('death').classList.remove('on'); openMenu('load'); };
@@ -1811,7 +1816,7 @@ function spawnBoss() {
   const g = new THREE.Group(); g.add(o); o.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(o); const cr = makeAcc('coroa'); cr.position.set(0, b.max.y - 0.04, 0); cr.scale.setScalar(0.9); g.add(cr);
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xb04cff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.35 })); glow.scale.set(1.6, 1.6, 1); glow.position.y = 0.35; g.add(glow);
   cave.group.add(g); boss = { isBoss: true, big: true, o: g, mats, x: BOSSPOS.x, z: BOSSPOS.z, y: 0, hp: 160, max: 160, sc: 3.2, state: 'idle', t: 0, cd: 2.2, air: 0, airMax: 0.9, vx: 0, vz: 0, tx: 0, tz: 0, flash: 0, kx: 0, kz: 0, dead: false, awake: false, c: 1 };
-  g.scale.setScalar(boss.sc); g.position.set(boss.x, 0, boss.z); $('bossbar').classList.remove('on');
+  g.scale.setScalar(boss.sc); g.position.set(boss.x, 0, boss.z); if (!KR.on && !RB.on) $('bossbar').classList.remove('on'); /* v21: virar o dia no meio do Kraken não some com a barra */
 }
 function bossHit(hx, hz, r, mult, col) { if (PVP.on || DUEL.on) pvpAtk(hx, hz, r, mult); if (RB.on) return rosaHit(hx, hz, r, mult, col); if (!boss || boss.dead || !boss.awake || mode !== 'cave') return false; const d = Math.hypot(boss.x - hx, boss.z - hz); if (d > r + 1.15) return false; const dx = boss.x - P.x, dz = boss.z - P.z, l = Math.hypot(dx, dz) || 1; hitSlime(boss, mult, dx / l, dz / l, col, 2); return true; }
 function bossDamage(b, dmg, opt, col) {
@@ -2061,7 +2066,7 @@ function openAtelie() {
 }
 function swatchThumb(c) { const k = 'sw' + c; if (ICONC[k]) return ICONC[k]; const cv = document.createElement('canvas'); cv.width = cv.height = 64; const x = cv.getContext('2d'); x.fillStyle = '#14141b'; x.beginPath(); x.arc(32, 32, 26, 0, 7); x.fill(); x.fillStyle = c || '#7a4a30'; x.beginPath(); x.arc(32, 32, 22, 0, 7); x.fill(); x.fillStyle = 'rgba(255,255,255,.5)'; x.beginPath(); x.arc(24, 24, 7, 0, 7); x.fill(); return (ICONC[k] = cv.toDataURL()); }
 /* =================== Forja da Duda (equipamentos) =================== */
-function oreTxt(ore) { return Object.entries(ore || {}).map(([k, n]) => `<span class="oreq ${(S.inv[k] || 0) >= n ? 'ok' : ''}"><img src="${THUMB['i_' + k]}">${S.inv[k] || 0}/${n}</span>`).join(''); }
+function oreTxt(ore) { return Object.entries(ore || {}).map(([k, n]) => `<span class="oreq ${(S.inv[k] || 0) >= n ? 'ok' : ''}" title="${(ITEMS[k] || {}).n || k}"><img src="${THUMB['i_' + k]}">${S.inv[k] || 0}/${n} ${(ITEMS[k] || {}).n || ''}</span>`).join(''); }
 const canPay = (price, ore) => S.coins >= price && Object.entries(ore || {}).every(([k, n]) => (S.inv[k] || 0) >= n);
 function pay(price, ore) { S.coins -= price; for (const [k, n] of Object.entries(ore || {})) S.inv[k] -= n; }
 function openForge() {
@@ -2204,7 +2209,7 @@ function openFarm() {
 function renderFarmPanel() {
   const own = Object.entries(S.fd).filter(([, n]) => n > 0), Z = ZONES[farmEd.zone];
   $('decor').innerHTML = `<div class="dhead"><b>${Z.e} ${Z.n}</b><span>${Z.soil ? 'Are a grama para criar canteiros novos. ' : ''}Escolha um enfeite e clique no chão da área. <span class="key">R</span> gira · clique num enfeite para pegar · <span class="key">X</span> guarda</span><button class="btn xb2" id="dclose">Pronto ✓</button></div>
-   <div class="drow">${Z.soil ? `<div class="dslot ${farmEd.tool === 'arar' ? 'on' : ''}" data-tool="arar"><img src="${icon('na_pick', 64)}"><b>Arar terra</b><span>20⭐</span></div><div class="dslot ${farmEd.tool === 'grama' ? 'on' : ''}" data-tool="grama"><img src="${icon('clover', 64)}"><b>Voltar a grama</b><span>grátis</span></div>` : ''}
+   <div class="drow">${Z.soil ? `<div class="dslot ${farmEd.tool === 'arar' ? 'on' : ''}" data-tool="arar"><img src="${icon('na_pick', 64)}"><b>Arar terra</b><span>20🪙</span></div><div class="dslot ${farmEd.tool === 'grama' ? 'on' : ''}" data-tool="grama"><img src="${icon('clover', 64)}"><b>Voltar a grama</b><span>grátis</span></div>` : ''}
    ${own.map(([id, n]) => `<div class="dslot ${farmEd.sel === id ? 'on' : ''}" data-fd="${id}"><img src="${THUMB['fd_' + id]}"><b>${FD[id].n}</b><span>×${n}</span></div>`).join('')}${own.length ? '' : '<p class="dnote">Compre enfeites na aba <b>Fazenda</b> da Lojinha do Tico.</p>'}</div>`;
   $('dclose').onclick = closeFarm;
   document.querySelectorAll('[data-tool]').forEach((el) => (el.onclick = () => { farmEd.tool = farmEd.tool === el.dataset.tool ? null : el.dataset.tool; farmEd.sel = null; sfx('menu'); renderFarmPanel(); }));
@@ -2296,7 +2301,7 @@ const LORE = [
   { t: 'A Coroa Estelar', who: 'Observatório', txt: 'A maior de todas as estrelas caiu no alto da montanha e virou uma coroa de cristal. Diziam que quem a usasse poderia conversar com o próprio céu. Desde que ela sumiu, falta uma estrela na constelação da Coroa.' },
   { t: 'O slime guloso', who: 'Ruínas Estelares', txt: 'Um slime pequenininho e muito faminto encontrou a coroa brilhando entre as pedras e a engoliu inteirinha. Ele cresceu, cresceu... e virou o Rei Slime Gelatinoso. Os antigos ergueram este altar para pedir que a coroa um dia voltasse.' },
   { t: 'A Caverna Cintilante', who: 'Mestra Íris', txt: 'Com medo de perder a coroa, o Rei se escondeu nas profundezas da montanha. Os cristais da caverna brilham com a luz que escapa da barriga dele.' },
-  { t: 'A Torre de Íris', who: 'Mestra Íris', txt: 'Ergui minha torre perto da lagoinha para estudar os bichinhos e a luz dos cristais. Foi lá que descobri: só uma chave feita de cristal abre o salão do Rei.' },
+  { t: 'A Torre da Íris', who: 'Mestra Íris', txt: 'Ergui minha torre perto da lagoinha para estudar os bichinhos e a luz dos cristais. Foi lá que descobri: só uma chave feita de cristal abre o salão do Rei.' },
   { t: 'Os girassóis curiosos', who: 'Prefeito Otto', txt: 'Os girassóis da vila sempre se viram para o Poço, e não para o sol. Eu juro que é porque eles também querem fazer um pedido!' },
   { t: 'Uma carta antiga', who: 'Vovó Rosa', txt: 'Querida neta, se você está lendo isto, o vale precisa de você. Cuide do Poço, faça amigos e devolva a Coroa ao céu. Com todo o amor do mundo, Vó.' },
   { t: 'O Círculo das Fadas', who: 'Bosque das Fadas', txt: 'Quando as estrelas caíram, algumas eram tão pequenas que viraram fadas. Elas dançam em círculo nas noites de lua e curam quem entra no anel com o coração leve.' },
@@ -2345,7 +2350,7 @@ function questText(q) { const st = S.sq[q.id]; if (!st || st.done) return ''; co
 function grantReward(q) {
   if (q.onDone) q.onDone(); const r = q.reward; if (r.stars) { S.coins += Math.round(r.stars * 0.6); S.stars += Math.round(r.stars * 0.3); } if (r.xp) gainXp(r.xp); if (r.flag) { S.flags = S.flags || {}; S.flags[r.flag] = 1; } if (r.items) for (const [k, n] of Object.entries(r.items)) S.inv[k] = (S.inv[k] || 0) + n; if (r.fd) for (const [k, n] of Object.entries(r.fd)) S.fd[k] = (S.fd[k] || 0) + n;
   if (r.ward) giveWard(r.ward[0], r.ward[1]); if (r.up) S.up[r.up] = 1; if (r.farm && (S.farmLv || 0) < 2) expandFarm(); if (r.sword && (gear().sword || 0) < SWORDS.length - 1) { gear().sword++; applyIcons(); buildHotbar(); updateHand(); }
-  sfx('jingle_5'); confetti(innerWidth / 2, innerHeight * 0.4, 30, true); toast(`📜 Missão concluída: <b>${q.n}</b>! ${r.stars ? `+${r.stars}⭐` : ''}${r.flag === 'ckey' ? ' · 🔑 Chave Cintilante' : ''}`); hud(); goalUI();
+  sfx('jingle_5'); confetti(innerWidth / 2, innerHeight * 0.4, 30, true); toast(`📜 Missão concluída: <b>${q.n}</b>! ${r.stars ? `+${Math.round(r.stars * 0.6)}🪙 +${Math.round(r.stars * 0.3)}⭐` : ''}${r.flag === 'ckey' ? ' · 🔑 Chave Cintilante' : ''}`); hud(); goalUI();
 }
 function advanceQuest(q, st) { st.s++; if (st.s >= q.steps.length) { st.done = 1; grantReward(q); return true; } goalUI(); return false; }
 function questTalk(who, n) {
@@ -2376,7 +2381,7 @@ function loreUpdate_old(dt) { if (mode !== 'out') return; for (let k = lorePick.
 function showLore(i) { const L = LORE[i]; if (!L) return; openModal(`<div class="parch"><div class="parch-h">📜 Página ${i + 1} de ${LORE.length}</div><h2>${L.t}</h2><p>${L.txt}</p><div class="parch-f">— contada por ${L.who || 'alguém do vale'} ✿</div></div>`, 'parchp'); }
 let storyPage = 0;
 function showStory(first) { storyPage = 0; const draw = () => { const s = STORY[storyPage]; openModal(`${floaters(12)}<div class="story"><div class="sart">${s.e.split('').length ? [...s.e].map((c, i) => `<span style="animation-delay:${i * 0.15}s">${c}</span>`).join('') : ''}</div><h2>${s.t}</h2><p>${s.p}</p><div class="sdots">${STORY.map((_, i) => `<i class="${i === storyPage ? 'on' : ''}"></i>`).join('')}</div><div class="sbtns">${storyPage ? '<button class="btn sm" id="sPrev">◀</button>' : ''}<button class="btn candy pink" id="sNext">${storyPage < STORY.length - 1 ? 'Continuar ▶' : first ? '🌸 Começar!' : 'Fechar ✓'}</button></div></div>`, 'storyp wishp');
-    $('sNext').onclick = () => { if (storyPage < STORY.length - 1) { storyPage++; sfx('bookFlip2'); draw(); } else { closeModal(); if (first) toast(`Bem-vinda ao vale, <b>${escapeHtml(S.name)}</b>! Siga a <b>seta amarela</b>. <span class="key">J</span> abre o diário.`); } };
+    $('sNext').onclick = () => { if (storyPage < STORY.length - 1) { storyPage++; sfx('bookFlip2'); draw(); } else { closeModal(); if (first) toast(`${gA('Bem-vinda', 'Bem-vindo')} ao vale, <b>${escapeHtml(S.name)}</b>! Siga a <b>seta amarela</b>. <span class="key">J</span> abre o diário.`); } };
     if ($('sPrev')) $('sPrev').onclick = () => { storyPage--; draw(); }; }; draw(); }
 let diaryTab = 'missoes';
 function openDiary() {
@@ -2386,7 +2391,7 @@ function openDiary() {
     body = `${act.length ? act.map((q) => `<div class="qcard"><b>${q.n}</b><span>${questText(q)}</span><small>de ${giverN(q.giver)}</small></div>`).join('') : '<p class="dnote">Nenhuma missão ativa. Converse com os moradores para descobrir novas!</p>'}
       ${avail.length ? `<h4>✨ Moradores com missões para você</h4><div class="chips">${avail.map((q) => `<span class="tag">${giverN(q.giver)}: ${q.n}</span>`).join('')}</div>` : ''}${done.length ? `<h4>✓ Concluídas</h4>${done.map((q) => `<div class="qcard done"><b>${q.n}</b></div>`).join('')}` : ''}`; }
   if (diaryTab === 'historia') body = `<button class="btn candy pink sm" id="dStory">📖 Reler a história do vale</button><div class="lgrid">${LORE.map((L, i) => (S.lore && S.lore[i] ? `<div class="lcard" data-lore="${i}"><b>${i + 1}. ${L.t}</b><span>${L.txt.slice(0, 70)}…</span></div>` : `<div class="lcard lock"><b>${i + 1}. ???</b><span>Página perdida em algum canto do vale.</span></div>`)).join('')}</div>`;
-  if (diaryTab === 'amigos') body = `<div class="fgrid">${[['rosa', 'Vovó Rosa', THUMB.rosa], ...NPCDEF.map((d) => [d.id, d.n, THUMB['npc_' + d.id]])].map(([id, nm, im]) => { const h = id === 'rosa' ? Math.min(10, Object.keys(S.sq || {}).length) : ((S.npc || {})[id] || {}).h || 0; return `<div class="fcard2"><img src="${im}"><b>${nm}</b><span>${'♥'.repeat(Math.min(10, h))}${'♡'.repeat(Math.max(0, 5 - h))}</span></div>`; }).join('')}</div>`;
+  if (diaryTab === 'amigos') body = `<div class="fgrid">${[['rosa', 'Vovó Rosa', THUMB.rosa], ...NPCDEF.map((d) => [d.id, d.n, THUMB['npc_' + d.id]])].map(([id, nm, im]) => { const h = id === 'rosa' ? Math.min(10, Object.keys(S.sq || {}).length) : ((S.npc || {})[id] || {}).h || 0; return `<div class="fcard2"><img src="${im}"><b>${nm}</b><span>${'♥'.repeat(Math.min(10, h))}${'♡'.repeat(Math.max(0, 10 - h))}</span></div>`; }).join('')}</div>`;
   openModal(`<h2>📔 Diário de ${escapeHtml(S.name)}</h2><div class="wtabs">${Object.entries(tabs).map(([k, n]) => `<button class="btn ctab ${diaryTab === k ? 'on' : ''}" data-dt="${k}">${n}</button>`).join('')}</div><div class="diary">${body}</div>`, 'wide wishp');
   document.querySelectorAll('[data-dt]').forEach((el) => (el.onclick = () => { diaryTab = el.dataset.dt; sfx('bookFlip2'); openDiary(); }));
   document.querySelectorAll('[data-lore]').forEach((el) => (el.onclick = () => showLore(+el.dataset.lore))); if ($('dStory')) $('dStory').onclick = () => showStory(false);
@@ -2578,8 +2583,8 @@ let CREDITS_HTML = `<h3>Estrelume</h3><p>Um jogo aconchegante feito com carinho 
 <li>"Castles in the Sky", "Simplicity", "Reverie", "Firefly", "The Long Way Home" — <b>Scott Buckley</b> (scottbuckley.com.au), CC BY 4.0</li>
 <li>"Enchanted Valley", "Plucky Daisy", "Thatched Villagers", "Fiddles McGinty", "Skye Cuillin", "Ghost Story", "Heroic Age" — <b>Kevin MacLeod</b> (incompetech.com), CC BY 4.0</li>
 <li>"Pond" — <b>Rafael Krux</b> (FreePD), CC0</li><li>"Fire Place", "Dangerous Voyage (Music Box)" — <b>HoliznaCC0</b>, CC0</li></ul>
-<h3>🔊 Sons</h3><ul><li><b>Kenney</b> (kenney.nl), CC0</li></ul>
-<h3>🧸 Modelos 3D</h3><ul><li><b>KayKit</b> — Adventurers, Medieval Hexagon, Furniture, Dungeon (Kay Lousberg), CC0</li><li><b>Quaternius</b> — Ultimate Nature, Stylized Trees, Farm Animals, Fantasy Weapons, CC0</li><li>Slimes, morcegos, cogumelos, abelhas, fantasmas, farol, observatório e ruínas: feitos para este jogo</li><li>Amigas e amigos do Poço: <b>KayKit</b> Mystery Monthly e Adventurers 2.0, com KayKit Character Animations (Kay Lousberg), CC0</li></ul><h3>✨ Efeitos visuais</h3><ul><li><b>Kenney</b> Particle Pack e Smoke Particles, CC0</li><li>Superpowers Asset Packs — RPG Battle System fx (Sparklin Labs), CC0</li></ul>
+<h3>🔊 Sons</h3><ul><li><b>Kenney</b> (kenney.nl), CC0</li><li>OpenGameArt (qubodup, artisticdude, StarNinjas, Technopeasant, fvcalderan, MouseBYTE, congusbongus, Vinrax, Kresiek, Wolfgang_, SketchMan3, JaggedStone, Ylmir, cogitollc), CC0</li><li><b>Joseph Sardin</b> (BigSoundBank): galinhas, patos e murmúrio da vila, CC0</li></ul>
+<h3>🧸 Modelos 3D</h3><ul><li><b>KayKit</b> — Adventurers, Medieval Hexagon, Furniture, Dungeon, Mixed Bag (Kay Lousberg), CC0</li><li><b>Kenney</b> — Mini Characters (a base fofinha), Fantasy Town, Nature, Watercraft, Mini Market, Survival, CC0</li><li><b>Quaternius</b> — Ultimate Nature, Stylized Trees, Farm Animals, Fantasy Weapons, CC0</li><li>Slimes, morcegos, cogumelos, abelhas, fantasmas, farol, observatório e ruínas: feitos para este jogo</li><li>Amigas e amigos do Poço: <b>KayKit</b> Mystery Monthly e Adventurers 2.0, com KayKit Character Animations (Kay Lousberg), CC0</li></ul><h3>✨ Efeitos visuais</h3><ul><li><b>Kenney</b> Particle Pack e Smoke Particles, CC0</li><li>Superpowers Asset Packs — RPG Battle System fx (Sparklin Labs), CC0</li></ul>
 <h3>🎨 Ícones em pixel art</h3><ul><li><b>DawnLike 16x16</b> — DragonDePlatino, paleta de <b>DawnBringer</b>, CC BY 4.0 (opengameart.org/content/dawnlike-16x16-universal-rogue-like-tileset-v181)</li><li><b>Ninja Adventure</b> (Pixel-Boy &amp; AAA), CC0</li><li>Alguns ícones (estrela, regador, bicicleta, casa, concha, gosma, tronco) desenhados para este jogo no mesmo estilo</li><li><b>Kenney</b> UI Pack, CC0</li></ul>
 <h3>⚙️ Tecnologia</h3><ul><li>three.js (MIT)</li></ul>`;
 /* =================== v8: placas, marcos visitáveis, viagem e lore contada =================== */
@@ -2829,7 +2834,7 @@ function cutCamera(dt) {
   if (t > 16.5) endIntro();
 }
 function endIntro() { if (!CUT) return; CUT = null; const el = $('cut'); if (el) el.classList.remove('on', 'showt'); document.body.classList.remove('incut'); P.z = Math.min(P.z, 39); camera.position.set(P.x, 9.5, P.z + 8.6); camLook.set(P.x, 0.6, P.z); sfx('quest');
-  setTimeout(() => { try { if (typeof talkRosa === 'function' && rosa && Math.hypot(rosa.x - P.x, rosa.z - P.z) < 12) talkRosa(); else toast(`Bem-vinda ao vale, <b>${escapeHtml(S.name)}</b>! Siga a <b>seta amarela</b>.`); } catch (e) {} }, 500); }
+  setTimeout(() => { try { if (typeof talkRosa === 'function' && rosa && Math.hypot(rosa.x - P.x, rosa.z - P.z) < 12) talkRosa(); else toast(`${gA('Bem-vinda', 'Bem-vindo')} ao vale, <b>${escapeHtml(S.name)}</b>! Siga a <b>seta amarela</b>.`); } catch (e) {} }, 500); }
 /* ---------- decoração das vilas: bandeirolas, floreiras, bancos, varais de luz ---------- */
 function decorateVillages() {
   const flagCols = ['#ff8fbd', '#ffe18d', '#9fe8ff', '#c9a2ff', '#b6f06a'];
@@ -2910,7 +2915,7 @@ function openBag() {
   const cells = [...ent.map(([k, c]) => ({ k, c, img: THUMB['i_' + k], n: ITEMS[k].n, d: `${ITEMS[k].price}🪙 cada` })), ...sn.map(([k, c]) => ({ k, c, img: THUMB['s_' + k], n: SNACKS[k].n, d: SNACKS[k].desc, use: true }))];
   const N = Math.max(30, Math.ceil(cells.length / 6) * 6);
   openModal(`<h2>${icon('bag') ? `<img class="ei" src="${icon('bag', 32)}">` : ''} Mochila</h2><div class="bagwrap"><div class="ggrid">${Array.from({ length: N }, (_, i) => { const c = cells[i]; return c ? `<div class="gs ${c.use ? 'use' : ''}" data-i="${i}" title="${c.n}"><img src="${c.img}"><b>${c.c}</b></div>` : '<div class="gs empty"></div>'; }).join('')}</div>
-  <div class="bagside" id="bagside"><p class="note">Toque num item para ver os detalhes.</p><p class="note">Valor de venda total: <b>${Math.round(tot * PERK.sell())}⭐</b></p></div></div>`, 'wide bagp');
+  <div class="bagside" id="bagside"><p class="note">Toque num item para ver os detalhes.</p><p class="note">Valor de venda total: <b>${Math.round(tot * PERK.sell())}🪙</b></p></div></div>`, 'wide bagp');
   document.querySelectorAll('.gs[data-i]').forEach((el) => (el.onclick = () => { const c = cells[+el.dataset.i]; document.querySelectorAll('.gs.sel').forEach((q) => q.classList.remove('sel')); el.classList.add('sel'); sfx('menu');
     $('bagside').innerHTML = `<img class="bigi" src="${c.img}"><h3>${c.n}</h3><p>${c.d}</p><p class="note">Você tem <b>${c.c}</b>.</p>${c.use ? `<button class="btn candy pink" id="bagUse">Usar</button>` : ''}${!c.use && FOOD[c.k] ? `<button class="btn candy gold" id="bagEat">Comer (+${FOOD[c.k]} saciedade)</button>` : ''}`; if ($('bagUse')) $('bagUse').onclick = () => { S.food = Math.min(100, (S.food ?? 100) + (c.k === 'bolinho' ? 40 : 15)); useSnack(c.k); }; if ($('bagEat')) $('bagEat').onclick = () => { eatItem(c.k); openBag(); }; }));
 }
@@ -3263,7 +3268,7 @@ function fogFirst() { S.flags = S.flags || {}; if (S.flags.nevoa) return; S.flag
 
 /* ---------- mapa novo: papel com borda irregular, névoa, rótulos sem sobreposição ---------- */
 function mapPOIs() {
-  return [['house', H1.x + 2, H1.y + 1.5, 'Sua casa'], ['house2', H2.x + 2, H2.y + 1.5, 'Casa da Rosa'], ['wish', SHRINE.x + 1, SHRINE.y + 1, 'Poço dos Desejos'], ['coin', BOX.x + 1, BOX.y + 1, 'Barraca'], ['bag', SHOP.x + 1.5, SHOP.y + 1.5, 'Lojinha do Tico'], ['scroll', BOARD.x + 0.5, BOARD.y + 0.5, 'Quadro de pedidos'], ['rod', dockStart + 2.5, 44.5, 'Píer'], ['wheat', 33.5, 41, 'Sua fazenda'], ['flower2', 98.5, 33.5, 'Vila Girassol'], ['anvil', SMITH.x + 1.5, SMITH.y + 1.5, 'Forja da Duda'], ['shell', 50, BEACHY + 1.5, 'Praia do Sol'], ['pick', MINE.x + 2, MINE.y + 1.5, 'Caverna'], ['wand', TOWER.x + 1.5, TOWER.y + 1.5, 'Torre de Íris'], ['house', HUT.x + 1.5, HUT.y + 1, 'Cabana da Lia'], ['dress', ATELIE.x + 1.5, ATELIE.y + 1.5, 'Ateliê da Fifi'], ['sheep', 15, 43, 'Pasto'], ['flower', LM.fairy.x, LM.fairy.y, 'Bosque das Fadas'], ['gem', LM.ruin.x, LM.ruin.y, 'Ruínas Estelares'], ['moon', LM.obs.x + 2, LM.obs.y + 2, 'Observatório'], ['honey', LM.hive.x + 1, LM.hive.y + 5, 'Colmeias']];
+  return [['house', H1.x + 2, H1.y + 1.5, 'Sua casa'], ['house2', H2.x + 2, H2.y + 1.5, 'Casa da Rosa'], ['wish', SHRINE.x + 1, SHRINE.y + 1, 'Poço dos Desejos'], ['coin', BOX.x + 1, BOX.y + 1, 'Barraca'], ['bag', SHOP.x + 1.5, SHOP.y + 1.5, 'Lojinha do Tico'], ['scroll', BOARD.x + 0.5, BOARD.y + 0.5, 'Quadro de tarefas'], ['rod', dockStart + 2.5, 44.5, 'Píer'], ['wheat', 33.5, 41, 'Minha Fazenda'], ['flower2', 98.5, 33.5, 'Vila Girassol'], ['anvil', SMITH.x + 1.5, SMITH.y + 1.5, 'Forja da Duda'], ['shell', 50, BEACHY + 1.5, 'Praia do Sol'], ['pick', MINE.x + 2, MINE.y + 1.5, 'Caverna'], ['wand', TOWER.x + 1.5, TOWER.y + 1.5, 'Torre da Íris'], ['house', HUT.x + 1.5, HUT.y + 1, 'Cabana da Lia'], ['dress', ATELIE.x + 1.5, ATELIE.y + 1.5, 'Ateliê da Fifi'], ['sheep', 15, 43, 'Pasto'], ['flower', LM.fairy.x, LM.fairy.y, 'Bosque das Fadas'], ['gem', LM.ruin.x, LM.ruin.y, 'Ruínas Estelares'], ['moon', LM.obs.x + 2, LM.obs.y + 2, 'Observatório'], ['honey', LM.hive.x + 1, LM.hive.y + 5, 'Colmeias']];
 }
 function mapPaperPath(cw, ch) { const p = new Path2D(), R3 = rng(5151), pts = [], m = 14, N = 90; for (let i = 0; i < N; i++) { const t = i / N, side = Math.floor(t * 4), f = t * 4 - side, j = (R3() - 0.5) * 12 + Math.sin(i * 1.7) * 3; let x, y; if (side === 0) { x = m + f * (cw - 2 * m); y = m + j; } else if (side === 1) { x = cw - m + j; y = m + f * (ch - 2 * m); } else if (side === 2) { x = cw - m - f * (cw - 2 * m); y = ch - m + j; } else { x = m + j; y = ch - m - f * (ch - 2 * m); } pts.push([x, y]); } p.moveTo(...pts[0]); for (let i = 1; i <= N; i++) { const a = pts[i % N], b = pts[(i + 1) % N]; p.quadraticCurveTo(a[0], a[1], (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); } p.closePath(); return p; }
 function drawMap12(c) {
@@ -3325,7 +3330,7 @@ let TSEL = 0;
 function renderTitle() {
   const auto = slotInfo('ve3d-auto'), any = SLOTS.some((s) => slotInfo(s.k));
   const items = [];
-  if (auto) items.push(['cont', 'star', 'Continuar', `Dia ${auto.day} · ${auto.stars} estrelinhas · ${auto.pets} bichinho(s)`]);
+  if (auto) items.push(['cont', 'star', 'Continuar', `Dia ${auto.day} · ${auto.coins ?? auto.stars}🪙 · ${auto.stars}⭐ · ${auto.pets} bichinho(s)`]);
   items.push(['new', 'sparkles', auto ? 'Novo jogo' : 'Começar', confirmNew ? 'Toque de novo para confirmar: o save automático será substituído' : auto ? 'Começar uma história nova' : 'Crie sua personagem e chegue ao vale']);
   if (any) items.push(['load', 'book', 'Carregar', 'Escolher um save']);
   items.push(['set', 'wand', 'Opções', 'Som, gráficos e filtro']);
@@ -3433,7 +3438,7 @@ function auditPlacement() {
 /* ---------- game feel: interface animada, transição em íris, tremor de tela ---------- */
 let lastStars = null, uiShk = 0;
 function feelUpdate(dt) {
-  const st = S.stars; if (lastStars !== null && st !== lastStars) { const m = document.querySelector('.money'); if (m) { m.classList.remove('bump', 'bumpd'); void m.offsetWidth; m.classList.add(st > lastStars ? 'bump' : 'bumpd'); } } lastStars = st;
+  const st = S.stars, co = S.coins; if (lastStars !== null && st !== lastStars) moneyBump('.money.wishes', st > lastStars); if (lastCoins !== null && co !== lastCoins) moneyBump('.money.coins', co > lastCoins); lastStars = st; lastCoins = co;
   if (shake > 0.28 && uiShk <= 0) { const u = $('ui'); u.classList.remove('shk'); void u.offsetWidth; u.classList.add('shk'); uiShk = 0.35; } uiShk -= dt;
 }
 function feelInit() {
@@ -3486,7 +3491,7 @@ function nevUpdate(dt) {
     if (rand() < dt * 0.7) floatText(FIRE.x + (rand() - 0.5) * 2.5, 2, FIRE.z - 1, '♪', pick(['#ffe18d', '#ffb3c8', '#b8e8ff']));
     const d = Math.hypot(P.x - FIRE.x, P.z - FIRE.z); if (d < 3.2 && !P.dead) { P.hp = Math.min(maxHp(), P.hp + dt * 3); P.st = Math.min(maxSt(), P.st + dt * 10); } }
   // ginástica: ficar perto dá fôlego e carinho dos vizinhos
-  if (NEV.cur === 'ginastica' && mode === 'out' && Math.hypot(P.x - 42, P.z - 34.3) < 4.5 && (S.nev || {}).gin !== S.day) { NEV.gin += dt; if (!P.moving && player && rand() < dt * 0.8) anim(pick(['Cheer', 'Jump_Full_Short', 'Spellcast_Raise']), 1); if (NEV.gin > 9) { S.nev = S.nev || {}; S.nev.gin = S.day; P.st = maxSt(); P.boost = Math.max(P.boost || 0, 60); S.coins += 20; for (const n of npcs) { const st = npcSt(n.d.id); st.p = (st.p || 0) + 1; if (st.p >= 3) { st.p = 0; st.h = Math.min(10, (st.h || 0) + 1); } } sfx('quest'); confetti(innerWidth / 2, innerHeight / 2, 24, true); toast('Ginástica concluída! <b>+30</b> estrelinhas, fôlego cheio e os vizinhos gostaram de você.'); hud(); } }
+  if (NEV.cur === 'ginastica' && mode === 'out' && Math.hypot(P.x - 42, P.z - 34.3) < 4.5 && (S.nev || {}).gin !== S.day) { NEV.gin += dt; if (!P.moving && player && rand() < dt * 0.8) anim(pick(['Cheer', 'Jump_Full_Short', 'Spellcast_Raise']), 1); if (NEV.gin > 9) { S.nev = S.nev || {}; S.nev.gin = S.day; P.st = maxSt(); P.boost = Math.max(P.boost || 0, 60); S.coins += 20; for (const n of npcs) { const st = npcSt(n.d.id); st.p = (st.p || 0) + 1; if (st.p >= 3) { st.p = 0; st.h = Math.min(10, (st.h || 0) + 1); } } sfx('quest'); confetti(innerWidth / 2, innerHeight / 2, 24, true); toast('Ginástica concluída! <b>+20🪙</b>, fôlego cheio e os vizinhos gostaram de você.'); hud(); } }
   // papo entre pares
   if (NEV.cur === 'papo') { NEV.chatT -= dt; if (NEV.chatT <= 0) { NEV.chatT = 3.2; for (const p of NEV.pairs) { if (!p.a || !p.b || p.a.moving || p.b.moving || Math.hypot(p.a.x - p.b.x, p.a.z - p.b.z) > 1.8) continue; const ln = NCHAT[(p.k + Math.floor(p.i / 2)) % NCHAT.length]; bubble(p.i % 2 ? p.b : p.a, ln[p.i % 2], 3); p.i++; } } }
   // aniversário: balões seguem o aniversariante
@@ -3496,11 +3501,11 @@ function nevUpdate(dt) {
   // dois vizinhos se encontrando se cumprimentam
   for (let i = 0; i < npcs.length; i++) for (let j = i + 1; j < npcs.length; j++) { const a = npcs[i], b = npcs[j]; if (a.hidden || b.hidden || Math.hypot(a.x - b.x, a.z - b.z) > 1.6) continue; const k = a.d.id + b.d.id; if ((NEV.greet[k] || -99) > gtime - 60 || NEV.cur === 'papo' || NEV.cur === 'ginastica') continue; NEV.greet[k] = gtime; bubble(a, `Oi, ${b.d.n.split(' ').pop()}!`, 2.4); setTimeout(() => bubble(b, pick(['Oiê!', 'Tudo bem?', 'Olá, vizinho!', 'Que bom te ver!']), 2.4), 900); }
 }
-function nevLetter() { const pool = npcs.filter((n) => (npcSt(n.d.id).h || 0) >= 1); if (!pool.length || rand() > 0.5) return; const n = pick(pool), msgs = ['Obrigado por ser uma vizinha tão querida!', 'Deixei umas estrelinhas pra você comprar algo bonito.', 'Passa lá em casa qualquer dia!', 'Vi você correndo pelo vale e fiquei feliz.']; S.stars += 10; setTimeout(() => { toast(`<img class="ti" src="${icon('letter', 24)}"> Carta de <b>${n.d.n}</b>: “${pick(msgs)}” <b>+10⭐</b> desejos`); sfx('pop'); hud(); }, 2500); }
+function nevLetter() { const pool = npcs.filter((n) => (npcSt(n.d.id).h || 0) >= 1); if (!pool.length || rand() > 0.5) return; const n = pick(pool), msgs = [gA('Obrigado por ser uma vizinha tão querida!', 'Obrigado por ser um vizinho tão querido!'), 'Deixei uns Desejos pra você usar no Poço.', 'Passa lá em casa qualquer dia!', 'Vi você correndo pelo vale e fiquei feliz.']; S.stars += 10; setTimeout(() => { toast(`<img class="ti" src="${icon('letter', 24)}"> Carta de <b>${n.d.n}</b>: “${pick(msgs)}” <b>+10⭐</b> desejos`); sfx('pop'); hud(); }, 2500); }
 function talkNpc(n) {
   if (n.hidden) return findPipo(n);
   if (NEV.bday === n && (S.nev || {}).bd !== S.day) { S.nev = S.nev || {}; S.nev.bd = S.day; const st = npcSt(n.d.id); st.h = Math.min(10, (st.h || 0) + 1); sayWho = n.c;
-    say(n.d.n, THUMB['npc_' + n.d.id], ['Você lembrou do meu aniversário?!', 'Ninguém tinha vindo me dar parabéns ainda...', 'Toma, um presentinho pra você também!'], () => { S.coins += 40; S.stars += 20; confetti(innerWidth / 2, innerHeight / 2, 40, true); sfx('jingle_a'); toast(`Você deu parabéns para <b>${n.d.n}</b>! +1 coração e <b>+80</b> estrelinhas.`); hud(); }); return; }
+    say(n.d.n, THUMB['npc_' + n.d.id], ['Você lembrou do meu aniversário?!', 'Ninguém tinha vindo me dar parabéns ainda...', 'Toma, um presentinho pra você também!'], () => { S.coins += 40; S.stars += 20; confetti(innerWidth / 2, innerHeight / 2, 40, true); sfx('jingle_a'); toast(`Você deu parabéns para <b>${n.d.n}</b>! +1 coração e <b>+40🪙 +20⭐</b>.`); hud(); }); return; }
   npcMenu(n);
 }
 function drawBubbles() {
@@ -3669,7 +3674,7 @@ function doorList() {
   if (doorList.c) return doorList.c; const L = []; let fi = 0;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const o = obj[I(x, y)]; if (!o || o.t !== 'house') continue; if (x === H1.x && y === H1.y) continue; const rosaH = x === H2.x && y === H2.y; L.push({ id: 'h' + x + '_' + y, type: rosaH ? 'rosa' : 'casa', n: rosaH ? 'Casa da Vovó Rosa' : `Casa dos ${FAM[fi++ % FAM.length]}`, dx: x + 1, dz: y + 2, dw: 2, dh: 1, ex: x + 2, ez: y + 3.5 }); }
   L.push({ id: 'mill', type: 'moinho', n: 'Moinho', dx: MILL.x + 0.5, dz: MILL.y + 2.3, dw: 2, dh: 1, ex: MILL.x + 1.5, ez: MILL.y + 3.5 });
-  L.push({ id: 'tower', type: 'torre', n: 'Torre de Íris', dx: TOWER.x + 0.5, dz: TOWER.y + 2.3, dw: 2, dh: 1, ex: TOWER.x + 1.5, ez: TOWER.y + 3.5 });
+  L.push({ id: 'tower', type: 'torre', n: 'Torre da Íris', dx: TOWER.x + 0.5, dz: TOWER.y + 2.3, dw: 2, dh: 1, ex: TOWER.x + 1.5, ez: TOWER.y + 3.5 });
   L.push({ id: 'hut', type: 'cabana', n: 'Cabana da Lia', dx: HUT.x, dz: HUT.y + 1.3, dw: 3, dh: 1, ex: HUT.x + 1.5, ez: HUT.y + 2.6 });
   L.push({ id: 'obs', type: 'obs', n: 'Observatório', dx: LM.obs.x + 1, dz: LM.obs.y + 3.3, dw: 2, dh: 1, ex: LM.obs.x + 2, ez: LM.obs.y + 4.6 });
   return (doorList.c = L);
@@ -3740,10 +3745,10 @@ async function mpLeave() { try { if (MP.room && MP.room.leave) await MP.room.lea
 function mpChip() { let c = $('mpchip'); if (!c) { const t = document.querySelector('.trinfo'); if (!t) return; t.insertAdjacentHTML('beforeend', '<div class="hud pill" id="mpchip"></div>'); c = $('mpchip'); c.onclick = () => openMP(); } c.style.display = MP.code ? '' : 'none'; if (MP.code) c.innerHTML = `Partida <b>${MP.code}</b> · ${1 + Object.keys(MP.peers).length}`; }
 function openMP() {
   const ok = !!MP.R, peers = Object.values(MP.peers);
-  openModal(`<h2>Multiplayer</h2>${!ok ? '<p class="lead">O multiplayer funciona quando o jogo está aberto dentro do Claude (a página publicada). Aqui ele está desligado.</p>' : MP.code ? `<div class="mpbox"><p class="lead">Você está na partida:</p><div class="mpcode">${MP.code}</div><button class="btn sm" id="mpcopy">Copiar código</button><p class="note">Mande esse código para suas amigas. Elas abrem o jogo, vão em <b>Menu → Multiplayer → Entrar</b> e digitam o código.</p><h4>Na partida (${1 + peers.length})</h4><ul class="mplist"><li><b>${escapeHtml(S.name || 'Você')}</b> (você)</li>${peers.map((p) => `<li>${escapeHtml(p.n || 'Amiga')}</li>`).join('')}</ul><button class="btn candy gold big" id="mparena">${PVP.on ? 'Sair da Arena PvP' : 'Ir para a Arena PvP'}</button> <button class="btn pink" id="mpleave">Sair da partida</button></div>`
+  openModal(`<h2>Multiplayer</h2>${!ok ? '<p class="lead">O multiplayer funciona quando o jogo está aberto dentro do Claude (a página publicada). Aqui ele está desligado.</p>' : MP.code ? `<div class="mpbox"><p class="lead">Você está na partida:</p><div class="mpcode">${MP.code}</div><button class="btn sm" id="mpcopy">Copiar código</button><p class="note">Mande esse código para suas amigas. Elas abrem o jogo, vão em <b>Menu → Multiplayer → Entrar</b> e digitam o código.</p><h4>Na partida (${1 + peers.length})</h4><ul class="mplist"><li><b>${escapeHtml(S.name || 'Você')}</b> (você)</li>${peers.map((p) => `<li>${escapeHtml(p.n || 'Amiga')}</li>`).join('')}</ul><button class="btn candy gold big" id="mparena">${PVP.on ? 'Sair da Arena Estelar' : 'Ir para a Arena Estelar'}</button> <button class="btn pink" id="mpleave">Sair da partida</button></div>`
     : `<div class="mpbox"><p class="lead">Crie uma partida e chame suas amigas com um código, ou entre na partida de alguém.</p><div class="mpcols"><div><h4>Criar partida</h4><button class="btn candy pink big" id="mpnew">Criar partida</button></div><div><h4>Entrar com código</h4><input id="mpin" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase"><button class="btn candy gold" id="mpgo">Entrar</button></div></div><p class="note">Cada jogadora continua com o próprio save; vocês se veem andando pelo vale.</p></div>`}`);
   if ($('mpnew')) $('mpnew').onclick = async () => { const c = mpCode(); if (await mpJoin(c)) openMP(); };
-  if ($('mpgo')) $('mpgo').onclick = async () => { const c = ($('mpin').value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length < 4) { toast('Digite o código de 5 letras.'); return; } if (await mpJoin(c)) { toast(`Você entrou na partida <b>${c}</b>!`); openMP(); } };
+  if ($('mpgo')) $('mpgo').onclick = async () => { const c = ($('mpin').value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length !== 5) { toast('Digite o código de 5 letras e números.'); return; } if (await mpJoin(c)) { toast(`Você entrou na partida <b>${c}</b>!`); openMP(); } };
   if ($('mparena')) $('mparena').onclick = () => { if (PVP.on) { pvpLeave(); closeModal(); } else pvpEnter(); };
   if ($('mpleave')) $('mpleave').onclick = async () => { if (PVP.on) pvpLeave(); await mpLeave(); toast('Você saiu da partida.'); openMP(); };
   if ($('mpcopy')) $('mpcopy').onclick = () => { try { navigator.clipboard.writeText(MP.code); toast('Código copiado!'); } catch (e) {} };
@@ -3786,7 +3791,7 @@ function rosaUpdate(dt) {
   for (let i = RB.shots.length - 1; i >= 0; i--) { const s = RB.shots[i]; s.life -= dt; s.m.position.x += s.vx * dt; s.m.position.z += s.vz * dt; const dx = P.x - s.m.position.x, dz = P.z - s.m.position.z; if (Math.hypot(dx, dz) < 0.45 && !P.dead) { hurtPlayer(s.dmg, -s.vx / 6, -s.vz / 6); s.life = 0; } if (s.life <= 0 || Math.hypot(s.m.position.x - RB.cx, s.m.position.z - RB.cz) > RB.R + 0.5) { burst(s.m.position.x, 0.8, s.m.position.z, ['#ffd1ec'], 5, 1.5); world.remove(s.m); RB.shots.splice(i, 1); } }
   for (let i = RB.marks.length - 1; i >= 0; i--) { const m = RB.marks[i]; m.t -= dt; m.m.material.opacity = 0.25 + (1 - m.t / 1.1) * 0.5; m.m.scale.setScalar(1 + Math.sin(m.t * 20) * 0.03); if (m.t <= 0) { world.remove(m.m); RB.marks.splice(i, 1); burst(m.x, 0.3, m.z, ['#ff5fa8', '#ffe18d', '#ffffff'], 26, 4, true, true); fxRing(m.x, 0.06, m.z, '#ff8fc8', 1.5, 0.4); sfx('boom'); shake = Math.max(shake, 0.2); if (Math.hypot(P.x - m.x, P.z - m.z) < 1.35) hurtPlayer(12, (P.x - m.x) || 0.1, (P.z - m.z) || 0.1); } }
 }
-function talkRosa() { if (RB.on) return; const st = TUT[S.tstep]; if (st && st.ev === 'rosaboss') { rosa.wait = 4; sayWho = rosaC; say('Vovó Rosa', THUMB.rosa, ['Você cuidou da horta, pescou, vendeu e arrumou a casinha. Estou orgulhosa!', 'Mas lá fora a Névoa Sonolenta esconde slimes e perigos.', 'Antes de deixar você sair, vou fazer um pequeno teste de magia. Não se preocupe: eu não deixo você se machucar de verdade.', 'Pronta? Vamos até o campo perto do lago!'], () => rosaStart()); return; } talkRosa_v12(); }
+function talkRosa() { if (RB.on) return; const st = TUT[S.tstep]; if (st && st.ev === 'rosaboss') { rosa.wait = 4; sayWho = rosaC; say('Vovó Rosa', THUMB.rosa, ['Você cuidou da horta, pescou, vendeu e arrumou a casinha. Estou orgulhosa!', 'Mas lá fora a Névoa Sonolenta esconde slimes e perigos.', 'Antes de deixar você sair, vou fazer um pequeno teste de magia. Não se preocupe: eu não deixo você se machucar de verdade.', gA('Pronta?', 'Pronto?') + ' Vamos até o campo perto do lago!'], () => rosaStart()); return; } talkRosa_v12(); }
 
 // ---------- tudo junto no loop ----------
 function v13Update(dt) { if (mode === 'out') { if (ADM.fly) { scene.fog = NOFOG; for (const m of FOGR.mats) m.visible = false; } else if (scene.fog !== FOG) scene.fog = FOG; } hungerUpdate(dt); wxUpdate(dt); rosaUpdate(dt); roomsUpdate(dt); if (MP.code && rand() < dt) mpChip(); }
@@ -3886,7 +3891,7 @@ function pvpEnter() {
   if (!MP.code) { toast('Entre numa partida multiplayer primeiro.'); return; } if (mode !== 'out') { toast('Saia para o vale para entrar na arena.'); return; } if (RB.on) return;
   closeModal(); fade(() => { PVP.on = true; P.x = PVP.cx + (Math.random() - 0.5) * 4; P.z = PVP.cz + 2.5; P.hp = maxHp(); P.st = maxSt(); camera.position.set(P.x, 9.5, P.z + 8.6); camLook.set(P.x, 0.6, P.z);
     if (!PVP.wall) { const g = new THREE.Group(); const cyl = new THREE.Mesh(new THREE.CylinderGeometry(PVP.R, PVP.R, 1.6, 48, 1, true), new THREE.MeshBasicMaterial({ color: '#9fe8ff', transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })); cyl.position.y = 0.8; g.add(cyl); const ring = new THREE.Mesh(new THREE.RingGeometry(PVP.R - 0.12, PVP.R, 64).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#e8fbff', transparent: true, opacity: 0.85, depthWrite: false })); ring.position.y = 0.03; g.add(ring); g.position.set(PVP.cx, 0, PVP.cz); world.add(g); PVP.wall = g; }
-    PVP.wall.visible = true; pvpHud(); toast('Você entrou na <b>Arena Estelar</b>! Golpeie as outras jogadoras com a espada. Quem cair volta para a borda.'); sfx('alert'); });
+    PVP.wall.visible = true; pvpHud(); toast('Você entrou na <b>Arena Estelar</b>! Ataque as outras jogadoras com a sua arma. Quem cair volta para a borda.'); sfx('alert'); });
 }
 function pvpLeave() { PVP.on = false; if (PVP.wall) PVP.wall.visible = false; const h = $('pvphud'); if (h) h.remove(); P.hp = maxHp(); toast('Você saiu da arena.'); }
 function pvpAtk(hx, hz, r, mult) { if (!PVP.on) return; PVP.atk = { s: ++PVP.seq, x: +hx.toFixed(2), z: +hz.toFixed(2), r: +(r || 1.4).toFixed(2), d: Math.round(7 * (mult || 1)) }; }
@@ -4029,12 +4034,12 @@ function buildKraken_v15() {
   KR.tent = []; for (let i = 0; i < 6; i++) { const t = new THREE.Group(); const segs = []; for (let k = 0; k < 7; k++) { const s = new THREE.Mesh(new THREE.SphereGeometry(0.5 - k * 0.055, 10, 8), k % 2 ? dark : body); t.add(s); segs.push(s); } const a = (i / 6) * Math.PI * 2 + 0.3; t.userData = { a, segs, slam: 0, tx: 0, tz: 0, hp: 40, down: 0 }; g.add(t); KR.tent.push(t); }
   g.traverse((n) => { if (n.isMesh) n.castShadow = true; }); g.position.set(KR.x, -6, KR.z); world.add(g); KR.g = g;
 }
-function krakenStart() { if (KR.on || KR.dead && KR.deadDay === S.day) return; if (!KR.g) buildKraken(); KR.x = clamp(P.x + (P.x < W / 2 ? 13 : -13), 12, W - 12); KR.z = P.z + 4; KR.ox = KR.x; KR.oz = KR.z; KR.on = true; KR.dead = false; KR.max = 360 + (S.lv || 1) * 20; KR.hp = KR.max; KR.t = 0; KR.cd = 3.5; KR.phase = 1; KR.rise = 0; for (const t of KR.tent) { t.userData.hp = 45; t.userData.down = 0; t.visible = true; } KR.blind = 0;
+function krakenStart() { if (KR.on || KR.dead && KR.deadDay === S.day || S.krDay === S.day) return; if (!KR.g) buildKraken(); KR.x = clamp(P.x + Math.sin(P.ang) * 10, 12, W - 12); KR.z = Math.max(H + 10, P.z + Math.cos(P.ang) * 10); KR.ox = KR.x; KR.oz = KR.z; KR.on = true; KR.dead = false; KR.max = 560 + (S.lv || 1) * 30; KR.hp = KR.max; KR.t = 0; KR.cd = 3.5; KR.phase = 1; KR.rise = 0; for (const t of KR.tent) { t.userData.hp = 45; t.userData.down = 0; t.visible = true; } KR.blind = 0;
   KR.g.visible = true; const bb = $('bossbar'); bb.classList.add('on'); const nm = bb.querySelector('.bbn'); if (nm) nm.innerHTML = 'Kraken do Mar Estrelado <span id="bossph">Fase 1</span>'; krBar(); sfx('alert'); shake = 0.5; toast('O <b>Kraken</b> surgiu das ondas! Desvie dos círculos e dispare estrelas com <span class="key">Espaço</span>. Mire nos tentáculos e nos olhos!'); }
 function krBar_v15() { $('bossfill').style.width = Math.max(0, (KR.hp / KR.max) * 100) + '%'; const ph = $('bossph'); if (ph) ph.textContent = 'Fase ' + KR.phase; }
 function krakenEnd(win) { if (!KR.on && !win) return; KR.on = false; for (const m of KR.marks) world.remove(m.m); for (const i of KR.ink) world.remove(i.m); KR.marks = []; KR.ink = []; $('bossbar').classList.remove('on'); const nm = document.querySelector('#bossbar .bbn'); if (nm) nm.innerHTML = 'Rei Slime Gelatinoso <span id="bossph">Fase 1</span>'; if (!win && KR.g) KR.rise = Math.min(KR.rise, 1); }
-function krakenWin() { KR.dead = true; KR.deadDay = S.day; krakenEnd(true); sfx('jingle_5'); setTimeout(() => sfx('secret'), 600); confetti(innerWidth / 2, innerHeight / 2, 70, true); shake = 0.7; burst(KR.x, 3, KR.z, ['#c99bff', '#ffe18d', '#9fe8ff', '#ffffff'], 80, 7, true, true); S.coins += 250; S.stars += 200; gainXp(80); S.flags = S.flags || {}; const first = !S.flags.kraken; S.flags.kraken = 1; drop(P.x, P.z, 'star', null, 16);
-  setTimeout(() => { openModal(`${floaters(16)}<div class="story"><div class="sart"><span>🐙</span><span>🫧</span><span>✨</span></div><h2>A Pérola do Mar Estrelado</h2><p>O Kraken afundou devagarinho, soprou bolhas de alegria e deixou uma <b>Pérola de Luz</b> flutuando ao lado do seu barco. ${first ? 'Uma nova página foi adicionada ao diário!' : 'Ele promete brincar de novo amanhã.'}</p><p class="note">+500 estrelinhas e 80 XP</p><div class="sbtns"><button class="btn candy pink" id="krOk">Que aventura!</button></div></div>`, 'storyp wishp'); $('krOk').onclick = closeModal; if (first) unlockLore(KRAKEN_LORE); }, 1800); }
+function krakenWin() { KR.dead = true; KR.deadDay = S.day; S.krDay = S.day; krakenEnd(true); sfx('jingle_5'); setTimeout(() => sfx('secret'), 600); confetti(innerWidth / 2, innerHeight / 2, 70, true); shake = 0.7; burst(KR.x, 3, KR.z, ['#c99bff', '#ffe18d', '#9fe8ff', '#ffffff'], 80, 7, true, true); S.coins += 250; S.stars += 200; gainXp(80); S.flags = S.flags || {}; const first = !S.flags.kraken; S.flags.kraken = 1; drop(P.x, P.z, 'star', null, 16);
+  setTimeout(() => { openModal(`${floaters(16)}<div class="story"><div class="sart"><span>🐙</span><span>🫧</span><span>✨</span></div><h2>A Pérola do Mar Estrelado</h2><p>O Kraken afundou devagarinho, soprou bolhas de alegria e deixou uma <b>Pérola de Luz</b> flutuando ao lado do seu barco. ${first ? 'Uma nova página foi adicionada ao diário!' : 'Ele promete brincar de novo amanhã.'}</p><p class="note">+250🪙 Moedas, +280⭐ Desejos e 80 XP</p><div class="sbtns"><button class="btn candy pink" id="krOk">Que aventura!</button></div></div>`, 'storyp wishp'); $('krOk').onclick = closeModal; if (first) unlockLore(KRAKEN_LORE); }, 1800); }
 function krHit_v15(x, z, dmg) {
   for (const t of KR.tent) { if (!t.visible || t.userData.down > 0) continue; const tip = t.userData.segs[3].getWorldPosition(new THREE.Vector3()); if (Math.hypot(tip.x - x, tip.z - z) < 1.1) { t.userData.hp -= dmg; burst(tip.x, 1, tip.z, ['#c99bff', '#ffffff'], 10, 2.5); floatText(tip.x, 2.2, tip.z, '-' + dmg, '#ffe18d', true); sfx('hit'); if (t.userData.hp <= 0) { t.userData.down = 9; t.visible = false; KR.hp -= 30; floatText(tip.x, 2.8, tip.z, 'Tentáculo recolhido!', '#9fe8ff', true); sfx('boom'); shake = 0.3; } KR.hp -= dmg * 0.4; krBar(); return true; } }
   if (Math.hypot(KR.x - x, KR.z - z) < 2.9) { const fx = Math.sin(KR.g.rotation.y), fz = Math.cos(KR.g.rotation.y); const eye = Math.hypot(KR.x + fx * 1.9 - x, KR.z + fz * 1.9 - z) < 1.3; const d = eye ? dmg * 1.8 : dmg; KR.hp -= d; floatText(x, 3.2, z, (eye ? 'NO OLHO! ' : '') + '-' + Math.round(d), eye ? '#ffcb2a' : '#ffe18d', true); burst(x, 2.5, z, ['#c99bff', '#ffffff'], 14, 3); sfx('hit'); hitStop = Math.max(hitStop, 0.05); krBar(); return true; }
@@ -4060,11 +4065,11 @@ function krUpdate_v15(dt) {
 function seaUpdate(dt) {
   if (!SEA.boat) return; boatCd -= dt;
   if (P.boat) { SEA.boat.position.set(P.x, -0.05 + Math.sin(gtime * 2) * 0.05, P.z); SEA.boat.rotation.y = angLerp(SEA.boat.rotation.y, P.ang, Math.min(1, dt * 6)); SEA.boat.rotation.z = Math.sin(gtime * 1.6) * 0.05; if (SEA.boat.userData.sail) SEA.boat.userData.sail.scale.x = 1 + Math.sin(gtime * 3) * 0.04;
-    if (player) { player.obj.position.set(P.x, 0.12 + Math.sin(gtime * 2) * 0.05, P.z); player.obj.rotation.y = SEA.boat.rotation.y; }
+    if (player) { player.obj.position.set(P.x - Math.sin(SEA.boat.rotation.y) * 0.55, 0.74 + Math.sin(gtime * 2) * 0.05, P.z - Math.cos(SEA.boat.rotation.y) * 0.55); player.obj.rotation.y = SEA.boat.rotation.y; }
     if (P.moving && rand() < dt * 14) emit(PN, { x: P.x - Math.sin(P.ang) * 1.2 + (rand() - 0.5) * 0.6, y: 0.05, z: P.z - Math.cos(P.ang) * 1.2, vx: (rand() - 0.5) * 0.6, vz: (rand() - 0.5) * 0.6, vy: 0.5, g: 3, life: 0.6, max: 0.6, c: '#ffffff' });
-    if (P.z > H + 12 && !KR.on && !(KR.dead && KR.deadDay === S.day)) krakenStart(); if (KR.on && Math.hypot(P.x - KR.x, P.z - KR.z) > 30) { krakenEnd(false); toast('Você se afastou e o Kraken mergulhou de volta.'); }
+    if (P.z > H + 12 && !KR.on && !(KR.dead && KR.deadDay === S.day) && S.krDay !== S.day) krakenStart(); if (KR.on && Math.hypot(P.x - KR.x, P.z - KR.z) > 30) { krakenEnd(false); toast('Você se afastou e o Kraken mergulhou de volta.'); }
     if (P.z > H + 4 && SEA.told !== S.day) { SEA.told = S.day; dayBanner('Mar Estrelado'); } }
-  for (let i = BSHOT.length - 1; i >= 0; i--) { const b = BSHOT[i]; b.life -= dt; b.m.position.x += b.vx * dt; b.m.position.z += b.vz * dt; if (rand() < dt * 30) emit(PG, { x: b.m.position.x, y: 0.55, z: b.m.position.z, vx: 0, vz: 0, vy: 0.2, g: 0, life: 0.35, max: 0.35, c: '#ffe18d' }); let hit = KR.on && krHit(b.m.position.x, b.m.position.z, Math.round(10 * (1 + ((S.lv || 1) - 1) * 0.08)));
+  for (let i = BSHOT.length - 1; i >= 0; i--) { const b = BSHOT[i]; b.life -= dt; b.m.position.x += b.vx * dt; b.m.position.z += b.vz * dt; if (rand() < dt * 30) emit(PG, { x: b.m.position.x, y: 0.55, z: b.m.position.z, vx: 0, vz: 0, vy: 0.2, g: 0, life: 0.35, max: 0.35, c: '#ffe18d' }); let hit = KR.on && krHit(b.m.position.x, b.m.position.z, Math.round(10 * (1 + ((S.lv || 1) - 1) * 0.08))); { const tx = Math.floor(b.m.position.x), tz = Math.floor(b.m.position.z); if (inb(tx, tz) && !isW(tx, tz)) b.life = 0; }
     if (!hit) for (const s of slimes) if (!s.dead && Math.hypot(s.x - b.m.position.x, s.z - b.m.position.z) < 0.8) { hitSlime(s, 1.5, b.vx / 14, b.vz / 14, '#ffe18d', 4); hit = true; break; }
     if (hit || b.life <= 0) { burst(b.m.position.x, 0.5, b.m.position.z, ['#ffe18d', '#ffffff'], 8, 2); world.remove(b.m); BSHOT.splice(i, 1); } }
   krUpdate(dt);
@@ -4683,7 +4688,7 @@ function openCraft() {
   const rows = list.map(({ r, i }) => { const ok = recOk(r), lock = (S.lv || 1) < (r.lv || 0);
     const req = Object.entries(r.need).map(([k, n]) => `<span class="oreq ${(S.inv[k] || 0) >= n ? 'ok' : ''}"><img src="${THUMB['i_' + k] || ''}">${S.inv[k] || 0}/${n} ${ITEMS[k] ? ITEMS[k].n : k}</span>`).join('');
     return `<div class="fcard ${ok ? '' : 'dim'}"><img src="${recImg(r.give)}"><div class="grow"><b>${recName(r.give)}${r.give.q > 1 ? ' ×' + r.give.q : ''}</b><span>${req}</span>${lock ? `<span class="fnext">🔒 Nível ${r.lv}</span>` : ''}</div><button class="btn ${ok ? 'candy mint' : ''} sm" data-craft="${i}" ${ok ? '' : 'disabled'}>Fazer</button></div>`; });
-  openModal(`<div class="shophead"><img src="${THUMB['fd_bancada'] || icon('anvil', 64)}"><div><h2 style="margin:0">🔨 Bancada de Trabalho</h2><p class="lead" style="margin:2px 0 0">Junte madeira, pedras, flores e o que achar pelo vale e faça você mesma, sem gastar 🪙.</p></div></div>
+  openModal(`<div class="shophead"><img src="${THUMB['fd_bancada'] || icon('anvil', 64)}"><div><h2 style="margin:0">🔨 Bancada de Trabalho</h2><p class="lead" style="margin:2px 0 0">Junte madeira, pedras, flores e o que achar pelo vale e faça você ${gA('mesma', 'mesmo')}, sem gastar 🪙.</p></div></div>
     <div class="wtabs">${Object.entries(tabs).map(([k, n]) => `<button class="btn ctab ${craftTab === k ? 'on' : ''}" data-ctab="${k}">${n}</button>`).join('')}</div>
     <div class="forge">${rows.join('')}</div><p class="note">Enfeites vão para <b>Personalizar Fazenda</b>; móveis, para <b>Decorar a casa</b>; lanches, para a mochila. Madeira vem de árvores (machado), pedra e minérios das rochas (picareta).</p>`, 'wide');
   document.querySelectorAll('[data-ctab]').forEach((el) => (el.onclick = () => { craftTab = el.dataset.ctab; sfx('switch'); openCraft(); }));
@@ -5009,7 +5014,7 @@ WARD_PRICE.cp = { livre: 450 }; // "Paleta mágica": cor livre para cabelo e rou
   return `<button class="btn chip cpick locked ${v ? 'on' : ''}" data-cplock="1" title="Compre a Paleta mágica no Ateliê da Fifi"><i style="background:${v || 'conic-gradient(#ff8fb0,#ffd45a,#8ff0c0,#7cc4ff,#b49cff,#ff8fb0)'}"></i>Cor livre 🔒</button>`; }; }
 { const base = openCreator; openCreator = function (t) { const r = base(t); document.querySelectorAll('[data-cplock]').forEach((el) => (el.onclick = (e) => { e.preventDefault(); sfx('cancel'); toast('🔒 A <b>Paleta mágica</b> (cor livre) fica à venda no <b>Ateliê da Fifi</b>, na Vila Girassol.'); })); return r; }; }
 // quem já usava uma cor livre antes da v20 continua com a paleta
-{ const base = applyState; applyState = function (d) { base(d); const lk = S.look || {}; if (['hc', 'tint'].some((k) => typeof lk[k] === 'string' && lk[k][0] === '#') && !owns('cp', 'livre')) giveWard('cp', 'livre'); setTimeout(() => { try { fixSigns(); } catch (e) { console.error(e); } }, 0); }; }
+{ const base = applyState; applyState = function (d) { base(d); const lk = S.look || {}; if (['hc', 'tint', 'acc_c', 'glc', 'bkc', 'wac'].some((k) => typeof lk[k] === 'string' && lk[k][0] === '#') && !owns('cp', 'livre')) giveWard('cp', 'livre'); setTimeout(() => { try { fixSigns(); } catch (e) { console.error(e); } }, 0); }; }
 
 // ---------- penteados completos escondem o cabelo que vem modelado na cabeça (antes saíam por cima dele) ----------
 // O cabelo original faz parte da malha da cabeça: os vértices pintados com a cor do cabelo afundam para dentro do crânio.
@@ -5165,38 +5170,49 @@ const PATHCLEAR = { n: 0 };
 { const base = buildWorld; buildWorld = function () { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = I(x, y), o = obj[i]; if (o && NATURE.test(o.t) && !o.rim && tile[i] === PA) { obj[i] = null; PATHCLEAR.n++; } } return base(); }; }
 // ---------- chão v20: mais resolução, normais suaves e detalhes pintados (tufos, florzinhas, pedrinhas, sulcos) ----------
 // Antes: 8 px por tile e sombreamento facetado sobre relevos aleatórios (triângulos claros e escuros pela grama).
-const GPX2 = matchMedia('(pointer: coarse)').matches ? 8 : 12;
+const GPX2 = matchMedia('(pointer: coarse)').matches ? 8 : 12; // v21: mais resolução e pintura suave (sem carimbos de 1 texel)
 const GPAL2 = { [GR]: [140, 200, 86], [PA]: [226, 190, 134], [SO]: [132, 88, 58], [SA]: [244, 226, 170] };
 paintGroundRect = function (x0, y0, x1, y1) {
-  const { img } = GCV, d = img.data, CW2 = W * GPX2, types = [GR, PA, SO, SA], G = GPX2, B = 3;
+  // v21: pintura suave. Nada de decisão dura por texel: a borda entre tipos de chão mistura as duas cores,
+  // e os detalhes (tufos, pedrinhas, sulcos, flores) são feitos de ruído e formas com borda macia.
+  const { img } = GCV, d = img.data, CW2 = W * GPX2, types = [GR, PA, SO, SA], G = GPX2, B = 4, sm = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
   x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(W - 1, x1); y1 = Math.min(H - 1, y1);
   const PX0 = x0 * G, PY0 = y0 * G, PX1 = (x1 + 1) * G, PY1 = (y1 + 1) * G;
-  // ruído suave numa grade de 3 px (é o que pesava: ~9 ruídos por pixel)
-  const bw = Math.ceil((PX1 - PX0) / B) + 1, bh = Math.ceil((PY1 - PY0) / B) + 1, NB = new Float32Array(bw * bh * 3);
-  for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) { const wx = (PX0 + bx * B + 1.5) / G, wy = (PY0 + by * B + 1.5) / G, k = (by * bw + bx) * 3; NB[k] = fbm(wx * 0.07, wy * 0.07, 3) - 0.5; NB[k + 1] = fbm(wx * 0.35, wy * 0.35, 8) - 0.5; NB[k + 2] = (vn(wx * 0.6, wy * 0.6, 31) - 0.5) * 0.3; }
-  // tipo de cada tile (com uma borda) e se tem árvore/pedra em cima
+  // ruído numa grade de 4 texels, interpolado (bilinear) para não aparecer degrau
+  const bw = Math.ceil((PX1 - PX0) / B) + 2, bh = Math.ceil((PY1 - PY0) / B) + 2, NB = new Float32Array(bw * bh * 7);
+  for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) { const wx = (PX0 + bx * B) / G, wy = (PY0 + by * B) / G, k = (by * bw + bx) * 7; NB[k] = fbm(wx * 0.07, wy * 0.07, 3) - 0.5; NB[k + 1] = fbm(wx * 0.35, wy * 0.35, 8) - 0.5; NB[k + 2] = (vn(wx * 0.6, wy * 0.6, 31) - 0.5) * 0.3; NB[k + 3] = vn(wx * 1.7, wy * 1.7, 41); NB[k + 4] = vn(wx * 1.6, wy * 0.6, 9); NB[k + 5] = vn(wx * 2.2, wy * 2.2, 11); NB[k + 6] = vn(wx * 2.2, (wy - 0.1) * 2.2, 11); }
   const tw = x1 - x0 + 3, th = y1 - y0 + 3, TT = new Uint8Array(tw * th), NT = new Uint8Array(tw * th);
   for (let ty = 0; ty < th; ty++) for (let tx = 0; tx < tw; tx++) { const X = x0 - 1 + tx, Y = y0 - 1 + ty; TT[ty * tw + tx] = gType(X, Y); const cx = Math.max(0, Math.min(W - 1, X)), cy = Math.max(0, Math.min(H - 1, Y)), o = obj[I(cx, cy)]; NT[ty * tw + tx] = o && NATURE.test(o.t) && !o.cut && tile[I(cx, cy)] === GR ? 1 : 0; }
   const tt = (X, Y) => TT[(Math.max(y0 - 1, Math.min(y1 + 1, Y)) - y0 + 1) * tw + (Math.max(x0 - 1, Math.min(x1 + 1, X)) - x0 + 1)];
-  const w = [0, 0, 0, 0, 0, 0, 0];
-  for (let py = PY0; py < PY1; py++) { const fy = (py + 0.5) / G - 0.5, ty = Math.floor(fy), ay = fy - ty, oy = Math.floor(py / G), byi = Math.floor((py - PY0) / B) * bw;
+  const w = [0, 0, 0, 0, 0, 0, 0], N = [0, 0, 0, 0, 0, 0, 0];
+  const shade = (t, lf, px, py, nb) => { const c = GPAL2[t]; return [c[0] * lf, c[1] * lf, c[2] * lf]; };
+  let kb0 = 0, w00 = 0, w10 = 0, w01 = 0, w11 = 0, py = 0; const R7 = bw * 7, at = (c) => NB[kb0 + c] * w00 + NB[kb0 + 7 + c] * w10 + NB[kb0 + R7 + c] * w01 + NB[kb0 + R7 + 7 + c] * w11;
+  // luz de cada tipo neste ponto (com os detalhes macios)
+  const lit = (t) => { let lf = 1;
+        if (t === GR) { lf += N[0] * 0.14 + N[1] * 0.08; if (N[4] < 0) N[4] = at(4); if (N[3] < 0) N[3] = at(3); lf -= sm(0.6, 0.74, N[4]) * 0.05; lf += sm(0.7, 0.8, N[3]) * 0.05; } // tufos alongados e macios
+        else if (t === PA) { lf += N[0] * 0.06 + N[1] * 0.05; if (N[5] < 0) { N[5] = at(5); N[6] = at(6); } lf += sm(0.74, 0.82, N[5]) * 0.05 - sm(0.8, 0.88, N[6]) * 0.035; } // pedrinhas com sombrinha
+        else if (t === SO) lf += N[1] * 0.06 + Math.sin((py / G) * Math.PI * 2 * 2.5) * 0.06; // sulcos ondulados da terra arada
+        else { if (N[3] < 0) N[3] = at(3); lf += N[0] * 0.05 + N[1] * 0.04 + sm(0.82, 0.9, N[3]) * 0.04; }
+        return lf; };
+  for (py = PY0; py < PY1; py++) { const fy = (py + 0.5) / G - 0.5, ty = Math.floor(fy), ay = fy - ty, oy = Math.floor(py / G), gy = (py - PY0) / B, gy0 = Math.floor(gy), gfy = gy - gy0; let ctx = -9999, c00 = 0, c10 = 0, c01 = 0, c11 = 0, cNT = 0;
     for (let px = PX0; px < PX1; px++) {
-      const fx = (px + 0.5) / G - 0.5, tx = Math.floor(fx), ax = fx - tx, nk = (byi + Math.floor((px - PX0) / B)) * 3, big = NB[nk], mid = NB[nk + 1], wob = NB[nk + 2];
+      const fx = (px + 0.5) / G - 0.5, tx = Math.floor(fx), ax = fx - tx, gx = (px - PX0) / B, gx0 = Math.floor(gx), gfx = gx - gx0;
+      kb0 = (gy0 * bw + gx0) * 7; w00 = (1 - gfx) * (1 - gfy); w10 = gfx * (1 - gfy); w01 = (1 - gfx) * gfy; w11 = gfx * gfy;
+      N[0] = at(0); N[1] = at(1); N[2] = at(2); N[3] = -1; N[4] = -1; N[5] = -1; N[6] = -1;
+      const big = N[0], mid = N[1], wob = N[2];
+      if (tx !== ctx) { ctx = tx; c00 = tt(tx, ty); c10 = tt(tx + 1, ty); c01 = tt(tx, ty + 1); c11 = tt(tx + 1, ty + 1); cNT = NT[(oy - y0 + 1) * tw + (Math.floor(px / G) - x0 + 1)]; }
       w[GR] = 0; w[PA] = 0; w[SO] = 0; w[SA] = 0;
-      w[tt(tx, ty)] += (1 - ax) * (1 - ay); w[tt(tx + 1, ty)] += ax * (1 - ay); w[tt(tx, ty + 1)] += (1 - ax) * ay; w[tt(tx + 1, ty + 1)] += ax * ay;
-      const ox = Math.floor(px / G); if (NT[(oy - y0 + 1) * tw + (ox - x0 + 1)]) w[GR] += 0.45; // o caminho não entra embaixo das árvores
-      let best = GR, bwt = -1, second = -1; for (const t of types) { const v = w[t] + (t === GR ? wob : 0); if (v > bwt) { second = bwt; bwt = v; best = t; } else if (v > second) second = v; }
-      const c = GPAL2[best]; let r = c[0], g = c[1], b = c[2], lf = 1;
-      if (best === GR) { lf += big * 0.14 + mid * 0.07;
-        const cxx = Math.floor(px / 5), cyy = Math.floor(py / 5), hr = hash2(cxx, cyy, 9), lx = (px % 5) - Math.floor(hr * 7.7) % 2, ly = (py % 5) - Math.floor(hr * 13.3) % 2;
-        if (hr < 0.2 && lx >= 0 && ly >= 0) { if ((ly === 1 || ly === 2) && (lx === 1 || lx === 3)) lf *= 0.86; else if (ly === 3 && lx === 2) lf *= 0.86; else if (ly === 0 && (lx === 1 || lx === 3)) lf *= 1.08; }
-        if ((px % 6) < 2 && (py % 6) < 2) { const fh = hash2(Math.floor(px / 6), Math.floor(py / 6), 13); if (fh > 0.994) { const pc = [[255, 255, 255], [255, 170, 200], [255, 226, 110]][Math.floor(fh * 1000) % 3]; r = pc[0]; g = pc[1]; b = pc[2]; lf = 1; } }
-        if (bwt - second < 0.08 && hash2(px, py, 7) > 0.6) lf *= 0.9; }
-      else if (best === PA) { lf += big * 0.06 + mid * 0.05; const lx = px % 5, ly = py % 5; if (lx >= 1 && lx <= 2 && ly >= 1 && ly <= 2 && hash2(Math.floor(px / 5), Math.floor(py / 5), 11) < 0.14) lf *= ly === 1 ? 1.09 : 0.92; }
-      else if (best === SO) lf += mid * 0.06 + ((py & 3) === 0 ? -0.1 : (py & 3) === 1 ? 0.05 : 0);
-      else { lf += big * 0.05 + mid * 0.04; if (hash2(px, py, 5) > 0.992) lf *= 1.1; }
-      if (best !== GR) { const m = bwt - second; if (m < 0.1) lf *= 0.86; else if (m < 0.2 && best === PA) lf *= 0.94; }
-      const i = (py * CW2 + px) * 4; d[i] = Math.min(255, r * lf); d[i + 1] = Math.min(255, g * lf); d[i + 2] = Math.min(255, b * lf); d[i + 3] = 255; } }
+      w[c00] += (1 - ax) * (1 - ay); w[c10] += ax * (1 - ay); w[c01] += (1 - ax) * ay; w[c11] += ax * ay;
+      if (NT[(oy - y0 + 1) * tw + (Math.floor(px / G) - x0 + 1)]) w[GR] += 0.45;
+      let best = GR, bwt = -1, second = GR, swt = -1; for (const t of types) { const v = w[t] + (t === GR ? wob : 0); if (v > bwt) { second = best; swt = bwt; bwt = v; best = t; } else if (v > swt) { swt = v; second = t; } }
+
+      const cB = GPAL2[best], lB = lit(best), m = bwt - swt;
+      let r = cB[0] * lB, g = cB[1] * lB, b = cB[2] * lB;
+      // borda: mistura suave com o vizinho e um contorno macio no caminho/terra
+      if (m < 0.32 && swt > 0) { const cS = GPAL2[second] || cB, lS = lit(second), k = 0.5 + 0.5 * sm(0, 0.32, m), e = best !== GR ? 1 - (1 - sm(0, 0.2, m)) * 0.12 : 1 - (1 - sm(0, 0.14, m)) * 0.05; r = (r * k + cS[0] * lS * (1 - k)) * e; g = (g * k + cS[1] * lS * (1 - k)) * e; b = (b * k + cS[2] * lS * (1 - k)) * e; }
+      // florzinhas raras na grama, redondas e com borda macia
+      if (best === GR && m > 0.2) { const fc = 7, ddx = (px % fc) - 3, ddy = (py % fc) - 3, d2 = ddx * ddx + ddy * ddy; const fh = d2 < 6 ? hash2(Math.floor(px / fc), Math.floor(py / fc), 13) : 0; if (fh > 0.992) { const dd = Math.sqrt(d2), a = 1 - sm(1.2, 2.4, dd), pc = [[255, 252, 245], [255, 170, 200], [255, 226, 110]][Math.floor(fh * 1000) % 3]; r = r * (1 - a) + pc[0] * a; g = g * (1 - a) + pc[1] * a; b = b * (1 - a) + pc[2] * a; } }
+      const i = (py * CW2 + px) * 4; d[i] = Math.min(255, r); d[i + 1] = Math.min(255, g); d[i + 2] = Math.min(255, b); d[i + 3] = 255; } }
   GCV.ctx.putImageData(img, 0, 0, PX0, PY0, PX1 - PX0, PY1 - PY0); if (GCV.tex) GCV.tex.needsUpdate = true;
 };
 paintGround = function () {
@@ -5229,6 +5245,354 @@ function makeMailbox(col, vi = 0) { const g = new THREE.Group(), wood = sgMat('#
   const flag = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.09, 0.13), sgMat('#e0394c')); flag.position.set(0.18, 1.04, 0.1); g.add(flag);
   const letter = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.02, 0.1), sgMat('#ffffff')); letter.position.set(0, 1.08, 0.02); letter.rotation.z = 0.2; letter.visible = vi % 2 === 0; g.add(letter);
   bakeVC(g); g.userData.dress = 1; return g; }
+
+/* =================== v21: base fofinha (Kenney Mini Characters) com peças trocáveis, poço estilo Genshin, barco e inconsistências =================== */
+// ---------- base nova: 12 personagens do Kenney com o mesmo esqueleto; cabeça (penteado) e corpo (roupa) se misturam ----------
+// Cada parte vira cor por vértice: pele, cabelo, blusa, calça/saia e sapato recebem a cor escolhida, mantendo o degradê original.
+// O rosto (olhos, sobrancelhas, boca, bochechas) é pintado numa placa presa ao osso da cabeça, como em Animal Crossing.
+const KM_VAR = ['fa', 'fb', 'fc', 'fd', 'fe', 'ff', 'ma', 'mb', 'mc', 'md', 'me', 'mf'];
+for (const v of KM_VAR) { MODEL_LIST.push('km_' + v); FIT['km_' + v] = { h: 1 }; }
+const KM = { S: 1.5, clips: null, aliased: null, pal: null, part: {}, geo: {}, face: {}, mat: null, faceMat: {} };
+{ const base = prepare; prepare = function (k, gltf) { base(k, gltf); if (!/^km_/.test(k)) return; const M = MODELS[k], root = M.root.children[0];
+  root.scale.setScalar(KM.S); root.position.set(0, 0, 0); M.isChar = true;
+  root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; o.frustumCulled = false; } if (o.name === 'torso') o.name = 'spine'; if (o.name === 'body-mesh') o.name = 'km_Body'; if (o.name === 'head-mesh') o.name = 'km_Head'; });
+  if (k === 'km_fa') { for (const c of gltf.animations) for (const t of c.tracks) t.name = t.name.replace(/^torso\./, 'spine.'); KM.clips = gltf.animations; MODELS.ch_km = M;
+    // mão: um ponto vazio no fim do braço direito, onde as ferramentas ficam (o Kenney não tem osso de mão)
+    let arm = null; root.traverse((o) => { if (o.name === 'arm-right') arm = o; }); if (arm) { const hs = new THREE.Object3D(); hs.name = 'handslot.r'; hs.position.set(-0.115, -0.012, 0.01); arm.add(hs); } } }; }
+const KM_ALIAS = { Idle: 'idle', Idle_A: 'idle', Walking_A: 'walk', Running_A: 'sprint', Cheer: 'emote-yes', Cheering: 'emote-yes', Waving: 'emote-yes', Interact: 'interact-right', Use_Item: 'interact-right', PickUp: 'pick-up',
+  '1H_Melee_Attack_Chop': 'attack-melee-right', '1H_Melee_Attack_Slice_Diagonal': 'attack-melee-right', '1H_Melee_Attack_Stab': 'attack-melee-right', '1H_Melee_Attack_Slice_Horizontal': 'attack-melee-right', '2H_Melee_Attack_Spin': 'attack-kick-right', Melee_1H_Attack_Chop: 'attack-melee-right', Melee_1H_Attack_Slice_Horizontal: 'attack-melee-right', Throw: 'attack-melee-right',
+  Spellcast_Raise: 'holding-both-shoot', Spellcast_Shoot: 'holding-right-shoot', Ranged_Magic_Spellcasting: 'holding-both', Ranged_Magic_Raise: 'holding-both-shoot', Ranged_Magic_Shoot: 'holding-right-shoot', Spellbook_open: 'holding-both', Spellbook: 'holding-both',
+  Hit_A: 'emote-no', Dodge_Forward: 'jump', Death_A: 'die', Death_B: 'die', Death_A_Pose: 'die', Lie_Idle: 'die', Sit_Floor_Idle: 'sit', Sit_Chair_Idle: 'sit', Jump_Full_Short: 'jump', Block_Hit: 'crouch', Melee_Block: 'crouch' };
+function kmClips() { if (KM.aliased) return KM.aliased; const by = {}; for (const c of KM.clips || []) by[c.name] = c; const out = [...(KM.clips || [])]; for (const [a, b] of Object.entries(KM_ALIAS)) if (by[b]) { const c = by[b].clone(); c.name = a; out.push(c); } return (KM.aliased = out); }
+{ const Base = Char; Char = class extends Base { constructor(key) { const km = key === 'km', sv = CLIPS; if (km) CLIPS = kmClips(); try { super(key); } finally { CLIPS = sv; } if (km) this.hand = this.nodes['handslot.r']; } }; }
+// paleta (colormap) de onde cada vértice tira a cor original
+function kmPalette() { if (KM.pal) return KM.pal; let img = null; MODELS.km_fa.root.traverse((o) => { if (!img && o.isMesh && o.material && o.material.map) img = o.material.map.image; });
+  const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0); return (KM.pal = { w: c.width, h: c.height, d: x.getImageData(0, 0, c.width, c.height).data }); }
+const kmTex = (u, v) => { const P = kmPalette(), px = Math.min(P.w - 1, Math.max(0, Math.floor(u * P.w))), py = Math.min(P.h - 1, Math.max(0, Math.floor(v * P.h))), i = (py * P.w + px) * 4; return new THREE.Color().setRGB(P.d[i] / 255, P.d[i + 1] / 255, P.d[i + 2] / 255, THREE.SRGBColorSpace); };
+// ilhas de geometria (peças separadas da malha), pelo índice e por posição igual
+function kmIslands(g) { const pos = g.attributes.position, n = pos.count, par = new Int32Array(n).map((_, i) => i), f = (i) => { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; }, un = (a, b) => { a = f(a); b = f(b); if (a !== b) par[a] = b; };
+  const key = new Map(); for (let i = 0; i < n; i++) { const k = pos.getX(i).toFixed(4) + ',' + pos.getY(i).toFixed(4) + ',' + pos.getZ(i).toFixed(4); if (key.has(k)) un(i, key.get(k)); else key.set(k, i); }
+  const idx = g.index; if (idx) for (let t = 0; t < idx.count; t += 3) { un(idx.getX(t), idx.getX(t + 1)); un(idx.getX(t), idx.getX(t + 2)); } else for (let t = 0; t < n; t += 3) { un(t, t + 1); un(t, t + 2); }
+  const id = new Int32Array(n); for (let i = 0; i < n; i++) id[i] = f(i); return id; }
+function kmOrder() { if (KM.order) return KM.order; let m = null; MODELS.km_fa.root.traverse((o) => { if (!m && o.isSkinnedMesh && o.name === 'km_Body') m = o; }); return (KM.order = m.skeleton.bones.map((b) => b.name)); }
+const KM_CAT = { keep: 0, skin: 1, hair: 2, top: 3, bottom: 4, shoes: 5, face: 6, drop: 7 };
+// análise de uma peça (cabeça ou corpo de uma variante): categoria e cor original de cada vértice
+function kmPart(v, which) { const key = v + which; if (KM.part[key]) return KM.part[key]; const M = MODELS['km_' + v]; if (!M) return null; let mesh = null; M.root.traverse((o) => { if (o.isSkinnedMesh && o.name === (which === 'h' ? 'km_Head' : 'km_Body')) mesh = o; }); if (!mesh) return null;
+  const g = mesh.geometry, pos = g.attributes.position, uv = g.attributes.uv, nrm = g.attributes.normal, n = pos.count, col = new Float32Array(n * 3), cat = new Uint8Array(n), isl = kmIslands(g); g.computeBoundingBox(); const bb = g.boundingBox;
+  for (let i = 0; i < n; i++) { const c = kmTex(uv.getX(i), uv.getY(i)); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+  const I = {}; for (let i = 0; i < n; i++) { const k = isl[i]; const o = I[k] || (I[k] = { n: 0, r: 0, g: 0, b: 0, x0: 1e9, x1: -1e9, y0: 1e9, y1: -1e9, z1: -1e9, nz: 0, j: g.attributes.skinIndex ? g.attributes.skinIndex.getX(i) : 0 }); o.n++; o.r += col[i * 3]; o.g += col[i * 3 + 1]; o.b += col[i * 3 + 2]; const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i); o.x0 = Math.min(o.x0, x); o.x1 = Math.max(o.x1, x); o.y0 = Math.min(o.y0, y); o.y1 = Math.max(o.y1, y); o.z1 = Math.max(o.z1, z); o.nz += nrm ? nrm.getZ(i) : 0; }
+  for (const o of Object.values(I)) { o.r /= o.n; o.g /= o.n; o.b /= o.n; o.nz /= o.n; }
+  const lum = (o) => 0.3 * o.r + 0.59 * o.g + 0.11 * o.b, dist = (a, b) => Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b), C = (i) => ({ r: col[i * 3], g: col[i * 3 + 1], b: col[i * 3 + 2] });
+  const mode = (ids) => { const h = {}; let best = null, bn = 0; for (const i of ids) { const c = C(i), k = Math.round(c.r * 12) + ',' + Math.round(c.g * 12) + ',' + Math.round(c.b * 12); const e = h[k] || (h[k] = { n: 0, r: 0, g: 0, b: 0 }); e.n++; e.r += c.r; e.g += c.g; e.b += c.b; if (e.n > bn) { bn = e.n; best = e; } } return best ? { r: best.r / best.n, g: best.g / best.n, b: best.b / best.n, n: best.n } : null; };
+  const all = [...Array(n).keys()], hy = bb.max.y - bb.min.y, dz = bb.max.z - bb.min.z, ref = {};
+  let skinRef;
+  if (which === 'h') {
+    // traços do rosto original: ilhas pequenas e escuras na frente
+    for (const o of Object.values(I)) if (o.n <= 40 && lum(o) < 0.12 && o.z1 > bb.max.z - dz * 0.35) o.c = 'face';
+    const fv = all.filter((i) => I[isl[i]].c === 'face'); let fx = 0, fy = 0, fz = -1e9; for (const i of fv) { fx += pos.getX(i); fy += pos.getY(i); fz = Math.max(fz, pos.getZ(i)); } fx /= Math.max(1, fv.length); fy /= Math.max(1, fv.length);
+    // pele: a cor mais comum logo em volta dos olhos e da boca
+    skinRef = mode(all.filter((i) => !I[isl[i]].c && nrm && nrm.getZ(i) > 0.7 && Math.abs(pos.getY(i) - fy) < hy * 0.35 && pos.getZ(i) > fz - dz * 0.12 && lum(C(i)) > 0.12)) || mode(all.filter((i) => !I[isl[i]].c && pos.getZ(i) > fz - dz * 0.2 && lum(C(i)) > 0.12)) || { r: 0.8, g: 0.55, b: 0.4 };
+    KM.face[v + 'pos'] = { fx, fy, fz };
+  } else skinRef = kmPart(v, 'h').skinRef;
+  for (let i = 0; i < n; i++) { if (I[isl[i]].c) { cat[i] = KM_CAT[I[isl[i]].c]; continue; } if (dist(C(i), skinRef) < 0.1) cat[i] = KM_CAT.skin; }
+  if (which === 'h') { const rest = all.filter((i) => !cat[i]), top = mode(rest.filter((i) => pos.getY(i) > bb.min.y + hy * 0.6)) || mode(rest); if (top) { ref.hair = top; for (const i of rest) if (dist(C(i), top) < 0.2) cat[i] = KM_CAT.hair; }
+    // cada peça (ilha) fica inteira com a categoria da maioria: a franja não vira pele quando o cabelo é parecido com o tom da pele
+    const tally = {}; for (let i = 0; i < n; i++) { const t = tally[isl[i]] || (tally[isl[i]] = { 1: 0, 2: 0 }); if (cat[i] === 1 || cat[i] === 2) t[cat[i]]++; }
+    for (let i = 0; i < n; i++) { const t = tally[isl[i]]; if ((cat[i] === 1 || cat[i] === 2) && t[1] + t[2] > 0) cat[i] = t[2] >= t[1] ? 2 : 1; } }
+  else {
+    const bones = mesh.skeleton.bones.map((b) => b.name), legJ = new Set(['leg-left', 'leg-right'].map((nm) => bones.indexOf(nm))), si = g.attributes.skinIndex, isLeg = (i) => legJ.has(si.getX(i));
+    if (v === 'fa') for (let i = 0; i < n; i++) if (Math.abs(pos.getX(i)) > 0.27 && !isLeg(i)) cat[i] = KM_CAT.drop; // a fa vem com uma arma na mão
+    const legs = all.filter((i) => !cat[i] && isLeg(i)), shoeY = bb.min.y + hy * 0.14;
+    const pants = mode(legs.filter((i) => pos.getY(i) > shoeY + hy * 0.04)), shoeC = mode(legs.filter((i) => pos.getY(i) < shoeY && (!pants || dist(C(i), pants) > 0.12)));
+    if (pants) { ref.bottom = pants; for (const i of legs) if (dist(C(i), pants) < 0.2 && (pos.getY(i) > shoeY - hy * 0.02 || !shoeC)) cat[i] = KM_CAT.bottom; }
+    if (shoeC) { ref.shoes = shoeC; for (const i of legs) if (!cat[i] && pos.getY(i) < shoeY + hy * 0.02 && dist(C(i), shoeC) < 0.2) cat[i] = KM_CAT.shoes; }
+    const tops = all.filter((i) => !cat[i] && !isLeg(i)), topC = mode(tops); if (topC) { ref.top = topC; for (const i of tops) if (dist(C(i), topC) < 0.2) cat[i] = KM_CAT.top; }
+  }
+  { const acc = {}; for (let i = 0; i < n; i++) { const c = cat[i]; if (c < 1 || c > 5) continue; const e = acc[c] || (acc[c] = { r: 0, g: 0, b: 0, n: 0 }); e.r += col[i * 3]; e.g += col[i * 3 + 1]; e.b += col[i * 3 + 2]; e.n++; } const nmOf = ['keep', 'skin', 'hair', 'top', 'bottom', 'shoes'];
+    for (const [c, e] of Object.entries(acc)) { const m = { r: e.r / e.n, g: e.g / e.n, b: e.b / e.n }; if (+c === 1) { if (which === 'h') skinRef = m; } else ref[nmOf[c]] = m; } }
+  return (KM.part[key] = { v, which, mesh, g, col, cat, ref, skinRef, bones: mesh.skeleton.bones.map((b) => b.name), isl, I }); }
+const KCOL = { branco: { n: 'Branco', c: '#f4f1ea' }, creme: { n: 'Creme', c: '#ffe9c4' }, amarelo: { n: 'Amarelo', c: '#ffd45a' }, laranja: { n: 'Laranja', c: '#ff9a4a' }, vermelho: { n: 'Vermelho', c: '#e8505b' }, rosa: { n: 'Rosa', c: '#ff8fb8' }, lilas: { n: 'Lilás', c: '#b79cff' }, roxo: { n: 'Roxo', c: '#8a5cd8' },
+  ceu: { n: 'Céu', c: '#9fd8ff' }, azul: { n: 'Azul', c: '#5f97f0' }, marinho: { n: 'Marinho', c: '#3b4f8f' }, menta: { n: 'Menta', c: '#8fe0b8' }, verde: { n: 'Verde', c: '#5cbf6a' }, bege: { n: 'Bege', c: '#d9bf94' }, marrom: { n: 'Marrom', c: '#8a5a3b' }, cinza: { n: 'Cinza', c: '#9aa0ad' }, carvao: { n: 'Carvão', c: '#3e3a48' }, dourado: { n: 'Dourado', c: '#e8b84a' } };
+const KM_HAIRC = { castanho: '#6b4428' };
+const kmHex = (T, v, def) => (v && v[0] === '#' ? v : (T[v] && T[v].c) || def || null);
+// geometria recolorida (cache por variante + cores): cor por vértice = cor escolhida × (degradê original / cor média da peça)
+function kmGeo(v, which, cols) { const key = v + which + JSON.stringify(cols); if (KM.geo[key]) return KM.geo[key]; const P = kmPart(v, which); if (!P) return null;
+  const g = P.g.clone(); for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'skinIndex', 'skinWeight'].includes(a)) g.deleteAttribute(a);
+  { const ord = kmOrder(); if (P.bones.join() !== ord.join()) { const map = P.bones.map((nm) => Math.max(0, ord.indexOf(nm))), si = g.attributes.skinIndex; for (let i = 0; i < si.count; i++) for (let c = 0; c < 4; c++) si.setComponent(i, c, map[si.getComponent(i, c)] ?? 0); si.needsUpdate = true; } }
+  const n = g.attributes.position.count, out = new Float32Array(n * 3), pos = g.attributes.position, T = {}; for (const [k, h] of Object.entries(cols)) if (h) T[k] = new THREE.Color(h);
+  const refOf = (nm) => (nm === 'skin' ? P.skinRef : P.ref[nm]), cx = (P.g.boundingBox.min.x + P.g.boundingBox.max.x) / 2, cy = (P.g.boundingBox.min.y + P.g.boundingBox.max.y) / 2, cz = (P.g.boundingBox.min.z + P.g.boundingBox.max.z) / 2;
+  const names = ['keep', 'skin', 'hair', 'top', 'bottom', 'shoes', 'face', 'drop'];
+  for (let i = 0; i < n; i++) { const c = P.cat[i], nm = names[c]; let r = P.col[i * 3], gg = P.col[i * 3 + 1], b = P.col[i * 3 + 2];
+    if (c === 6 || c === 7) { pos.setXYZ(i, cx, cy, cz); } // olhos e boca originais somem (o rosto novo é pintado); a arma da fa também
+    else if (T[nm] && refOf(nm)) { const R = refOf(nm), lr = (0.3 * r + 0.59 * gg + 0.11 * b) / Math.max(0.01, 0.3 * R.r + 0.59 * R.g + 0.11 * R.b), k = Math.max(0.62, Math.min(1.3, lr)); r = T[nm].r * k; gg = T[nm].g * k; b = T[nm].b * k; } // só a luz do degradê original, com o tom escolhido
+    out[i * 3] = r; out[i * 3 + 1] = gg; out[i * 3 + 2] = b; }
+  g.setAttribute('color', new THREE.BufferAttribute(out, 3)); pos.needsUpdate = true; g.computeBoundingSphere(); return (KM.geo[key] = g); }
+// ---------- rosto pintado ----------
+const KM_EYES = { redondo: 'Redondinhos', brilho: 'Brilhantes', feliz: 'Felizes', sono: 'Sonolentos', cilios: 'Com cílios', ponto: 'Pontinhos', estrela: 'Estrelas', coracao: 'Corações', pisca: 'Piscadinha', gato: 'De gatinho' };
+const KM_ECOL = { preto: { n: 'Preto', c: '#2a2230' }, castanho: { n: 'Castanho', c: '#6b4428' }, azul: { n: 'Azul', c: '#3f7fd6' }, verde: { n: 'Verde', c: '#3e9a5a' }, lilas: { n: 'Lilás', c: '#8a5cd8' }, rosa: { n: 'Rosa', c: '#e0608f' }, mel: { n: 'Mel', c: '#c98a2e' } };
+const KM_BROWS = { normal: 'Normais', grossa: 'Grossas', fina: 'Finas', brava: 'Bravinhas', triste: 'Preocupadas', nenhuma: 'Sem' };
+const KM_MOUTH = { sorriso: 'Sorriso', sorrisao: 'Sorrisão', gato: 'Gatinho', bico: 'Biquinho', linha: 'Tranquila', dente: 'Dentinho', lingua: 'Linguinha', surpresa: 'Surpresa' };
+const KM_CHEEK = { none: 'Nada', blush: 'Bochechas', sardas: 'Sardas', ambos: 'Bochechas e sardas', rubor: 'Rubor forte', bigodes: 'Bigodinhos', estrela: 'Estrelinha', coracao: 'Coraçãozinho' };
+const KM_DEF = { kb: 'fb', kh: 'fb', sk: 's2', hc: 'castanho', ct: 'amarelo', cb: 'lilas', cs: 'branco', ey: 'redondo', ec: 'preto', br: 'normal', mo: 'sorriso', fc: 'blush', acc: 'none', trail: 'none', sz: 'n', hd: 'n' };
+function kmFaceTex(lk) { const key = [lk.ey, lk.ec, lk.br, lk.mo, lk.fc, lk.hc].join('|'); if (KM.face[key]) return KM.face[key];
+  const S_ = 256, c = document.createElement('canvas'); c.width = c.height = S_; const x = c.getContext('2d'), ink = '#2a1d2e', ec = kmHex(KM_ECOL, lk.ec, '#2a2230'), brow = kmHex(HAIRC, lk.hc, KM_HAIRC.castanho) || '#6b4428';
+  x.lineCap = 'round'; x.lineJoin = 'round'; x.translate(128, 144); x.scale(1.12, 1.12); x.translate(-128, -128); /* um pouco maior e mais baixo: a franja cobre o alto da placa */ const L = 82, R = 174, EY = 118;
+  const eye = (cx, cy, mir) => { x.save(); x.translate(cx, cy); x.fillStyle = ink; x.strokeStyle = ink;
+    switch (lk.ey) {
+      case 'brilho': x.fillStyle = ink; x.beginPath(); x.ellipse(0, 0, 21, 27, 0, 0, 7); x.fill(); x.fillStyle = ec; x.beginPath(); x.ellipse(0, 5, 15, 19, 0, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-7, -10, 7, 0, 7); x.fill(); x.beginPath(); x.arc(7, 9, 3.5, 0, 7); x.fill(); break;
+      case 'feliz': x.lineWidth = 9; x.beginPath(); x.arc(0, 10, 17, Math.PI * 1.12, Math.PI * 1.88); x.stroke(); break;
+      case 'sono': x.lineWidth = 8; x.beginPath(); x.arc(0, -6, 17, Math.PI * 0.15, Math.PI * 0.85); x.stroke(); break;
+      case 'cilios': x.fillStyle = ec === '#2a2230' ? ink : ec; x.beginPath(); x.ellipse(0, 2, 14, 19, 0, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-4, -6, 5, 0, 7); x.fill(); x.lineWidth = 5; for (const a of [-0.5, 0, 0.5]) { x.beginPath(); x.moveTo(Math.sin(a) * 14 * mir, -16); x.lineTo(Math.sin(a) * 24 * mir + 6 * mir, -27); x.stroke(); } break;
+      case 'ponto': x.beginPath(); x.arc(0, 2, 9, 0, 7); x.fill(); break;
+      case 'estrela': x.fillStyle = ec === '#2a2230' ? '#ffb83c' : ec; x.beginPath(); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 - Math.PI / 2, r = i % 2 ? 9 : 22; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); } x.closePath(); x.fill(); x.lineWidth = 3; x.strokeStyle = ink; x.stroke(); break;
+      case 'coracao': x.fillStyle = '#ff5c8a'; x.beginPath(); x.moveTo(0, 16); x.bezierCurveTo(-26, -2, -14, -24, 0, -9); x.bezierCurveTo(14, -24, 26, -2, 0, 16); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-7, -8, 4, 0, 7); x.fill(); break;
+      case 'pisca': if (mir > 0) { x.lineWidth = 9; x.beginPath(); x.moveTo(-15, -6); x.lineTo(10, 2); x.lineTo(-15, 10); x.stroke(); } else { x.beginPath(); x.ellipse(0, 0, 14, 19, 0, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-4, -7, 5, 0, 7); x.fill(); } break;
+      case 'gato': x.fillStyle = ec === '#2a2230' ? '#e8b84a' : ec; x.beginPath(); x.ellipse(0, 0, 17, 20, 0, 0, 7); x.fill(); x.fillStyle = ink; x.beginPath(); x.ellipse(0, 0, 5, 17, 0, 0, 7); x.fill(); x.lineWidth = 4; x.beginPath(); x.ellipse(0, 0, 17, 20, 0, 0, 7); x.stroke(); break;
+      default: x.fillStyle = ec === '#2a2230' ? ink : ec; x.beginPath(); x.ellipse(0, 0, 14, 19, 0, 0, 7); x.fill(); if (ec !== '#2a2230') { x.lineWidth = 4; x.strokeStyle = ink; x.stroke(); } x.fillStyle = '#fff'; x.beginPath(); x.arc(-4, -7, 5.5, 0, 7); x.fill(); }
+    x.restore(); };
+  eye(L, EY, -1); eye(R, EY, 1);
+  // sobrancelhas
+  if (lk.br !== 'nenhuma') { x.strokeStyle = brow; x.lineWidth = lk.br === 'grossa' ? 12 : lk.br === 'fina' ? 4 : 7; for (const [cx, m] of [[L, -1], [R, 1]]) { x.beginPath(); if (lk.br === 'brava') { x.moveTo(cx - 18 * m, 74); x.lineTo(cx + 16 * m, 84); } else if (lk.br === 'triste') { x.moveTo(cx - 18 * m, 84); x.lineTo(cx + 16 * m, 74); } else { x.moveTo(cx - 18, 82); x.quadraticCurveTo(cx, 70, cx + 18, 82); } x.stroke(); } }
+  // bochechas e enfeites
+  const fc = lk.fc || 'none';
+  if (fc === 'blush' || fc === 'ambos' || fc === 'rubor') { x.fillStyle = fc === 'rubor' ? 'rgba(255,90,120,.62)' : 'rgba(255,120,150,.42)'; for (const cx of [56, 200]) { x.beginPath(); x.ellipse(cx, 160, 22, 13, 0, 0, 7); x.fill(); } }
+  if (fc === 'sardas' || fc === 'ambos') { x.fillStyle = 'rgba(150,80,50,.7)'; for (const [px, py] of [[48, 146], [60, 152], [52, 160], [196, 146], [208, 152], [202, 160]]) { x.beginPath(); x.arc(px, py, 3, 0, 7); x.fill(); } }
+  if (fc === 'bigodes') { x.strokeStyle = ink; x.lineWidth = 3; for (const m of [-1, 1]) for (const dy of [-6, 4]) { x.beginPath(); x.moveTo(128 + 52 * m, 166 + dy); x.lineTo(128 + 92 * m, 160 + dy * 1.6); x.stroke(); } }
+  if (fc === 'estrela') { x.fillStyle = '#ffb83c'; x.beginPath(); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 - Math.PI / 2, r = i % 2 ? 5 : 12; x.lineTo(205 + Math.cos(a) * r, 162 + Math.sin(a) * r); } x.fill(); }
+  if (fc === 'coracao') { x.fillStyle = '#ff5c8a'; x.beginPath(); x.moveTo(205, 172); x.bezierCurveTo(190, 162, 196, 148, 205, 156); x.bezierCurveTo(214, 148, 220, 162, 205, 172); x.fill(); }
+  // boca
+  x.strokeStyle = ink; x.fillStyle = ink; x.lineWidth = 7; const MY = 176;
+  switch (lk.mo) {
+    case 'sorrisao': x.beginPath(); x.moveTo(104, MY - 6); x.quadraticCurveTo(128, MY - 10, 152, MY - 6); x.quadraticCurveTo(128, MY + 34, 104, MY - 6); x.fill(); x.fillStyle = '#ff7f8f'; x.beginPath(); x.ellipse(128, MY + 12, 12, 7, 0, 0, 7); x.fill(); break;
+    case 'gato': x.beginPath(); x.moveTo(104, MY - 4); x.quadraticCurveTo(116, MY + 12, 128, MY - 2); x.quadraticCurveTo(140, MY + 12, 152, MY - 4); x.stroke(); break;
+    case 'bico': x.fillStyle = '#e8506f'; x.beginPath(); x.ellipse(128, MY, 9, 8, 0, 0, 7); x.fill(); break;
+    case 'linha': x.beginPath(); x.moveTo(112, MY); x.lineTo(144, MY); x.stroke(); break;
+    case 'dente': x.beginPath(); x.moveTo(104, MY - 6); x.quadraticCurveTo(128, MY + 22, 152, MY - 6); x.stroke(); x.fillStyle = '#fff'; x.fillRect(120, MY - 1, 10, 9); x.strokeStyle = ink; x.lineWidth = 2; x.strokeRect(120, MY - 1, 10, 9); break;
+    case 'lingua': x.beginPath(); x.moveTo(104, MY - 6); x.quadraticCurveTo(128, MY + 18, 152, MY - 6); x.stroke(); x.fillStyle = '#ff7f8f'; x.beginPath(); x.ellipse(136, MY + 8, 9, 10, 0, 0, 7); x.fill(); break;
+    case 'surpresa': x.beginPath(); x.ellipse(128, MY + 2, 10, 13, 0, 0, 7); x.fill(); break;
+    default: x.beginPath(); x.moveTo(106, MY - 6); x.quadraticCurveTo(128, MY + 16, 150, MY - 6); x.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return (KM.face[key] = t); }
+// placa do rosto: na frente da pele da cabeça, no espaço do osso da cabeça
+function kmFace(obj, head, lk) { let hb = null; obj.traverse((o) => { if (!hb && o.isBone && o.name === 'head') hb = o; }); if (!hb) return;
+  if (obj.userData.kmFace) { obj.userData.kmFace.parent && obj.userData.kmFace.parent.remove(obj.userData.kmFace); obj.userData.kmFace = null; }
+  const P = kmPart(lk.kh, 'h'); if (!P) return; const sk = head.skeleton, hi = sk.bones.findIndex((b) => b.name === 'head'); if (hi < 0) return;
+  const M = sk.boneInverses[hi].clone().multiply(head.bindMatrix), pos = P.g.attributes.position, v = new THREE.Vector3(); let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9, z1 = -1e9;
+  for (let i = 0; i < pos.count; i++) { if (P.cat[i] !== KM_CAT.skin && P.cat[i] !== KM_CAT.face) continue; v.fromBufferAttribute(pos, i); if (P.cat[i] === KM_CAT.skin && P.g.attributes.normal && P.g.attributes.normal.getZ(i) < 0.7) continue; v.applyMatrix4(M); x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y); z1 = Math.max(z1, v.z); }
+  if (!isFinite(x0)) return; const w = (x1 - x0) * 0.96, h = Math.min(w, (y1 - y0) * 1.0);
+  const mat = KM.faceMat[kmFaceTex(lk).uuid] || (KM.faceMat[kmFaceTex(lk).uuid] = new THREE.MeshLambertMaterial({ map: kmFaceTex(lk), transparent: true, alphaTest: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); m.position.set((x0 + x1) / 2, y0 + (y1 - y0) * 0.5, z1 + 0.0015); m.renderOrder = 2; m.castShadow = false; hb.add(m); obj.userData.kmFace = m; }
+function kmLook(obj, look) { const lk = Object.assign({}, KM_DEF, look || {}); if (!KM_VAR.includes(lk.kb)) lk.kb = KM_DEF.kb; if (!KM_VAR.includes(lk.kh)) lk.kh = KM_DEF.kh;
+  let body = null, head = null; obj.traverse((o) => { if (o.isSkinnedMesh && o.name === 'km_Body') body = o; if (o.isSkinnedMesh && o.name === 'km_Head') head = o; }); if (!body || !head) return;
+  if (!KM.mat) KM.mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const skin = kmHex(SKINS, lk.sk, null), hair = kmHex(HAIRC, lk.hc, KM_HAIRC[lk.hc] || null) || KM_HAIRC.castanho;
+  const gb = kmGeo(lk.kb, 'b', { skin, top: kmHex(KCOL, lk.ct), bottom: kmHex(KCOL, lk.cb), shoes: kmHex(KCOL, lk.cs) }), gh = kmGeo(lk.kh, 'h', { skin, hair });
+  obj.userData.kmKey = lk.kb + lk.kh;
+  if (gb) { body.geometry = gb; body.material = KM.mat; } if (gh) { head.geometry = gh; head.material = KM.mat; }
+  try { kmFace(obj, head, lk); } catch (e) { console.error(e); }
+  ACC_TINT.hex = accCol(lk.acc_c); ACC_TINT.pat = lk.acc_p || 'lisa'; try { attachHead(obj, null, lk.acc); } finally { ACC_TINT.hex = null; ACC_TINT.pat = 'lisa'; }
+  try { equipSlots(obj, lk); } catch (e) { console.error(e); } }
+{ const base = applyLook; applyLook = function (obj, look) { if (obj && obj.userData.ck === 'km') return kmLook(obj, look); return base(obj, look); }; }
+{ const base = applyBody; applyBody = function (o, lk) { if (o && o.userData.ck === 'km') return base(o, Object.assign({}, lk || {}, { fc: 'none' })); return base(o, lk); }; }
+{ const base = accAnchors; accAnchors = function (obj, ck) { return base(obj, ck === 'km' ? 'km:' + (obj.userData.kmKey || '') : ck); }; }
+{ const base = scMount; scMount = function (el, obj, opt) { if (obj && obj.userData.ck === 'km') { const sv = CLIPS; CLIPS = kmClips(); try { return base(el, obj, opt); } finally { CLIPS = sv; } } return base(el, obj, opt); }; }
+// espada básica: a base nova não tem espada embutida no modelo
+{ const base = updateHand; updateHand = function () { base(); if (!player || player.key !== 'km' || !player.hand) return; const t = TOOLS[S.slot].id, sw = SWORDS[gear().sword || 0]; if (handProp && !handProp.userData.kmS) { handProp.userData.kmS = 1; handProp.scale.multiplyScalar(1.6); } // corpo chibi: ferramentas maiores
+  if (t === 'espada' && !sw.m && !handProp && mode !== 'in' && !P.bike && !fighting()) { const g = heldObj('w:w_sword'); player.obj.updateMatrixWorld(true); const inv = 1 / player.hand.getWorldScale(new THREE.Vector3()).x; g.scale.multiplyScalar(inv * 0.95 * 1.6); g.userData.kmS = 1; g.rotation.set(HELD_ROT.x, HELD_ROT.y, HELD_ROT.z); player.hand.add(g); handProp = g; handKey = 'w:w_sword'; } }; }
+
+// retratos: a base nova usa as próprias animações (sem isso ficava em T, minúscula no retrato)
+{ const base = thumb; thumb = function (k, opt = {}) { if (k && typeof k !== 'string' && k.userData && k.userData.ck === 'km' && opt.char) { const sv = CLIPS; CLIPS = kmClips(); try { return base(k, opt.head ? Object.assign({ zoom: 0.78 }, opt) : opt); } finally { CLIPS = sv; } } return base(k, opt); }; }
+// ---------- criador estilo Animal Crossing para a base nova ----------
+const KM_HEADS = { fa: 'Coque alto', fb: 'Coquinhos', fc: 'Coque com faixa', fd: 'Coque redondo', fe: 'Liso comprido', ff: 'Chiquinhas', ma: 'Cacheadinho', mb: 'Careca e barba', mc: 'Quepe', md: 'Espetado', me: 'Topete e óculos', mf: 'Bagunçado' };
+const KM_BODIES = { fa: 'Moletom', fb: 'Blusinha', fc: 'Vestido', fd: 'Terninho', fe: 'Jaleco', ff: 'Jaqueta', ma: 'Camiseta', mb: 'Camisetão', mc: 'Uniforme', md: 'Terno', me: 'Colete', mf: 'Jardineira' };
+WARD_FREE.kh = ['fa', 'fb', 'fd', 'fe', 'ff', 'ma', 'md', 'mf']; WARD_PRICE.kh = { fc: 120, mb: 80, me: 150, mc: 220 };
+WARD_FREE.kb = ['fa', 'fb', 'fc', 'ma', 'mb', 'mf']; WARD_PRICE.kb = { ff: 160, fe: 180, me: 200, fd: 240, mc: 300, md: 320 };
+WARD_PRICE.kc = { roxo: 90, marinho: 90, carvao: 90, dourado: 220 }; WARD_FREE.kc = Object.keys(KCOL).filter((k) => !WARD_PRICE.kc[k]);
+const crIsKM = (fromTitle) => crModel === 'km' || (!crModel && !fromTitle && S.outfit === 'km');
+// a base nova também aparece como opção no criador clássico
+modelChips = function (cur) { return `<div class="crl">Base do corpo</div><div class="chips mdl">${[['km', 'Fofinha (nova)'], ['rogue', 'Aventureira'], ['knight', 'Aventureiro']].map(([k, n]) => `<button class="btn chip ${cur === k || (k === 'rogue' && cur !== 'knight' && cur !== 'km') ? 'on' : ''}" data-md="${k}">${n}</button>`).join('')}</div><p class="note">A base <b>Fofinha</b> troca penteado, roupa e rosto peça por peça. As aventureiras são as clássicas.</p>`; };
+function kmChips(fromTitle, key, cat, T, cur, sw, label = (v) => (typeof v === 'string' ? v : v.n)) {
+  return Object.entries(T).map(([k, v]) => { const own = !cat || (fromTitle ? (WARD_FREE[cat] || []).includes(k) : owns(cat, k)); return `<button class="btn chip ${cur === k ? 'on' : ''} ${own ? '' : 'locked'}" data-kl="${key}:${k}" ${own ? '' : 'title="Compre no Ateliê da Fifi"'}>${sw ? `<i style="background:${sw(k, v)}"></i>` : ''}${label(v)}${own ? '' : ' 🔒'}</button>`; }).join(''); }
+function kmTabBody(tab, lk, fromTitle) { const C = (k, v) => v.c, row = (t, h) => `<div class="crl">${t}</div><div class="chips">${h}</div>`;
+  if (tab === 'corpo') return `${modelChips('km')}${row('Jeito de falar', [['f', 'Ela'], ['m', 'Ele']].map(([k, n]) => `<button class="btn chip ${(crGender || 'f') === k ? 'on' : ''}" data-kgd="${k}">${n}</button>`).join(''))}`
+    + row('Tom de pele', kmChips(fromTitle, 'sk', null, SKINS, lk.sk, (k, v) => v.c || '#f4c29b') + cpick('sk', lk.sk)) + row('Altura', kmChips(fromTitle, 'sz', null, Object.fromEntries(Object.entries(SIZES).map(([k, v]) => [k, v[0]])), lk.sz || 'n')) + row('Cabeça', kmChips(fromTitle, 'hd', null, Object.fromEntries(Object.entries(HEADS).map(([k, v]) => [k, v[0]])), lk.hd || 'n'));
+  if (tab === 'rosto') return row('Olhos', kmChips(fromTitle, 'ey', null, KM_EYES, lk.ey)) + row('Cor dos olhos', kmChips(fromTitle, 'ec', null, KM_ECOL, lk.ec, C)) + row('Sobrancelhas', kmChips(fromTitle, 'br', null, KM_BROWS, lk.br)) + row('Boca', kmChips(fromTitle, 'mo', null, KM_MOUTH, lk.mo)) + row('Bochechas e enfeites', kmChips(fromTitle, 'fc', null, KM_CHEEK, lk.fc || 'none'));
+  if (tab === 'cabelo') return row('Penteado', kmChips(fromTitle, 'kh', 'kh', KM_HEADS, lk.kh)) + row('Cor do cabelo', kmChips(fromTitle, 'hc', 'hc', HAIRC, lk.hc, (k, v) => v.c || KM_HAIRC[k] || '#6b4428') + cpick('hc', lk.hc));
+  if (tab === 'roupa') return row('Roupa', kmChips(fromTitle, 'kb', 'kb', KM_BODIES, lk.kb)) + row('Cor da blusa', kmChips(fromTitle, 'ct', 'kc', KCOL, lk.ct, C) + cpick('ct', lk.ct)) + row('Cor da calça ou saia', kmChips(fromTitle, 'cb', 'kc', KCOL, lk.cb, C) + cpick('cb', lk.cb)) + row('Cor dos sapatos', kmChips(fromTitle, 'cs', 'kc', KCOL, lk.cs, C) + cpick('cs', lk.cs));
+  return null; }
+{ const base = openCreator; openCreator = function (fromTitle) {
+  const fresh = !crLook; base(fromTitle);
+  if (fresh && fromTitle && crModel !== 'km') { crModel = 'km'; crLook = Object.assign({}, KM_DEF, { acc: 'none', trail: 'none' }); return openCreator(fromTitle); } // jogo novo começa na base fofinha
+  if (!crIsKM(fromTitle)) return; for (const [k, v] of Object.entries(KM_DEF)) if (crLook[k] === undefined || (k === 'sk' && crLook.sk === 'orig')) crLook[k] = v;
+  const h = kmTabBody(crTab, crLook, fromTitle), box = document.querySelector('.crbody'); if (!h || !box) return; box.innerHTML = h;
+  const redo = () => { sfx('accept'); openCreator(fromTitle); setTimeout(scPower, 60); };
+  box.querySelectorAll('[data-kl]').forEach((el) => (el.onclick = () => { if (el.classList.contains('locked')) { sfx('cancel'); toast('🔒 Isso fica à venda no <b>Ateliê da Fifi</b> (Vila Girassol).'); return; } const [k, v] = el.dataset.kl.split(':'); crLook[k] = v; redo(); }));
+  box.querySelectorAll('[data-kgd]').forEach((el) => (el.onclick = () => { crGender = el.dataset.kgd; if (!fromTitle) S.gender = crGender; redo(); }));
+  box.querySelectorAll('[data-md]').forEach((el) => (el.onclick = () => { const k = el.dataset.md; sfx('accept'); if (k === 'km') return; crGender = k === 'knight' ? 'm' : 'f'; crModel = k; if (!fromTitle) { S.gender = crGender; S.outfit = k; setOutfit(true); } openCreator(fromTitle); setTimeout(scPower, 60); }));
+  box.querySelectorAll('[data-cp]').forEach((el) => { el.onclick = (e) => e.stopPropagation(); el.onchange = () => { crLook[el.dataset.cp] = el.value; redo(); }; });
+  box.querySelectorAll('[data-cplock]').forEach((el) => (el.onclick = (e) => { e.preventDefault(); sfx('cancel'); toast('🔒 A <b>Paleta mágica</b> (cor livre) fica à venda no <b>Ateliê da Fifi</b>, na Vila Girassol.'); }));
+}; }
+// Ateliê: penteados, roupas e tecidos da base nova
+function kmThumb(lk, head) { const key = JSON.stringify(lk) + head; KM.th = KM.th || {}; if (KM.th[key]) return KM.th[key]; try { const o = cloneM('ch_km'); o.userData.ck = 'km'; applyLook(o, Object.assign({}, KM_DEF, lk)); return (KM.th[key] = thumb(o, { char: true, head, ry: -0.25 })); } catch (e) { return emojiThumb('👕'); } }
+{ const base = openAtelie; openAtelie = function () { base(); const grid = document.querySelector('.sgrid'), tab = document.querySelector('[data-at].on'); if (!grid || !tab) return; const at = tab.dataset.at;
+  const card = (img, n, d, price, owned, code) => `<div class="sitem ${owned ? 'own' : ''}"><img src="${img}"><b>${n}</b><span>${d}</span><button class="btn ${owned ? '' : 'candy pink'} sm" ${owned || S.coins < price ? 'disabled' : ''} data-wb="${code}">${owned ? 'Já é seu ✓' : price + '🪙'}</button></div>`;
+  let add = ''; if (at === 'roupas') add = Object.entries(WARD_PRICE.kb).map(([k, p]) => card(kmThumb({ kb: k }, false), KM_BODIES[k], 'Roupa da base fofinha', p, owns('kb', k), 'kb:' + k)).join('');
+  if (at === 'cabelo') add = Object.entries(WARD_PRICE.kh).map(([k, p]) => card(kmThumb({ kh: k }, true), KM_HEADS[k], 'Penteado da base fofinha', p, owns('kh', k), 'kh:' + k)).join('');
+  if (at === 'cores') add = Object.entries(WARD_PRICE.kc).map(([k, p]) => card(swatchThumb(KCOL[k].c), 'Tecido ' + KCOL[k].n, 'Cor de roupa (base fofinha)', p, owns('kc', k), 'kc:' + k)).join('');
+  if (!add) return; grid.insertAdjacentHTML('afterbegin', add);
+  grid.querySelectorAll('[data-wb]').forEach((el) => { const [cat, k] = el.dataset.wb.split(':'); if (!['kb', 'kh', 'kc'].includes(cat)) return; el.onclick = () => { const price = WARD_PRICE[cat][k]; if (S.coins < price) return sfx('cancel'); S.coins -= price; giveWard(cat, k); sfx('coin'); toast(`👗 Comprou <b>${(cat === 'kb' ? KM_BODIES : cat === 'kh' ? KM_HEADS : { [k]: KCOL[k].n })[k]}</b>! Vista em Menu → Personagem.`); lastHud = ''; hud(); openAtelie(); }; }); }; }
+
+// ---------- moradores na base nova (mesmo estilo da jogadora) ----------
+const NPCKM = {
+  rosa: { kh: 'fc', hc: 'branco', kb: 'fc', ct: 'rosa', cb: 'lilas', cs: 'marrom', sk: 's2', ey: 'feliz', mo: 'sorriso', br: 'fina', fc: 'blush', gl: 'redondo', glc: 'lilas', sz: 'p' },
+  tico: { kh: 'md', hc: 'ruivo', kb: 'mb', ct: 'amarelo', cb: 'azul', cs: 'marrom', sk: 's3', ey: 'redondo', mo: 'sorrisao', fc: 'sardas', acc: 'palha' },
+  bento: { kh: 'mb', hc: 'branco', kb: 'mf', ct: 'ceu', cb: 'marrom', cs: 'carvao', sk: 's4', ey: 'sono', mo: 'linha', br: 'grossa', acc: 'gorro', acc_c: 'ceu', sz: 'a' },
+  pipo: { kh: 'mf', hc: 'preto', kb: 'ma', ct: 'vermelho', cb: 'azul', cs: 'branco', sk: 's2', ey: 'brilho', ec: 'castanho', mo: 'lingua', fc: 'sardas', acc: 'boina', acc_c: 'coral', sz: 'p', hd: 'f' },
+  iris: { kh: 'fe', hc: 'lilas', kb: 'fe', ct: 'branco', cb: 'lilas', cs: 'roxo', sk: 's1', ey: 'cilios', ec: 'lilas', mo: 'sorriso', gl: 'redondo', glc: 'lilas', acc: 'estrela' },
+  duda: { kh: 'ff', hc: 'ruivo', kb: 'ff', ct: 'carvao', cb: 'marrom', cs: 'carvao', sk: 's4', ey: 'redondo', br: 'grossa', mo: 'dente', fc: 'blush', wa: 'cinto', wac: 'sol' },
+  otto: { kh: 'me', hc: 'castanho', kb: 'md', ct: 'marinho', cb: 'marinho', cs: 'carvao', sk: 's3', ey: 'ponto', br: 'grossa', mo: 'linha', acc: 'boina', acc_c: 'grafite', sz: 'a' },
+  lia: { kh: 'fd', hc: 'loiro', kb: 'ma', ct: 'menta', cb: 'bege', cs: 'marrom', sk: 's1', ey: 'brilho', ec: 'verde', mo: 'sorrisao', fc: 'sardas', gl: 'sol', glc: 'coral', bk: 'aljava' },
+  fifi: { kh: 'fb', hc: 'rosa', kb: 'fc', ct: 'rosa', cb: 'lilas', cs: 'branco', sk: 's2', ey: 'cilios', ec: 'rosa', mo: 'bico', fc: 'blush', acc: 'laco', acc_c: 'lilas', gl: 'gatinho', glc: 'rosa' },
+  tome: { kh: 'ma', hc: 'branco', kb: 'me', ct: 'azul', cb: 'marinho', cs: 'marrom', sk: 's5', ey: 'sono', mo: 'sorriso', acc: 'gorro', acc_c: 'ceu', sz: 'a' },
+  marina: { kh: 'fa', hc: 'preto', kb: 'mc', ct: 'marinho', cb: 'branco', cs: 'carvao', sk: 's5', ey: 'redondo', br: 'brava', mo: 'sorriso', gl: 'sol', glc: 'ceu', acc: 'palha' },
+};
+for (const [id, lk] of Object.entries(NPCKM)) NPCLOOK[id] = Object.assign({}, KM_DEF, lk);
+for (const d of NPCDEF) if (NPCKM[d.id]) { d.m = 'km'; d.hue = 0; }
+for (const sh of Object.values(SHOPS)) if (sh.keeper) sh.keeper[0] = 'km';
+{ const base = residentOf; residentOf = function (D) { const r = base(D); if (r && r.lid && NPCKM[r.lid]) r.key = 'km'; return r; }; }
+// a Vovó Rosa e o Tico são criados antes dos moradores: troco os dois pela base nova
+{ const base = buildNpcs; buildNpcs = function () {
+  for (const nm of ['rosa', 'tico']) { const old = nm === 'rosa' ? rosaC : ticoC; if (!old) continue; const c = new Char('km'); c.obj.position.copy(old.obj.position); c.obj.rotation.copy(old.obj.rotation); scene.remove(old.obj); if (nm === 'rosa') rosaC = c; else ticoC = c; }
+  return base(); }; }
+
+{ const base = dressNpc; dressNpc = function (obj, id, key) { if (obj && obj.userData.ck === 'km') key = 'km'; return base(obj, id, key); }; }
+{ const base = npcThumb; npcThumb = function (id, key) { return base(id, NPCKM[id] ? 'km' : key); }; }
+
+const DI = () => `<img class="ti" src="${icon('sparkles', 20)}" alt="Pó Estelar">`; // ícone do Pó Estelar (a fonte pixel não tem o ${DI()})
+// ---------- Poço dos Desejos estilo Genshin ----------
+// Pity separado por tipo de banner (bichinho, personagem e o permanente), 50/50 no ★5 e no ★4 com garantia,
+// ★3 = peças do Ateliê, repetidos viram Pó Estelar e uma loja de troca, revelação item por item e resumo em cartas.
+const WR = { base5: 0.008, soft5: 66, step5: 0.07, hard5: 80, base4: 0.051, soft4: 9, step4: 0.51, hard4: 10 };
+const STDB = { id: 'std', n: 'Desejo do Vale', std: true, a: '#9fd8ff', b: '#3b4f8f' };
+function wpOf(kind) { if (!S.wp) S.wp = { pet: { p5: S.pity5 || 0, p4: S.pity4 || 0, g5: !!S.guar, g4: false }, hum: { p5: S.pity5 || 0, p4: S.pity4 || 0, g5: !!S.guar, g4: false }, std: { p5: 0, p4: 0, g5: false, g4: false } }; return S.wp[kind] || (S.wp[kind] = { p5: 0, p4: 0, g5: false, g4: false }); }
+const bKind = (b) => (b.std ? 'std' : b.hum ? 'hum' : 'pet');
+function allBanners() { refreshBanners(); return [...BANNERS, STDB]; }
+function ward3() { const L = []; for (const cat of ['kb', 'kh', 'kc', 'ac', 'hc', 'tr']) for (const k of Object.keys(WARD_PRICE[cat] || {})) L.push(cat + ':' + k); return L; }
+function wardInfo(code) { const [cat, k] = String(code).split(':'); const n = cat === 'kb' ? KM_BODIES[k] : cat === 'kh' ? KM_HEADS[k] : cat === 'kc' ? 'Tecido ' + ((KCOL[k] || {}).n || k) : cat === 'ac' ? (ACCS[k] || {}).n : cat === 'hc' ? 'Tinta ' + ((HAIRC[k] || {}).n || k) : cat === 'tr' ? (TRAILS[k] || {}).n : k;
+  return { n: n || k, sp: { kb: 'Roupa', kh: 'Penteado', kc: 'Tecido', ac: 'Acessório', hc: 'Tinta de cabelo', tr: 'Rastro mágico' }[cat] || 'Peça do Ateliê', r: 3 }; }
+function wardImg(code) { const [cat, k] = String(code).split(':'); try { if (cat === 'kb') return kmThumb({ kb: k }, false); if (cat === 'kh') return kmThumb({ kh: k }, true); if (cat === 'kc') return swatchThumb(KCOL[k].c); if (cat === 'hc') return swatchThumb(HAIRC[k].c); if (cat === 'ac') return accThumb(k); if (cat === 'tr') return emojiThumb(TRAILS[k].e); } catch (e) {} return emojiThumb('🎀'); }
+const gInfo = (o) => (o.type === 'pet' ? petById(o.id) : o.type === 'out' ? Object.assign({ sp: 'Roupa' }, outById(o.id)) : wardInfo(o.id)) || { n: '?', r: 3, sp: '' };
+const gImg = (o) => (o.type === 'pet' ? THUMB['p_' + o.id] : o.type === 'out' ? THUMB['o_' + o.id] : wardImg(o.id));
+function rollG(b) { const W = wpOf(bKind(b)); W.p5++; W.p4++;
+  const p5 = W.p5 >= WR.hard5 ? 1 : Math.min(1, (WR.base5 + Math.max(0, W.p5 - WR.soft5 + 1) * WR.step5) * moonLuck()), r = rand();
+  if (r < p5) { const pc = W.p5; W.p5 = 0; const five = PETS.filter((p) => p.r === 5);
+    if (b.std) return { type: 'pet', id: pick(five).id, pc, r: 5 };
+    const win = W.g5 || rand() < 0.5; W.g5 = !win; const lose = five.filter((p) => !!p.hum === !!b.hum && p.id !== b.f5).map((p) => p.id); return { type: 'pet', id: win ? b.f5 : b.lose || pick(lose) || b.f5, win, pc, r: 5 }; }
+  const p4 = W.p4 >= WR.hard4 ? 1 : WR.base4 + Math.max(0, W.p4 - WR.soft4 + 1) * WR.step4;
+  if (r < p5 + p4) { W.p4 = 0; const four = PETS.filter((p) => p.r === 4 && (b.std || !!p.hum === !!b.hum)).map((p) => p.id);
+    if (b.std) return { type: 'pet', id: pick(four), r: 4 };
+    const win = W.g4 || rand() < 0.5, non = four.filter((id) => !b.f4.includes(id)); W.g4 = !win && non.length > 0; return { type: 'pet', id: win || !non.length ? pick(b.f4) : pick(non), r: 4 }; }
+  return { type: 'ward', id: pick(ward3()), r: 3 }; }
+function grantG(o) { o.dust = 0; const add = (n) => { o.dust = n; S.dust = (S.dust || 0) + n; };
+  if (o.type === 'pet') { const r = petById(o.id).r; if (S.pets[o.id] === undefined) { S.pets[o.id] = 0; if (!S.pet) S.pet = o.id; return 'NOVO!'; } if (S.pets[o.id] < 5) { S.pets[o.id]++; add(r === 5 ? 10 : 2); return `Constelação ♥${S.pets[o.id]}`; } add(r === 5 ? 25 : 5); return 'Constelação completa'; }
+  const [cat, k] = o.id.split(':'); if (!owns(cat, k)) { giveWard(cat, k); return 'NOVO!'; } add(1); return 'Repetido'; }
+function doWishG(n) { const B = allBanners(), b = B[S.banner] || B[0]; let cost = WISH * n;
+  if (n === 1 && S.freeW !== S.day) { S.freeW = S.day; cost = 0; toast('Seu <b>desejo grátis</b> do dia foi usado!'); }
+  if (S.stars < cost) { sfx('cancel'); toast(`Faltam <b>${cost - S.stars}⭐</b> Desejos. Complete as tarefas do dia e junte as estrelas caídas pelo vale.`); return; }
+  S.stars -= cost; S.wishes = (S.wishes || 0) + n; const res = []; for (let i = 0; i < n; i++) { const o = rollG(b); o.tag = grantG(o); res.push(o); }
+  S.wishLog = (S.wishLog || []).concat(res.map((o) => ({ t: o.type, id: o.id, d: S.day, b: bKind(b), bn: b.n, r: o.r, pc: o.pc || 0, w: o.win }))).slice(-200);
+  lastHud = ''; hud(); ev('wish'); setPet(); playWishG(res); }
+doWish = doWishG;
+// revelação: meteoro da cor da maior raridade, depois cada item, depois o resumo
+function playWishG(res) { const top = Math.max(...res.map((o) => o.r)), col = top === 5 ? '#ffcb8d' : top === 4 ? '#d3a2c0' : '#79b8ce', w = $('wish');
+  w.innerHTML = `<div class="sky"></div>${floaters(18)}<div class="stage"><div style="position:relative"><div class="wglow" id="wg" style="--c:${col}"></div><img class="bigwell" id="bw" src="${THUMB.well}"></div></div><div class="meteor m${top}" style="--c:${col}"></div><div class="wflash" id="wfl" style="--c:${col}"></div><div class="wtip">${top === 5 ? '✨ Uma estrela dourada cruzou o céu...!' : top === 4 ? 'Uma estrela lilás...' : 'Uma estrela azul...'}</div><button class="btn skip" id="wskip">Pular ▶▶</button>`;
+  w.classList.add('on'); sfx('magic'); wishQ = { g: 1, res, i: 0, stage: 'anim' };
+  setTimeout(() => { const g = $('wg'); if (g) g.classList.add('go'); const b = $('bw'); if (b) b.classList.add('shake'); sfx(top === 5 ? 'secret' : 'powerup'); }, 900);
+  setTimeout(() => { const f = $('wfl'); if (f) f.classList.add('on'); }, top === 5 ? 1900 : 1400);
+  wishQ.tm = setTimeout(() => gNext(), top === 5 ? 2300 : 1700);
+  $('wskip').onclick = () => { clearTimeout(wishQ.tm); gSummary(res); }; }
+function gNext() { if (!wishQ || !wishQ.g) return; clearTimeout(wishQ.tm); if (wishQ.i >= wishQ.res.length) return gSummary(wishQ.res); wishQ.stage = 'seq'; const o = wishQ.res[wishQ.i++], it = gInfo(o), w = $('wish'), rc = it.r === 5 ? '#ffcb8d' : it.r === 4 ? '#d3a2c0' : '#79b8ce';
+  const stars = [...Array(it.r)].map((_, i) => `<span style="animation-delay:${0.25 + i * 0.1}s">★</span>`).join(''), tag = `<div class="sptag ${o.tag === 'NOVO!' ? '' : 'dup'}">${o.tag}${o.dust ? ` · +${o.dust} ${DI()}` : ''}</div>`;
+  if (o.type === 'pet' && it.r >= 4) {
+    w.innerHTML = `<div class="spot r${it.r}" id="spot" style="--c:${it.atk.col};--rc:${rc}"><div class="rays"></div><div class="spgl"></div>${floaters(16)}<div class="spcv" id="spcv"></div><div class="spinfo"><div class="spst">${stars}</div><h2>${it.n}</h2><div class="spsp">${it.sp}</div>${tag}<div class="spatk">⚔️ <b>${it.atk.n}</b></div><div class="spperk">${it.perk}</div></div><div class="sphint">Clique ou aperte Espaço ▶ &nbsp;${wishQ.i}/${wishQ.res.length}</div><button class="btn skip" id="wskip2">Pular ▶▶</button></div>`;
+    scMount($('spcv'), buildPet(o.id), { col: it.atk.col, fly: it.fly, power: true, auto: true, aura: petLookOf(o.id).aura });
+    sfx(it.r === 5 ? 'jingle_5' : 'jingle_4'); setTimeout(() => confetti(innerWidth / 2, innerHeight * 0.42, it.r === 5 ? 46 : 18, it.r === 5), 450);
+  } else { scStop();
+    w.innerHTML = `<div class="spot r3 g3" id="spot" style="--c:#9fd8ff;--rc:${rc}"><div class="rays"></div>${floaters(8)}<div class="g3img"><img src="${gImg(o)}"></div><div class="spinfo"><div class="spst">${stars}</div><h2>${it.n}</h2><div class="spsp">${it.sp}</div>${tag}</div><div class="sphint">Clique ▶ &nbsp;${wishQ.i}/${wishQ.res.length}</div><button class="btn skip" id="wskip2">Pular ▶▶</button></div>`;
+    sfx('chime'); wishQ.tm = setTimeout(gNext, 900); }
+  $('spot').onclick = (e) => { if (e.target.id === 'wskip2') return; gNext(); };
+  $('wskip2').onclick = (e) => { e.stopPropagation(); clearTimeout(wishQ.tm); gSummary(wishQ.res); }; }
+function gSummary(res) { if (!wishQ) return; clearTimeout(wishQ.tm); scStop(); wishQ.stage = 'cards'; const w = $('wish'), dust = res.reduce((s, o) => s + (o.dust || 0), 0);
+  w.innerHTML = `<div class="sky"></div>${floaters(14)}<div class="ctitle">✨ Seus desejos ✨</div><div class="gsum">${res.map((o, i) => { const it = gInfo(o); return `<div class="gcard r${it.r}" style="animation-delay:${i * 0.07}s"><img src="${gImg(o)}"><div class="gcs">${'★'.repeat(it.r)}</div><div class="gcn">${it.n}</div>${o.tag === 'NOVO!' ? '<div class="gnew">NOVO</div>' : ''}</div>`; }).join('')}</div>
+    <div class="cfoot">${dust ? `<p class="gdust">+${dust} ${DI()} Pó Estelar dos repetidos (agora você tem ${S.dust})</p>` : ''}<button class="btn candy pink" id="wok">Continuar</button></div>`;
+  for (const o of res) if (o.r === 5) { setTimeout(() => sfx('secret'), 300); break; }
+  $('wok').onclick = () => { w.classList.remove('on'); w.innerHTML = ''; wishQ = null; sfx('menu'); anim('Cheer', 1.2); openWish(); }; }
+{ const base = wishAdvance; wishAdvance = function () { if (!wishQ || !wishQ.g) return base(); if (wishQ.stage === 'anim') { clearTimeout(wishQ.tm); gNext(); } else if (wishQ.stage === 'seq') gNext(); else if (wishQ.stage === 'cards' && $('wok')) $('wok').click(); }; }
+// tela principal do Poço
+let gwTab = 'banner';
+const DUST_SHOP = [
+  { id: 'desejo', n: 'Desejo', d: '+100⭐ para o Poço', p: 30, ok: () => true, give: () => { S.stars += WISH; }, img: () => emojiThumb('⭐') },
+  { id: 'paleta', n: 'Paleta mágica', d: 'Cor livre para cabelo e roupa', p: 80, ok: () => !owns('cp', 'livre'), give: () => giveWard('cp', 'livre'), img: () => emojiThumb('🎨') },
+  { id: 'coroa', n: 'Coroa', d: 'Acessório de cabeça', p: 60, ok: () => !owns('ac', 'coroa'), give: () => giveWard('ac', 'coroa'), img: () => accThumb('coroa') },
+  { id: 'rastro', n: 'Rastro de Estrelas', d: 'Rastro mágico ao andar', p: 50, ok: () => !owns('tr', 'estrelas'), give: () => giveWard('tr', 'estrelas'), img: () => emojiThumb('⭐') },
+  { id: 'dourado', n: 'Tecido Dourado', d: 'Cor de roupa (base fofinha)', p: 40, ok: () => !owns('kc', 'dourado'), give: () => giveWard('kc', 'dourado'), img: () => swatchThumb(KCOL.dourado.c) },
+];
+function gwSub(tab) { const B = allBanners(), b = B[S.banner] || B[0], back = '<button class="btn sm" id="gback">◀ Voltar</button>'; let body = '';
+  if (tab === 'det') { const f5 = b.std ? PETS.filter((p) => p.r === 5) : [petById(b.f5)], f4 = b.std ? PETS.filter((p) => p.r === 4) : b.f4.map(petById);
+    body = `<h2>Detalhes · ${b.n}</h2><div class="gdet lace"><p><b>★5:</b> ${(WR.base5 * 100).toFixed(1)}% por desejo. A partir do ${WR.soft5}º desejo sem ★5 a chance sobe a cada desejo, e no ${WR.hard5}º é garantido.${b.std ? ' Neste banner qualquer ★5 pode aparecer.' : ` Quando vem um ★5, há 50% de chance de ser o destaque. Se não for, o próximo ★5 é <b>garantido</b> como destaque.`}</p>
+      <p><b>★4:</b> ${(WR.base4 * 100).toFixed(1)}% por desejo, garantido a cada ${WR.hard4} desejos.${b.std ? '' : ' 50% de ser um dos ★4 em destaque, com a mesma garantia.'}</p>
+      <p><b>★3:</b> peças do Ateliê da Fifi: roupas, penteados, tecidos, acessórios, rastros e tintas. Se você já tiver a peça, ganha Pó Estelar.</p>
+      <p><b>Pity:</b> a contagem é separada para cada tipo de banner (bichinho, personagem e padrão) e continua de um banner para o próximo do mesmo tipo.</p>
+      <p><b>Repetidos:</b> bichinhos repetidos sobem de Constelação (♥, até 5: mais dano e ataques mais rápidos) e dão Pó Estelar ${DI()}, que pode ser trocado na Troca Estelar.</p>
+      <p><b>Lua cheia:</b> à noite, a chance de ★5 dobra.</p></div>
+      <div class="crl">★5</div><div class="gdl">${f5.map((p) => `<span><img src="${THUMB['p_' + p.id]}">${p.n}</span>`).join('')}</div><div class="crl">★4</div><div class="gdl">${f4.map((p) => `<span><img src="${THUMB['p_' + p.id]}">${p.n}</span>`).join('')}</div>`; }
+  if (tab === 'hist') { const L = (S.wishLog || []).slice().reverse(); body = `<h2>Histórico de desejos</h2><div class="ghist"><table><tr><th>Item</th><th>Tipo</th><th>Banner</th><th>Dia</th></tr>${L.length ? L.slice(0, 120).map((h) => { const o = { type: h.t, id: h.id }, it = gInfo(o), r = h.r || it.r; return `<tr class="r${r}"><td><img src="${gImg(o)}"><b>${it.n}</b> <span class="stars r${r}c">${'★'.repeat(r)}</span>${h.pc ? ` <small>no ${h.pc}º desejo${h.w === false ? ' · perdeu o 50/50' : ''}</small>` : ''}</td><td>${it.sp || ''}</td><td>${h.bn || (h.b === 'std' ? STDB.n : '')}</td><td>${h.d}</td></tr>`; }).join('') : '<tr><td colspan="4">Nenhum desejo ainda... que tal o primeiro? 💫</td></tr>'}</table></div>`; }
+  if (tab === 'shop') body = `<h2>${DI()} Troca Estelar</h2><p class="lead">Repetidos viram Pó Estelar. Você tem <b>${S.dust || 0} ${DI()}</b>.</p><div class="sgrid">${DUST_SHOP.map((it) => { const ok = it.ok(); return `<div class="sitem ${ok ? '' : 'own'}"><img src="${it.img()}"><b>${it.n}</b><span>${it.d}</span><button class="btn ${ok ? 'candy pink' : ''} sm" ${!ok || (S.dust || 0) < it.p ? 'disabled' : ''} data-ds="${it.id}">${ok ? it.p + ' ' + DI() : 'Já é seu ✓'}</button></div>`; }).join('')}</div>`;
+  openModal(`<div class="gsub">${back}${body}</div>`, 'wishp gwm');
+  $('gback').onclick = () => { gwTab = 'banner'; sfx('switch'); openWish(); };
+  document.querySelectorAll('[data-ds]').forEach((el) => (el.onclick = () => { const it = DUST_SHOP.find((x) => x.id === el.dataset.ds); if (!it || !it.ok() || (S.dust || 0) < it.p) return sfx('cancel'); S.dust -= it.p; it.give(); sfx('coin'); toast(`${DI()} Trocou por <b>${it.n}</b>!`); lastHud = ''; hud(); gwSub('shop'); })); }
+openWish = function () { wishOpen = true; if (gwTab !== 'banner') return gwSub(gwTab); const B = allBanners(); if (!(S.banner >= 0 && S.banner < B.length)) S.banner = 0; const b = B[S.banner], W = wpOf(bKind(b)), f = b.std ? null : petById(b.f5), free = S.freeW !== S.day;
+  const tabs = B.map((x, i) => `<button class="btn gtab ${i === S.banner ? 'on' : ''}" data-gb="${i}"><img src="${x.std ? THUMB.well : THUMB['p_' + x.f5]}"><span>${x.std ? 'Padrão' : x.hum ? 'Personagem' : 'Bichinho'}</span></button>`).join('');
+  const moon = moonOf() === 'cheia' && isNight() ? '<div class="gmoon">🌕 Lua cheia: chance de ★5 dobrada esta noite!</div>' : '';
+  openModal(`<div class="gw" style="--a:${b.a};--b:${b.b}"><div class="gtabs">${tabs}</div>
+    <div class="gart"><div class="gsky"></div>${floaters(10)}${f ? '<div class="gfeat" id="feat3d"></div>' : `<div class="gstd">${PETS.filter((p) => p.r === 5).map((p) => `<img src="${THUMB['p_' + p.id]}">`).join('')}</div>`}
+      <div class="ginfo"><div class="gkind">${b.std ? 'Desejo permanente' : 'Desejo de evento · por tempo limitado'}</div><h2>${b.n}</h2>
+        ${b.std ? '<p class="gdesc">Todos os bichinhos e amigas podem aparecer. Sem 50/50: qualquer ★5 vale!</p>' : `<div class="gstar">★★★★★</div><div class="gname">${f.n} <small>${f.sp}</small></div><p class="gdesc">${f.perk}</p><div class="gtime">Termina em ${bannerLeft()}</div><div class="g4">${b.f4.map((id) => `<div class="g4b" title="${petById(id).n} (★4 em destaque)"><img src="${THUMB['p_' + id]}"><span>★4</span></div>`).join('')}</div>`}${moon}</div></div>
+    <div class="gbar"><div class="gleft"><button class="btn sm" data-gt="shop">${DI()} Troca</button><button class="btn sm" data-gt="det">Detalhes</button><button class="btn sm" data-gt="hist">Histórico</button></div>
+      <div class="gpity"><span>★5: <b>${W.p5}</b>/${WR.hard5}</span><span>★4: <b>${W.p4}</b>/${WR.hard4}</span>${b.std ? '' : `<span>${W.g5 ? '🎀 Próximo ★5 é o destaque' : '🎲 50/50 no próximo ★5'}</span>`}</div>
+      <div class="gright"><div class="gwal">⭐ <b>${S.stars}</b> &nbsp; ${DI()} <b>${S.dust || 0}</b></div><button class="btn candy pink" id="w1" ${!free && S.stars < WISH ? 'disabled' : ''}>Desejar ×1<small>${free ? 'Grátis hoje!' : '⭐ ' + WISH}</small></button><button class="btn candy rose" id="w10" ${S.stars < WISH * 10 ? 'disabled' : ''}>Desejar ×10<small>⭐ ${WISH * 10}</small></button></div></div></div>`, 'wishp gwm');
+  if (f) { scMount($('feat3d'), buildPet(f.id), { col: f.atk.col, fly: f.fly, auto: true, ped: false, aura: petLookOf(f.id).aura }); if (wishAnimIn) { wishAnimIn = false; setTimeout(scPower, 250); } }
+  document.querySelectorAll('[data-gb]').forEach((el) => (el.onclick = () => { const ch = S.banner !== +el.dataset.gb; S.banner = +el.dataset.gb; wishAnimIn = ch; sfx('switch'); openWish(); }));
+  document.querySelectorAll('[data-gt]').forEach((el) => (el.onclick = () => { gwTab = el.dataset.gt; sfx('bookFlip2'); openWish(); }));
+  $('w1').onclick = () => { closeModal(); wishOpen = true; doWishG(1); }; $('w10').onclick = () => { closeModal(); wishOpen = true; doWishG(10); }; };
+{ const base = closeModal; closeModal = function () { gwTab = 'banner'; return base(); }; }
+
+// ---------- barco: correções do playtest ----------
+// save feito no mar volta no píer (antes você carregava dentro d'água, sem barco e sem conseguir andar)
+{ const base = snapshot; snapshot = function () { if (!P.boat) return base(); const sx = P.x, sz = P.z, d = seaDockSpot(); P.x = d.lx; P.z = d.lz; try { return base(); } finally { P.x = sx; P.z = sz; } }; }
+// carregar um save com a jogadora no barco desembarca e encerra o Kraken (antes ficava presa num barco em terra)
+{ const base = applyState; applyState = function (d) { base(d); if (P.boat || (KR && KR.on)) { P.boat = false; try { krakenEnd(false); } catch (e) {} const dd = seaDockSpot(); if (SEA.boat) { SEA.boat.position.set(dd.x, -0.05, dd.z); SEA.boat.rotation.y = 0; } } if (P.z > H - 0.5 && mode === 'out') { const dd = seaDockSpot(); P.x = dd.lx; P.z = dd.lz; } }; }
+{ const base = musicTarget; musicTarget = function () { const t = base(); return t && KR.on && P.boat && !titleOn ? 'boss' : t; }; }
+{ const base = toggleBike; toggleBike = function (force) { if (P.boat && force !== false) { toast('No barco não dá para pedalar! 🚲'); sfx('cancel'); return; } return base(force); }; }
+{ const base = useSkill; useSkill = function (i) { if (P.boat) { toast('No barco, use o canhão de estrelas: <span class="key">Espaço</span>.'); sfx('cancel'); return; } return base(i); }; }
+{ const base = leaveBoat; leaveBoat = function () { if (KR.on) toast('Você desceu do barco e o Kraken mergulhou de volta.'); return base(); }; }
+{ const base = seaSpecials; seaSpecials = function (list) { base(list); const it = list.find((x) => x.label === 'Embarcar no barco'); if (it && (!tutDone() || (S.lv || 1) < 4)) it.label = '🔒 Barco (nível 4)'; }; }
+{ const base = miniLabel; miniLabel = function () { if (P.boat) return P.z > H ? 'Mar Estrelado' : 'No barco'; return base(); }; }
+// canhão: segurar Espaço continua atirando, e a mira puxa de leve para o Kraken quando ele está à frente
+{ const base = boatFire; boatFire = function () { if (!KR.on || !KR.g) return base(); const a0 = P.ang, dx = KR.x - P.x, dz = KR.z - P.z, ta = Math.atan2(dx, dz); let da = ((ta - a0 + Math.PI * 3) % (Math.PI * 2)) - Math.PI; if (Math.abs(da) < 0.9 && Math.hypot(dx, dz) < 18) P.ang = a0 + da * 0.85; try { return base(); } finally { P.ang = a0; } }; }
+{ const base = v14Update; v14Update = function (dt) { base(dt); if (P.boat && keys.Space && !modalOpen() && !dlg && boatCd <= 0) boatFire(); }; }
+
+// "Aleatório" na base fofinha também sorteia penteado, roupa, cores e rosto (só o que você já tem)
+{ const base = randLook; randLook = function (fromTitle) { base(fromTitle); if (!crLook || !crIsKM(fromTitle)) return; const own = (cat, k) => (fromTitle ? (WARD_FREE[cat] || []).includes(k) : owns(cat, k)), pk = (T, cat) => { const ks = Object.keys(T).filter((k) => !cat || own(cat, k)); return pick(ks.length ? ks : Object.keys(T)); };
+  Object.assign(crLook, { kb: pk(KM_BODIES, 'kb'), kh: pk(KM_HEADS, 'kh'), ct: pk(KCOL, 'kc'), cb: pk(KCOL, 'kc'), cs: pk(KCOL, 'kc'), hc: pk(HAIRC, 'hc'), sk: pk(SKINS), ey: pk(KM_EYES), ec: pk(KM_ECOL), br: pk(KM_BROWS), mo: pk(KM_MOUTH), fc: pk(KM_CHEEK) }); }; }
+// ---------- inconsistências da auditoria ----------
+let lastCoins = null;
+function moneyBump(sel, up) { const m = document.querySelector(sel); if (!m) return; m.classList.remove('bump', 'bumpd'); void m.offsetWidth; m.classList.add(up ? 'bump' : 'bumpd'); }
+Object.assign(EMO, { '🔨': 'anvil', '✅': 'star', '🌐': 'map', '🏁': 'scroll', '🛠': 'anvil', '🛠️': 'anvil', '🌙': 'moon', '☀': 'sun', '☀️': 'sun', '🌇': 'sun', '🌕': 'moon' });
+// duelo: sair da arena (entrar em casa/loja) encerra o duelo; começar um duelo desce da bicicleta
+{ const base = duelUpdate; duelUpdate = function (dt) { if (DUEL.on && mode !== 'out') { try { duelEnd(false, 'O duelo acabou: você saiu da arena.'); } catch (e) {} return; } return base(dt); }; }
+{ const base = duelStart; duelStart = function (...a) { if (P.bike) toggleBike(false); return base(...a); }; }
+// armas do duelo não disparam de bicicleta nem no barco
+{ const base = weaponAttack; weaponAttack = function () { if (P.bike || P.boat) return; return base(); }; }
 
 /* =================== início, título e carregamento =================== */
 let ready = false;
@@ -5273,4 +5637,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };

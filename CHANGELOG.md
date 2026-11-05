@@ -2,6 +2,37 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v21: base fofinha estilo Animal Crossing, Poço estilo Genshin, barco e inconsistências
+**Personagem (base nova "Fofinha")**
+- Base nova e mais simples: os 12 personagens do **Kenney Mini Characters** (CC0), cabeçudinhos como em Animal Crossing, com o mesmo esqueleto e 18 animações (andar, correr, pular, sentar, pegar, comemorar...). Jogo novo começa nela; as bases aventureiras continuam no criador.
+- Personalização peça por peça: **12 penteados** e **12 roupas** que se misturam, cor do cabelo, da blusa, da calça ou saia e dos sapatos (18 tecidos), pele, altura e tamanho da cabeça.
+- Rosto pintado como em Animal Crossing: 10 tipos de olhos, 7 cores de olho, 6 sobrancelhas, 8 bocas e 8 bochechas/enfeites (sardas, rubor, bigodinhos, estrela, coração).
+- Acessórios de cabeça, óculos, costas e cintura funcionam na base nova. Penteados, roupas e tecidos extras ficam à venda no Ateliê da Fifi.
+- Todos os moradores (Rosa, Tico, Bento, Pipo, Íris, Duda, Otto, Lia, Fifi, Tomé e Marina) passaram para a base nova, cada um com visual próprio, no mesmo estilo da jogadora.
+
+**Poço dos Desejos estilo Genshin**
+- Três banners com pity separado: **bichinho** e **personagem** (eventos que trocam a cada 3 dias) e o **Desejo do Vale**, permanente.
+- ★5 com 0,8% de base, chance subindo a partir do 66º desejo e garantido no 80º. 50/50 com garantia no ★5 e também no ★4 (garantido a cada 10).
+- ★3 agora são **peças do Ateliê** (roupas, penteados, tecidos, acessórios, rastros e tintas).
+- Repetidos sobem de **Constelação** (♥) e dão **Pó Estelar**, trocado na **Troca Estelar** por Desejos, Paleta mágica, coroa, rastro e tecido dourado.
+- Meteoro da cor da maior raridade, revelação item por item (★4/★5 com o bichinho em 3D), resumo em cartas altas, **Histórico** com o número do desejo de cada ★5 (e se perdeu o 50/50) e página de **Detalhes** com as chances.
+
+**Barco (playtest)**
+- Salvar no mar guarda a posição do píer, e carregar um save no barco desembarca e encerra o Kraken (antes você ficava presa na água ou num barco em terra).
+- A personagem fica em cima do convés (estava dentro do casco), o Kraken surge à frente do barco, tem mais vida, toca a música de chefe e só aparece uma vez por dia mesmo recarregando.
+- Segurar Espaço continua atirando, a mira puxa de leve para o Kraken, os tiros param na terra, e virar o dia na luta não some com a barra.
+- No barco não dá para carregar a espada, correr gastando fôlego, usar habilidades ou subir na bicicleta. O minimapa diz "Mar Estrelado", e o barco bloqueado aparece com 🔒.
+
+**Chão sem pixelado**
+- O chão é repintado de forma suave: a borda entre grama, caminho, areia e terra mistura as duas cores em vez de escolher uma por texel, e os detalhes (tufos alongados, pedrinhas com sombrinha, sulcos ondulados na terra arada, florzinhas redondas e brilho na areia) são feitos de ruído macio interpolado, sem os carimbos de 1 texel que viravam quadradinhos ampliados.
+
+**Inconsistências (auditoria)**
+- Textos de moeda certos em compras, mochila, arar, morte, missões, Kraken, ginástica, aniversário, cartas e saves (🪙 Moedas × ⭐ Desejos). O presente da Rosa passa a dar Desejos, e o pulinho das moedas anima a moeda certa.
+- Ajuda atualizada: controles 1–8 e novas teclas, cartões de saciedade, bancada e reforma, barco e Kraken, duelos e natureza que volta, e o Poço novo.
+- Nomes iguais em todo lugar (Quadro de tarefas, Torre da Íris, Arena Estelar, Minha Fazenda), textos que respeitam "ela/ele" e código do multiplayer com 5 caracteres.
+- Interface: sem a ligadura quebrada da fonte ("Fifi", "floresta"), o botão de fechar volta para o canto certo, os ícones que sumiam (lua/sol do relógio, martelo, apagar save) aparecem, os requisitos mostram o nome do minério e a mochila fica em 6 colunas.
+- A tecla R volta a girar móveis e enfeites. O duelo acaba se você entra numa casa, desce da bicicleta ao começar, e as armas não disparam de bicicleta nem no barco. A migração da Paleta mágica olha todas as cores. Os créditos no jogo foram completados.
+
 ## v20: correções visuais e placas novas
 **Interface**
 - Cartão da personagem: as barras de vida, fôlego e fome ficam dentro do cartão (vazavam para fora desde o HUD enxuto da v18) e o texto "100 / 100" não quebra mais em duas linhas.

@@ -834,6 +834,44 @@ body.hudin #rTL{animation:hinL .7s cubic-bezier(.2,1.4,.4,1) .1s both}body.hudin
 #hint{font-size:14px!important;padding:6px 12px!important}
 #duelhud{position:fixed;left:16px;top:160px;z-index:20;padding:10px 12px;min-width:200px;font-size:13px}#duelhud h4{margin:0 0 6px;color:#c2477e}#duelhud table{width:100%;border-collapse:collapse}#duelhud td{padding:2px 4px}#duelhud td+td{text-align:center;font-weight:700;width:34px}#duelhud tr.me td{color:#c2477e}#duelhud small{display:block;margin:4px 0;color:var(--ink-2)}
 .fcard.dim{opacity:.72}
+/* ===================== v21 — inconsistências de interface ===================== */
+/* a Pixelify Sans junta "fi"/"fl" numa ligadura quebrada ("FiA", "Aoresta") */
+html,body,.btn,button,input{font-variant-ligatures:none;font-feature-settings:"liga" 0,"clig" 0}
+/* o botão de fechar pulava para o canto nos modais do Poço/Ateliê/Diário */
+.mp.wishp>.xb{position:absolute!important}
+/* mochila em 6 colunas certinhas */
+.bagp .ggrid{grid-template-columns:repeat(6,1fr)!important}
+/* ===================== v21 — Poço dos Desejos estilo Genshin ===================== */
+.mp.gwm{width:min(980px,96vw)!important;max-width:96vw!important;padding:14px!important}
+.gw{display:flex;flex-direction:column;gap:10px}
+.gtabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.gtab{display:flex!important;align-items:center;gap:6px;padding:4px 12px 4px 4px!important;border-radius:999px!important}.gtab img{width:34px;height:34px;border-radius:50%;background:#fff6fb;border:2px solid #7a3d68}.gtab.on{transform:translateY(-2px);box-shadow:0 0 0 3px #ffe18d,0 4px 0 #7a3d68!important}
+.gart{position:relative;display:grid;grid-template-columns:1.1fr 1fr;min-height:330px;border-radius:18px;overflow:hidden;border:3px solid #5a3d68;background:linear-gradient(135deg,var(--a),var(--b));box-shadow:inset 0 0 60px rgba(255,255,255,.25)}
+.gsky{position:absolute;inset:0;background-image:radial-gradient(#fff 1.5px,transparent 2px),radial-gradient(rgba(255,255,255,.6) 1px,transparent 1.5px);background-size:46px 46px,23px 23px;opacity:.45;pointer-events:none}
+.gfeat{position:relative;min-height:330px}
+.gstd{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:22px;align-content:center}.gstd img{width:100%;border-radius:14px;background:rgba(255,255,255,.35);border:2px solid rgba(255,255,255,.7)}
+.ginfo{position:relative;padding:22px 22px 18px 6px;color:#fff;text-shadow:0 2px 0 rgba(40,20,60,.45);display:flex;flex-direction:column;gap:6px;justify-content:center}
+.gkind{font-size:12px;letter-spacing:.5px;opacity:.95;background:rgba(40,20,60,.35);align-self:flex-start;padding:3px 10px;border-radius:999px}
+.ginfo h2{margin:2px 0;font-size:30px;line-height:1.05}.gstar{color:#ffe18d;font-size:20px;letter-spacing:2px}.gname{font-size:20px;font-weight:700}.gname small{font-size:13px;opacity:.9;font-weight:400}
+.gdesc{margin:2px 0;font-size:13.5px;background:rgba(40,20,60,.28);padding:8px 10px;border-radius:10px;text-shadow:none}
+.gtime{font-size:12.5px;opacity:.95}.gmoon{font-size:13px;background:rgba(255,230,140,.3);padding:4px 10px;border-radius:10px}
+.g4{display:flex;gap:8px}.g4b{position:relative;width:54px;height:54px;border-radius:12px;background:rgba(255,255,255,.4);border:2px solid #d3a2c0}.g4b img{width:100%;height:100%;border-radius:10px}.g4b span{position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);font-size:10px;background:#a76ac0;color:#fff;padding:0 5px;border-radius:6px;text-shadow:none}
+.gbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between}
+.gleft{display:flex;gap:6px;flex-wrap:wrap}.gpity{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;color:#5a3d68}.gpity span{background:#fff4fa;border:2px solid #e8c0d8;border-radius:10px;padding:3px 9px}
+.gright{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.gwal{font-size:14px;color:#5a3d68;background:#fff4fa;border:2px solid #e8c0d8;border-radius:10px;padding:4px 10px}
+.gright .btn small{display:block;font-size:11px;opacity:.9}
+.gsub h2{margin:8px 0 10px}.gsub #gback{margin-bottom:4px}.gdet p{margin:6px 0;font-size:13.5px}
+.gdl{display:flex;flex-wrap:wrap;gap:8px}.gdl span{display:flex;align-items:center;gap:6px;background:#fff4fa;border:2px solid #e8c0d8;border-radius:12px;padding:3px 10px 3px 3px;font-size:13px}.gdl img{width:34px;height:34px;border-radius:9px}
+.ghist{max-height:58vh;overflow:auto;border:3px solid #e8c0d8;border-radius:12px;background:#fffafc}.ghist table{width:100%;border-collapse:collapse;font-size:13px}.ghist th{position:sticky;top:0;background:#f6d6e8;text-align:left;padding:6px}.ghist td{padding:4px 6px;border-top:1px solid #f1dfe9;vertical-align:middle}.ghist td img{width:28px;height:28px;border-radius:7px;vertical-align:middle;margin-right:6px;background:#fff}.ghist tr.r5 td{background:#fff3d6}.ghist tr.r4 td{background:#f7ebff}.ghist small{color:#8a6a80}
+.gsum{position:relative;z-index:2;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;max-width:980px;margin:34px auto 18px;padding:0 10px}
+.gcard{position:relative;width:84px;height:250px;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:10px;border:3px solid rgba(255,255,255,.75);animation:gin .45s cubic-bezier(.3,1.4,.5,1) both;box-shadow:0 6px 18px rgba(20,10,40,.4)}
+.gcard.r3{background:linear-gradient(180deg,#6fa3d8,#3b5a9a)}.gcard.r4{background:linear-gradient(180deg,#c29be6,#6b3fa0)}.gcard.r5{background:linear-gradient(180deg,#ffd98a,#e08a3a);box-shadow:0 0 22px #ffcb8d,0 6px 18px rgba(20,10,40,.4)}
+.gcard img{width:78px;height:78px;object-fit:contain;margin-bottom:auto;margin-top:58px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.3))}.gcs{color:#ffe18d;font-size:12px;text-shadow:0 1px 0 #5a3d68}.gcn{color:#fff;font-size:11px;text-align:center;padding:0 4px;text-shadow:0 1px 0 #2a1d2e;line-height:1.15}
+.gnew{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#ff5c8a;color:#fff;font-size:10px;padding:1px 7px;border-radius:8px}
+.gdust{color:#fff;font-size:14px;text-shadow:0 2px 0 #5a3d68}
+@keyframes gin{from{opacity:0;transform:translateY(30px) scale(.8)}to{opacity:1;transform:none}}
+.spot.g3 .g3img{position:absolute;left:calc(50% - 95px);top:calc(42% - 95px);width:190px;height:190px;border-radius:24px;background:rgba(255,255,255,.25);display:grid;place-items:center;animation:gin .4s both}.spot.g3 .g3img img{width:150px;height:150px;object-fit:contain}
+@media (max-width:720px){.gart{grid-template-columns:1fr}.gfeat{min-height:240px}.ginfo{padding:12px}}
 /* ===================== v20 — correções de interface ===================== */
 /* barras do cartão: ocupam só o espaço do cartão (antes um width:172px antigo fazia vazarem para fora) */
 #hudTL .ufc{overflow:hidden}#hearts{width:100%}#hearts .bars{width:100%;min-width:0}#hearts .bl{width:100%;min-width:0}
@@ -921,7 +959,7 @@ body.hudin #rTL{animation:hinL .7s cubic-bezier(.2,1.4,.4,1) .1s both}body.hudin
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v20</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v21</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script src="bundle.js"></script>
