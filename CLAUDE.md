@@ -75,7 +75,7 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Moradores: visual em `NPCLOOK[id]` (mesmas chaves do `S.look`), aplicado por `dressNpc(obj, id, base)` aos moradores, à Rosa, ao Tico, aos lojistas (`SHOP_WHO`) e a quem está em casa. Os retratos saem de `npcThumb`. Morador novo: adicione o visual em `NPCLOOK`.
 - Cabelo: penteados completos (`HAIR_FULL`) afundam os vértices do cabelo original da cabeça (`baseHair`). Os cabelos `hr_*` se encaixam pela touca, e `HAIR_FIT` só faz o ajuste fino.
 - Placas: `makeSign` cria a placa com poste e tábua que balança (`FUNSIGNS`, `funSignsUpdate`). Dentro de casas e lojas, `wallSign` tira o poste. `fixSigns()` tira as placas de dentro das construções e da frente das portas. Placa que não pode sair do lugar leva `userData.keep = 1`. As peças fixas de placas e caixas de correio são juntadas por `bakeVC(grupo)` (uma malha com cor nos vértices); use o mesmo para adereços feitos de várias caixinhas.
-- Chão: `paintGroundRect`/`paintGround` da v20 (`GPX2`), com ruído numa grade de 3 px para carregar rápido. Nada de natureza (`NATURE`) em tile de caminho, e o `decor14` não põe adereços em caminho.
+- Chão: `paintGroundRect`/`paintGround` (`GPX2`, 12 px por tile; 8 no celular). Desde a v21 a pintura é suave: bordas misturadas e detalhes de ruído interpolado numa grade de 4 texels. Não use carimbos de 1 texel, porque viram quadradinhos ampliados. Nada de natureza (`NATURE`) em tile de caminho, e o `decor14` não põe adereços em caminho.
 
 ## Base fofinha, Poço e barco (v21)
 

@@ -23,6 +23,9 @@ Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js
 - Segurar Espaço continua atirando, a mira puxa de leve para o Kraken, os tiros param na terra, e virar o dia na luta não some com a barra.
 - No barco não dá para carregar a espada, correr gastando fôlego, usar habilidades ou subir na bicicleta. O minimapa diz "Mar Estrelado", e o barco bloqueado aparece com 🔒.
 
+**Chão sem pixelado**
+- O chão é repintado de forma suave: a borda entre grama, caminho, areia e terra mistura as duas cores em vez de escolher uma por texel, e os detalhes (tufos alongados, pedrinhas com sombrinha, sulcos ondulados na terra arada, florzinhas redondas e brilho na areia) são feitos de ruído macio interpolado, sem os carimbos de 1 texel que viravam quadradinhos ampliados.
+
 **Inconsistências (auditoria)**
 - Textos de moeda certos em compras, mochila, arar, morte, missões, Kraken, ginástica, aniversário, cartas e saves (🪙 Moedas × ⭐ Desejos). O presente da Rosa passa a dar Desejos, e o pulinho das moedas anima a moeda certa.
 - Ajuda atualizada: controles 1–8 e novas teclas, cartões de saciedade, bancada e reforma, barco e Kraken, duelos e natureza que volta, e o Poço novo.

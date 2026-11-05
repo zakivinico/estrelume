@@ -5170,38 +5170,46 @@ const PATHCLEAR = { n: 0 };
 { const base = buildWorld; buildWorld = function () { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = I(x, y), o = obj[i]; if (o && NATURE.test(o.t) && !o.rim && tile[i] === PA) { obj[i] = null; PATHCLEAR.n++; } } return base(); }; }
 // ---------- chão v20: mais resolução, normais suaves e detalhes pintados (tufos, florzinhas, pedrinhas, sulcos) ----------
 // Antes: 8 px por tile e sombreamento facetado sobre relevos aleatórios (triângulos claros e escuros pela grama).
-const GPX2 = matchMedia('(pointer: coarse)').matches ? 8 : 12;
+const GPX2 = matchMedia('(pointer: coarse)').matches ? 8 : 12; // v21: mais resolução e pintura suave (sem carimbos de 1 texel)
 const GPAL2 = { [GR]: [140, 200, 86], [PA]: [226, 190, 134], [SO]: [132, 88, 58], [SA]: [244, 226, 170] };
 paintGroundRect = function (x0, y0, x1, y1) {
-  const { img } = GCV, d = img.data, CW2 = W * GPX2, types = [GR, PA, SO, SA], G = GPX2, B = 3;
+  // v21: pintura suave. Nada de decisão dura por texel: a borda entre tipos de chão mistura as duas cores,
+  // e os detalhes (tufos, pedrinhas, sulcos, flores) são feitos de ruído e formas com borda macia.
+  const { img } = GCV, d = img.data, CW2 = W * GPX2, types = [GR, PA, SO, SA], G = GPX2, B = 4, sm = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
   x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(W - 1, x1); y1 = Math.min(H - 1, y1);
   const PX0 = x0 * G, PY0 = y0 * G, PX1 = (x1 + 1) * G, PY1 = (y1 + 1) * G;
-  // ruído suave numa grade de 3 px (é o que pesava: ~9 ruídos por pixel)
-  const bw = Math.ceil((PX1 - PX0) / B) + 1, bh = Math.ceil((PY1 - PY0) / B) + 1, NB = new Float32Array(bw * bh * 3);
-  for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) { const wx = (PX0 + bx * B + 1.5) / G, wy = (PY0 + by * B + 1.5) / G, k = (by * bw + bx) * 3; NB[k] = fbm(wx * 0.07, wy * 0.07, 3) - 0.5; NB[k + 1] = fbm(wx * 0.35, wy * 0.35, 8) - 0.5; NB[k + 2] = (vn(wx * 0.6, wy * 0.6, 31) - 0.5) * 0.3; }
-  // tipo de cada tile (com uma borda) e se tem árvore/pedra em cima
+  // ruído numa grade de 4 texels, interpolado (bilinear) para não aparecer degrau
+  const bw = Math.ceil((PX1 - PX0) / B) + 2, bh = Math.ceil((PY1 - PY0) / B) + 2, NB = new Float32Array(bw * bh * 7);
+  for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) { const wx = (PX0 + bx * B) / G, wy = (PY0 + by * B) / G, k = (by * bw + bx) * 7; NB[k] = fbm(wx * 0.07, wy * 0.07, 3) - 0.5; NB[k + 1] = fbm(wx * 0.35, wy * 0.35, 8) - 0.5; NB[k + 2] = (vn(wx * 0.6, wy * 0.6, 31) - 0.5) * 0.3; NB[k + 3] = vn(wx * 1.7, wy * 1.7, 41); NB[k + 4] = vn(wx * 1.6, wy * 0.6, 9); NB[k + 5] = vn(wx * 2.2, wy * 2.2, 11); NB[k + 6] = vn(wx * 2.2, (wy - 0.1) * 2.2, 11); }
   const tw = x1 - x0 + 3, th = y1 - y0 + 3, TT = new Uint8Array(tw * th), NT = new Uint8Array(tw * th);
   for (let ty = 0; ty < th; ty++) for (let tx = 0; tx < tw; tx++) { const X = x0 - 1 + tx, Y = y0 - 1 + ty; TT[ty * tw + tx] = gType(X, Y); const cx = Math.max(0, Math.min(W - 1, X)), cy = Math.max(0, Math.min(H - 1, Y)), o = obj[I(cx, cy)]; NT[ty * tw + tx] = o && NATURE.test(o.t) && !o.cut && tile[I(cx, cy)] === GR ? 1 : 0; }
   const tt = (X, Y) => TT[(Math.max(y0 - 1, Math.min(y1 + 1, Y)) - y0 + 1) * tw + (Math.max(x0 - 1, Math.min(x1 + 1, X)) - x0 + 1)];
-  const w = [0, 0, 0, 0, 0, 0, 0];
-  for (let py = PY0; py < PY1; py++) { const fy = (py + 0.5) / G - 0.5, ty = Math.floor(fy), ay = fy - ty, oy = Math.floor(py / G), byi = Math.floor((py - PY0) / B) * bw;
+  const w = [0, 0, 0, 0, 0, 0, 0], N = [0, 0, 0, 0, 0, 0, 0];
+  const shade = (t, lf, px, py, nb) => { const c = GPAL2[t]; return [c[0] * lf, c[1] * lf, c[2] * lf]; };
+  for (let py = PY0; py < PY1; py++) { const fy = (py + 0.5) / G - 0.5, ty = Math.floor(fy), ay = fy - ty, oy = Math.floor(py / G), gy = (py - PY0) / B, gy0 = Math.floor(gy), gfy = gy - gy0;
     for (let px = PX0; px < PX1; px++) {
-      const fx = (px + 0.5) / G - 0.5, tx = Math.floor(fx), ax = fx - tx, nk = (byi + Math.floor((px - PX0) / B)) * 3, big = NB[nk], mid = NB[nk + 1], wob = NB[nk + 2];
+      const fx = (px + 0.5) / G - 0.5, tx = Math.floor(fx), ax = fx - tx, gx = (px - PX0) / B, gx0 = Math.floor(gx), gfx = gx - gx0;
+      const kb0 = (gy0 * bw + gx0) * 7, w00 = (1 - gfx) * (1 - gfy), w10 = gfx * (1 - gfy), w01 = (1 - gfx) * gfy, w11 = gfx * gfy, R7 = bw * 7; const at = (c) => NB[kb0 + c] * w00 + NB[kb0 + 7 + c] * w10 + NB[kb0 + R7 + c] * w01 + NB[kb0 + R7 + 7 + c] * w11;
+      N[0] = at(0); N[1] = at(1); N[2] = at(2); N[3] = -1; N[4] = -1; N[5] = -1; N[6] = -1;
+      const big = N[0], mid = N[1], wob = N[2];
       w[GR] = 0; w[PA] = 0; w[SO] = 0; w[SA] = 0;
       w[tt(tx, ty)] += (1 - ax) * (1 - ay); w[tt(tx + 1, ty)] += ax * (1 - ay); w[tt(tx, ty + 1)] += (1 - ax) * ay; w[tt(tx + 1, ty + 1)] += ax * ay;
-      const ox = Math.floor(px / G); if (NT[(oy - y0 + 1) * tw + (ox - x0 + 1)]) w[GR] += 0.45; // o caminho não entra embaixo das árvores
-      let best = GR, bwt = -1, second = -1; for (const t of types) { const v = w[t] + (t === GR ? wob : 0); if (v > bwt) { second = bwt; bwt = v; best = t; } else if (v > second) second = v; }
-      const c = GPAL2[best]; let r = c[0], g = c[1], b = c[2], lf = 1;
-      if (best === GR) { lf += big * 0.14 + mid * 0.07;
-        const cxx = Math.floor(px / 5), cyy = Math.floor(py / 5), hr = hash2(cxx, cyy, 9), lx = (px % 5) - Math.floor(hr * 7.7) % 2, ly = (py % 5) - Math.floor(hr * 13.3) % 2;
-        if (hr < 0.2 && lx >= 0 && ly >= 0) { if ((ly === 1 || ly === 2) && (lx === 1 || lx === 3)) lf *= 0.86; else if (ly === 3 && lx === 2) lf *= 0.86; else if (ly === 0 && (lx === 1 || lx === 3)) lf *= 1.08; }
-        if ((px % 6) < 2 && (py % 6) < 2) { const fh = hash2(Math.floor(px / 6), Math.floor(py / 6), 13); if (fh > 0.994) { const pc = [[255, 255, 255], [255, 170, 200], [255, 226, 110]][Math.floor(fh * 1000) % 3]; r = pc[0]; g = pc[1]; b = pc[2]; lf = 1; } }
-        if (bwt - second < 0.08 && hash2(px, py, 7) > 0.6) lf *= 0.9; }
-      else if (best === PA) { lf += big * 0.06 + mid * 0.05; const lx = px % 5, ly = py % 5; if (lx >= 1 && lx <= 2 && ly >= 1 && ly <= 2 && hash2(Math.floor(px / 5), Math.floor(py / 5), 11) < 0.14) lf *= ly === 1 ? 1.09 : 0.92; }
-      else if (best === SO) lf += mid * 0.06 + ((py & 3) === 0 ? -0.1 : (py & 3) === 1 ? 0.05 : 0);
-      else { lf += big * 0.05 + mid * 0.04; if (hash2(px, py, 5) > 0.992) lf *= 1.1; }
-      if (best !== GR) { const m = bwt - second; if (m < 0.1) lf *= 0.86; else if (m < 0.2 && best === PA) lf *= 0.94; }
-      const i = (py * CW2 + px) * 4; d[i] = Math.min(255, r * lf); d[i + 1] = Math.min(255, g * lf); d[i + 2] = Math.min(255, b * lf); d[i + 3] = 255; } }
+      if (NT[(oy - y0 + 1) * tw + (Math.floor(px / G) - x0 + 1)]) w[GR] += 0.45;
+      let best = GR, bwt = -1, second = GR, swt = -1; for (const t of types) { const v = w[t] + (t === GR ? wob : 0); if (v > bwt) { second = best; swt = bwt; bwt = v; best = t; } else if (v > swt) { swt = v; second = t; } }
+      // luz de cada tipo neste ponto (com os detalhes macios)
+      const lit = (t) => { let lf = 1;
+        if (t === GR) { lf += big * 0.14 + mid * 0.08; if (N[4] < 0) N[4] = at(4); if (N[3] < 0) N[3] = at(3); lf -= sm(0.6, 0.74, N[4]) * 0.05; lf += sm(0.7, 0.8, N[3]) * 0.05; } // tufos alongados e macios
+        else if (t === PA) { lf += big * 0.06 + mid * 0.05; if (N[5] < 0) { N[5] = at(5); N[6] = at(6); } lf += sm(0.74, 0.82, N[5]) * 0.05 - sm(0.8, 0.88, N[6]) * 0.035; } // pedrinhas com sombrinha
+        else if (t === SO) lf += mid * 0.06 + Math.sin((py / G) * Math.PI * 2 * 2.5) * 0.06; // sulcos ondulados da terra arada
+        else { if (N[3] < 0) N[3] = at(3); lf += big * 0.05 + mid * 0.04 + sm(0.82, 0.9, N[3]) * 0.04; }
+        return lf; };
+      const cB = GPAL2[best], lB = lit(best), m = bwt - swt;
+      let r = cB[0] * lB, g = cB[1] * lB, b = cB[2] * lB;
+      // borda: mistura suave com o vizinho e um contorno macio no caminho/terra
+      if (m < 0.16 && swt > 0) { const cS = GPAL2[second] || cB, lS = lit(second), k = 0.5 + 0.5 * sm(0, 0.16, m), e = best !== GR ? 1 - (1 - sm(0, 0.12, m)) * 0.12 : 1 - (1 - sm(0, 0.1, m)) * 0.05; r = (r * k + cS[0] * lS * (1 - k)) * e; g = (g * k + cS[1] * lS * (1 - k)) * e; b = (b * k + cS[2] * lS * (1 - k)) * e; }
+      // florzinhas raras na grama, redondas e com borda macia
+      if (best === GR && m > 0.2) { const fc = 7, cx = Math.floor(px / fc), cy = Math.floor(py / fc), fh = hash2(cx, cy, 13); if (fh > 0.992) { const ddx = (px % fc) - 3, ddy = (py % fc) - 3, dd = Math.sqrt(ddx * ddx + ddy * ddy), a = 1 - sm(1.2, 2.4, dd), pc = [[255, 252, 245], [255, 170, 200], [255, 226, 110]][Math.floor(fh * 1000) % 3]; r = r * (1 - a) + pc[0] * a; g = g * (1 - a) + pc[1] * a; b = b * (1 - a) + pc[2] * a; } }
+      const i = (py * CW2 + px) * 4; d[i] = Math.min(255, r); d[i + 1] = Math.min(255, g); d[i + 2] = Math.min(255, b); d[i + 3] = 255; } }
   GCV.ctx.putImageData(img, 0, 0, PX0, PY0, PX1 - PX0, PY1 - PY0); if (GCV.tex) GCV.tex.needsUpdate = true;
 };
 paintGround = function () {
