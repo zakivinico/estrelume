@@ -2,6 +2,31 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v22: mais leve, golpes estilo Genshin, pesca com zoom, casa editável por dentro e fazenda que cresce
+**Mais leve**
+- O chão é desenhado no shader: um mapa de tipos de 170×120 (≈80 KB) diz onde é grama, caminho, areia ou terra, e a GPU faz bordas e detalhes. Antes era uma textura pintada na CPU de ≈16 MB que levava mais de 1 s para ficar pronta; agora leva ≈0,1 s e fica lisa em qualquer zoom.
+- **Áreas**: o mapa todo existe, mas só a área em volta da câmera é desenhada. O que está além da névoa sai do desenho sozinho e volta ao chegar perto. Ao entrar numa área nova aparece o nome dela no alto da tela.
+- Sombras na qualidade Alta atualizam a 30 Hz quando você está parada; a checagem de erros de shader (lenta) só roda no modo admin; bandeirinhas, floreiras e bancos viraram uma malha só cada.
+- Efeitos de golpe, faíscas e sprites são reaproveitados ou liberados da memória de vídeo ao sumir (antes ficavam acumulando).
+
+**Golpes estilo Genshin**
+- Corte novo desenhado por shader: meia-lua brilhante com núcleo branco, borda colorida e rastro que se apaga, inclinação alternada a cada golpe do combo.
+- Impacto com estrela de faíscas finas e anel; crítico ganha clarão. O golpe final do combo faz um segundo corte cruzado com brilho dourado. O arco antigo em folha de sprites saiu.
+
+**Pesca com zoom e minigame novo**
+- A câmera aproxima e enquadra a boia enquanto você pesca.
+- Depois de fisgar, uma coluna de água com o peixe: **segure Espaço** (ou o botão, ou o clique) para a barra verde subir e mantenha o peixe dentro dela até encher o medidor. Peixe comum nada manso, o raro muda de ideia e o lendário dá arrancadas.
+- Às vezes aparece um **brilho do lago**: segure-o na barra por 1 s para ganhar +5⭐. O peixe pego salta da água até você.
+
+**Casa**
+- A **bancada** não vem mais pronta lá fora: dentro de casa há um canto de obra marcado no chão, e você constrói a bancada com 10 madeiras e 4 pedras. Ela vira um móvel comum (dá para mudar de lugar no modo decorar). Quem já usava a bancada ganha a dela dentro de casa.
+- Piso e papel de parede mudam de dentro do cômodo, sem menu: no modo decorar, clique na parede ou no chão vazio; perto da parede, <kbd>E</kbd> troca o papel de parede.
+
+**Fazenda que começa pequena (estilo Stardew)**
+- Jogo novo começa num **Canteirinho** cercado com 10 quadradinhos de terra. Em volta há cinco terrenos cheios de mato, galhos, pedrinhas e tocos, cada um com uma placa 🪧 de **terreno à venda** na cerca (250 a 1.500🪙).
+- Ao comprar, a cerca se abre para o terreno novo. Limpe o mato com a espada, os galhos e tocos com o machado e as pedrinhas com a picareta, ou com <kbd>E</kbd> à mão (menos os tocos). Dá madeira, pedra e às vezes trevo ou flor.
+- Um pouco de mato volta a crescer a cada dia na grama livre da fazenda. Saves antigos mantêm a área que já tinham.
+
 ## v21: base fofinha estilo Animal Crossing, Poço estilo Genshin, barco e inconsistências
 **Personagem (base nova "Fofinha")**
 - Base nova e mais simples: os 12 personagens do **Kenney Mini Characters** (CC0), cabeçudinhos como em Animal Crossing, com o mesmo esqueleto e 18 animações (andar, correr, pular, sentar, pegar, comemorar...). Jogo novo começa nela; as bases aventureiras continuam no criador.

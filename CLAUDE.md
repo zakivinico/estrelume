@@ -85,3 +85,13 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Moradores na base nova: `NPCKM[id]` (vira `NPCLOOK[id]`). Peças pagas: `WARD_PRICE.kb/kh/kc` (Ateliê).
 - Poço (Genshin): `WR` (chances e pity), `S.wp[pet|hum|std]` (`p5`, `p4`, `g5`, `g4`), `rollG`/`grantG`/`doWishG`, banner permanente `STDB`, ★3 = `ward3()` (peças do Ateliê), `S.dust` (Pó Estelar) e `DUST_SHOP`. O `wishLog` guarda `b`, `r`, `pc` (em que desejo saiu o ★5) e `w` (ganhou o 50/50).
 - Barco: `snapshot` nunca salva no mar (usa o píer), `applyState` desembarca, `S.krDay` limita o Kraken a um por dia.
+
+## Mais leve, golpes, pesca, casa e fazenda (v22)
+
+- Chão no shader: `GSPLAT` é um `DataTexture` W×H (R caminho, G terra, B areia, A natureza) lido no `onBeforeCompile` do material do chão. Para mudar um tile em jogo continue usando `setTileColor(x, y)` (atualiza o texel e a vizinhança). Não volte a pintar textura na CPU.
+- `renderer.debug.checkShaderErrors` só fica ligado com `?admin=1` ou `?debug=1`. Na qualidade Alta a sombra atualiza a 30 Hz quando você está parada (`shadowThrottle`).
+- Efeitos: `fxSlash` (shader `SLASH_*`, malhas reaproveitadas de `SLASH.pool`) e `fxImpact` (faíscas). `stepFx`/`vfxUpdate_v13` liberam material e geometria ao remover; o que é de pool leva `userData.keep`. O arco em folha de sprites (`slash_arc_*`) não é mais desenhado.
+- Áreas (`AREAS22`): filhos diretos de `world` além de `AREAS22.far` saem do desenho trocando `layers.mask` para 0 (as luzes ficam de fora, porque o pool `LP` mexe nelas). Não use `layers` para outra coisa em objetos do mundo. Objeto que nunca deve sumir leva `userData.noArea = 1`.
+- Pesca: fase `'reel'` em `P.fishing` (barra `by`/`zb`, peixe `fy`, medidor `pr`, brilho `tr`); segurar = `keys.Space` ou `FISH22.hold`. A câmera usa `FISH22.w` para aproximar.
+- Casa: a bancada é construída no canto de obra (`BENCH22`, `S.bench22`) e vira o móvel `workbench`. Piso/parede: `homeCycle('wall'|'floor')`, chamado ao clicar na parede (`HOME22.walls`) ou no chão vazio no modo decorar.
+- Fazenda: terrenos em `LOTS22` (retângulos `r`, `price`); `S.farm22 = { lots, deb }` guarda os terrenos comprados e o mato/galho/pedrinha/toco (`obj.t === 'debris'`). `FARM.U` é o conjunto de tiles da fazenda e `inFarm` usa ele; `FARM.x0..y1` vira só a caixa em volta. A cerca contorna a união dos terrenos, com porteira em x 33–34 e a placa `lotsign` de cada terreno vizinho à venda.

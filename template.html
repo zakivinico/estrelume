@@ -880,6 +880,14 @@ html,body,.btn,button,input{font-variant-ligatures:none;font-feature-settings:"l
 /* mapa: mantém a proporção (antes width:100% + max-height deixava o mapa achatado) */
 .mapwrap.paper{display:flex;justify-content:center;align-items:center}
 .mapwrap.paper canvas{width:auto!important;height:auto!important;max-width:100%!important;max-height:62vh!important;aspect-ratio:170/120;object-fit:contain;margin:0 auto}
+/* v22: nome da área ao entrar */
+#areaT{position:fixed;left:50%;top:20%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;pointer-events:none;opacity:0;z-index:30;font-family:'Pixelify Sans',sans-serif;font-weight:700;color:#fff;text-shadow:0 3px 0 #14141b,0 0 14px rgba(20,20,27,.45);font-size:34px;white-space:nowrap}
+#areaT i{display:block;width:70px;height:3px;background:linear-gradient(90deg,transparent,#ffe18d);box-shadow:0 2px 0 #14141b}
+#areaT i:last-child{transform:scaleX(-1)}
+#areaT.on{animation:areaT 3.2s ease forwards}
+@keyframes areaT{0%{opacity:0;letter-spacing:12px}15%{opacity:1;letter-spacing:3px}75%{opacity:1}100%{opacity:0;letter-spacing:2px}}
+@media (max-width:600px){#areaT{font-size:22px}#areaT i{width:36px}}
+body.incut #areaT{display:none}
 </style>
 </head>
 <body class="ttl">
@@ -959,7 +967,7 @@ html,body,.btn,button,input{font-variant-ligatures:none;font-feature-settings:"l
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v21</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v22</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script>/*GAME*/</script>

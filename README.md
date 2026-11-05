@@ -2,7 +2,7 @@
 
 Um jogo cozy em 3D no navegador: plante, pesque, faça amizades, deseje bichinhos mágicos no Poço dos Desejos, enfrente a Vovó Rosa, navegue até o Mar Estrelado e encare o Kraken.
 
-**Versão atual: v21** (base fofinha estilo Animal Crossing com peças trocáveis, Poço dos Desejos estilo Genshin, barco revisado e inconsistências corrigidas). A v20 trouxe correções visuais e a v18 duas moedas, bancadas de craft, reforma da casa, natureza que volta, interiores vivos, duelos com três armas e HUD enxuto. Histórico completo em [`CHANGELOG.md`](CHANGELOG.md).
+**Versão atual: v22** (chão no shader e áreas que só desenham o que está perto, golpes estilo Genshin, pesca com zoom e barra de segurar, bancada construída dentro de casa, piso e parede trocados no cômodo e fazenda que começa pequena e cresce por terrenos). A v21 trouxe a base fofinha estilo Animal Crossing e o Poço estilo Genshin; a v20 trouxe correções visuais e a v18 duas moedas, bancadas de craft, reforma da casa, natureza que volta, interiores vivos, duelos com três armas e HUD enxuto. Histórico completo em [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Jogar
 
