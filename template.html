@@ -838,7 +838,7 @@ body.hudin #rTL{animation:hinL .7s cubic-bezier(.2,1.4,.4,1) .1s both}body.hudin
 /* a Pixelify Sans junta "fi"/"fl" numa ligadura quebrada ("FiA", "Aoresta") */
 html,body,.btn,button,input{font-variant-ligatures:none;font-feature-settings:"liga" 0,"clig" 0}
 /* o botão de fechar pulava para o canto nos modais do Poço/Ateliê/Diário */
-.mp.wishp>.xb{position:absolute!important}
+.mp.wishp>.xb{position:sticky!important}
 /* mochila em 6 colunas certinhas */
 .bagp .ggrid{grid-template-columns:repeat(6,1fr)!important}
 /* ===================== v21 — Poço dos Desejos estilo Genshin ===================== */
@@ -987,6 +987,9 @@ body.calm *{animation-duration:0s!important;transition-duration:0s!important}
 #cut .cbox .cbm{position:absolute;right:20px;bottom:8px;font-style:normal;font-size:12px;color:#c0587f;opacity:0;transition:opacity .2s}
 #cut .cbox.done .cbm{opacity:1;animation:dmore .7s ease-in-out infinite alternate}
 #cut .cbox i{color:#c0587f}
+/* v27: o ✕ fica sempre por cima e à vista. A animação de entrada dos filhos do painel ("both") criava camadas que cobriam o botão, e ele sumia ao rolar. */
+#modal .mp>.xb{position:sticky!important;top:6px;right:auto;float:right;z-index:30;margin:-12px -14px -40px 8px;animation:none!important}
+#modal .mp.wishp{overflow:clip!important}
 #fps27{position:fixed;left:50%;top:4px;transform:translateX(-50%);z-index:70;background:rgba(20,20,27,.7);color:#fff;font:600 12px var(--font);padding:2px 8px;border-radius:8px;pointer-events:none}
 </style>
 </head>
