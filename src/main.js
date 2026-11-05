@@ -5186,29 +5186,32 @@ paintGroundRect = function (x0, y0, x1, y1) {
   const tt = (X, Y) => TT[(Math.max(y0 - 1, Math.min(y1 + 1, Y)) - y0 + 1) * tw + (Math.max(x0 - 1, Math.min(x1 + 1, X)) - x0 + 1)];
   const w = [0, 0, 0, 0, 0, 0, 0], N = [0, 0, 0, 0, 0, 0, 0];
   const shade = (t, lf, px, py, nb) => { const c = GPAL2[t]; return [c[0] * lf, c[1] * lf, c[2] * lf]; };
-  for (let py = PY0; py < PY1; py++) { const fy = (py + 0.5) / G - 0.5, ty = Math.floor(fy), ay = fy - ty, oy = Math.floor(py / G), gy = (py - PY0) / B, gy0 = Math.floor(gy), gfy = gy - gy0;
+  let kb0 = 0, w00 = 0, w10 = 0, w01 = 0, w11 = 0, py = 0; const R7 = bw * 7, at = (c) => NB[kb0 + c] * w00 + NB[kb0 + 7 + c] * w10 + NB[kb0 + R7 + c] * w01 + NB[kb0 + R7 + 7 + c] * w11;
+  // luz de cada tipo neste ponto (com os detalhes macios)
+  const lit = (t) => { let lf = 1;
+        if (t === GR) { lf += N[0] * 0.14 + N[1] * 0.08; if (N[4] < 0) N[4] = at(4); if (N[3] < 0) N[3] = at(3); lf -= sm(0.6, 0.74, N[4]) * 0.05; lf += sm(0.7, 0.8, N[3]) * 0.05; } // tufos alongados e macios
+        else if (t === PA) { lf += N[0] * 0.06 + N[1] * 0.05; if (N[5] < 0) { N[5] = at(5); N[6] = at(6); } lf += sm(0.74, 0.82, N[5]) * 0.05 - sm(0.8, 0.88, N[6]) * 0.035; } // pedrinhas com sombrinha
+        else if (t === SO) lf += N[1] * 0.06 + Math.sin((py / G) * Math.PI * 2 * 2.5) * 0.06; // sulcos ondulados da terra arada
+        else { if (N[3] < 0) N[3] = at(3); lf += N[0] * 0.05 + N[1] * 0.04 + sm(0.82, 0.9, N[3]) * 0.04; }
+        return lf; };
+  for (py = PY0; py < PY1; py++) { const fy = (py + 0.5) / G - 0.5, ty = Math.floor(fy), ay = fy - ty, oy = Math.floor(py / G), gy = (py - PY0) / B, gy0 = Math.floor(gy), gfy = gy - gy0; let ctx = -9999, c00 = 0, c10 = 0, c01 = 0, c11 = 0, cNT = 0;
     for (let px = PX0; px < PX1; px++) {
       const fx = (px + 0.5) / G - 0.5, tx = Math.floor(fx), ax = fx - tx, gx = (px - PX0) / B, gx0 = Math.floor(gx), gfx = gx - gx0;
-      const kb0 = (gy0 * bw + gx0) * 7, w00 = (1 - gfx) * (1 - gfy), w10 = gfx * (1 - gfy), w01 = (1 - gfx) * gfy, w11 = gfx * gfy, R7 = bw * 7; const at = (c) => NB[kb0 + c] * w00 + NB[kb0 + 7 + c] * w10 + NB[kb0 + R7 + c] * w01 + NB[kb0 + R7 + 7 + c] * w11;
+      kb0 = (gy0 * bw + gx0) * 7; w00 = (1 - gfx) * (1 - gfy); w10 = gfx * (1 - gfy); w01 = (1 - gfx) * gfy; w11 = gfx * gfy;
       N[0] = at(0); N[1] = at(1); N[2] = at(2); N[3] = -1; N[4] = -1; N[5] = -1; N[6] = -1;
       const big = N[0], mid = N[1], wob = N[2];
+      if (tx !== ctx) { ctx = tx; c00 = tt(tx, ty); c10 = tt(tx + 1, ty); c01 = tt(tx, ty + 1); c11 = tt(tx + 1, ty + 1); cNT = NT[(oy - y0 + 1) * tw + (Math.floor(px / G) - x0 + 1)]; }
       w[GR] = 0; w[PA] = 0; w[SO] = 0; w[SA] = 0;
-      w[tt(tx, ty)] += (1 - ax) * (1 - ay); w[tt(tx + 1, ty)] += ax * (1 - ay); w[tt(tx, ty + 1)] += (1 - ax) * ay; w[tt(tx + 1, ty + 1)] += ax * ay;
+      w[c00] += (1 - ax) * (1 - ay); w[c10] += ax * (1 - ay); w[c01] += (1 - ax) * ay; w[c11] += ax * ay;
       if (NT[(oy - y0 + 1) * tw + (Math.floor(px / G) - x0 + 1)]) w[GR] += 0.45;
       let best = GR, bwt = -1, second = GR, swt = -1; for (const t of types) { const v = w[t] + (t === GR ? wob : 0); if (v > bwt) { second = best; swt = bwt; bwt = v; best = t; } else if (v > swt) { swt = v; second = t; } }
-      // luz de cada tipo neste ponto (com os detalhes macios)
-      const lit = (t) => { let lf = 1;
-        if (t === GR) { lf += big * 0.14 + mid * 0.08; if (N[4] < 0) N[4] = at(4); if (N[3] < 0) N[3] = at(3); lf -= sm(0.6, 0.74, N[4]) * 0.05; lf += sm(0.7, 0.8, N[3]) * 0.05; } // tufos alongados e macios
-        else if (t === PA) { lf += big * 0.06 + mid * 0.05; if (N[5] < 0) { N[5] = at(5); N[6] = at(6); } lf += sm(0.74, 0.82, N[5]) * 0.05 - sm(0.8, 0.88, N[6]) * 0.035; } // pedrinhas com sombrinha
-        else if (t === SO) lf += mid * 0.06 + Math.sin((py / G) * Math.PI * 2 * 2.5) * 0.06; // sulcos ondulados da terra arada
-        else { if (N[3] < 0) N[3] = at(3); lf += big * 0.05 + mid * 0.04 + sm(0.82, 0.9, N[3]) * 0.04; }
-        return lf; };
+
       const cB = GPAL2[best], lB = lit(best), m = bwt - swt;
       let r = cB[0] * lB, g = cB[1] * lB, b = cB[2] * lB;
       // borda: mistura suave com o vizinho e um contorno macio no caminho/terra
-      if (m < 0.16 && swt > 0) { const cS = GPAL2[second] || cB, lS = lit(second), k = 0.5 + 0.5 * sm(0, 0.16, m), e = best !== GR ? 1 - (1 - sm(0, 0.12, m)) * 0.12 : 1 - (1 - sm(0, 0.1, m)) * 0.05; r = (r * k + cS[0] * lS * (1 - k)) * e; g = (g * k + cS[1] * lS * (1 - k)) * e; b = (b * k + cS[2] * lS * (1 - k)) * e; }
+      if (m < 0.32 && swt > 0) { const cS = GPAL2[second] || cB, lS = lit(second), k = 0.5 + 0.5 * sm(0, 0.32, m), e = best !== GR ? 1 - (1 - sm(0, 0.2, m)) * 0.12 : 1 - (1 - sm(0, 0.14, m)) * 0.05; r = (r * k + cS[0] * lS * (1 - k)) * e; g = (g * k + cS[1] * lS * (1 - k)) * e; b = (b * k + cS[2] * lS * (1 - k)) * e; }
       // florzinhas raras na grama, redondas e com borda macia
-      if (best === GR && m > 0.2) { const fc = 7, cx = Math.floor(px / fc), cy = Math.floor(py / fc), fh = hash2(cx, cy, 13); if (fh > 0.992) { const ddx = (px % fc) - 3, ddy = (py % fc) - 3, dd = Math.sqrt(ddx * ddx + ddy * ddy), a = 1 - sm(1.2, 2.4, dd), pc = [[255, 252, 245], [255, 170, 200], [255, 226, 110]][Math.floor(fh * 1000) % 3]; r = r * (1 - a) + pc[0] * a; g = g * (1 - a) + pc[1] * a; b = b * (1 - a) + pc[2] * a; } }
+      if (best === GR && m > 0.2) { const fc = 7, ddx = (px % fc) - 3, ddy = (py % fc) - 3, d2 = ddx * ddx + ddy * ddy; const fh = d2 < 6 ? hash2(Math.floor(px / fc), Math.floor(py / fc), 13) : 0; if (fh > 0.992) { const dd = Math.sqrt(d2), a = 1 - sm(1.2, 2.4, dd), pc = [[255, 252, 245], [255, 170, 200], [255, 226, 110]][Math.floor(fh * 1000) % 3]; r = r * (1 - a) + pc[0] * a; g = g * (1 - a) + pc[1] * a; b = b * (1 - a) + pc[2] * a; } }
       const i = (py * CW2 + px) * 4; d[i] = Math.min(255, r); d[i + 1] = Math.min(255, g); d[i + 2] = Math.min(255, b); d[i + 3] = 255; } }
   GCV.ctx.putImageData(img, 0, 0, PX0, PY0, PX1 - PX0, PY1 - PY0); if (GCV.tex) GCV.tex.needsUpdate = true;
 };
