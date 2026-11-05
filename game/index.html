@@ -834,6 +834,13 @@ body.hudin #rTL{animation:hinL .7s cubic-bezier(.2,1.4,.4,1) .1s both}body.hudin
 #hint{font-size:14px!important;padding:6px 12px!important}
 #duelhud{position:fixed;left:16px;top:160px;z-index:20;padding:10px 12px;min-width:200px;font-size:13px}#duelhud h4{margin:0 0 6px;color:#c2477e}#duelhud table{width:100%;border-collapse:collapse}#duelhud td{padding:2px 4px}#duelhud td+td{text-align:center;font-weight:700;width:34px}#duelhud tr.me td{color:#c2477e}#duelhud small{display:block;margin:4px 0;color:var(--ink-2)}
 .fcard.dim{opacity:.72}
+/* ===================== v21 — inconsistências de interface ===================== */
+/* a Pixelify Sans junta "fi"/"fl" numa ligadura quebrada ("FiA", "Aoresta") */
+html,body,.btn,button,input{font-variant-ligatures:none;font-feature-settings:"liga" 0,"clig" 0}
+/* o botão de fechar pulava para o canto nos modais do Poço/Ateliê/Diário */
+.mp.wishp>.xb{position:absolute!important}
+/* mochila em 6 colunas certinhas */
+.bagp .ggrid{grid-template-columns:repeat(6,1fr)!important}
 /* ===================== v21 — Poço dos Desejos estilo Genshin ===================== */
 .mp.gwm{width:min(980px,96vw)!important;max-width:96vw!important;padding:14px!important}
 .gw{display:flex;flex-direction:column;gap:10px}
@@ -952,7 +959,7 @@ body.hudin #rTL{animation:hinL .7s cubic-bezier(.2,1.4,.4,1) .1s both}body.hudin
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v20</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v21</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script src="bundle.js"></script>
