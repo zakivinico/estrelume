@@ -953,6 +953,32 @@ body.calm *{animation-duration:0s!important;transition-duration:0s!important}
 #cut .cdots i.on{background:#ffe18d;opacity:1}
 #cut .cap i{color:#ffe3ef}
 #title .tlogo{animation:tfloat 4.5s ease-in-out infinite}@keyframes tfloat{50%{transform:translateY(-6px) rotate(-1deg)}}
+/* ===== v26: corações, barras arredondadas e céu com sol/lua atrás do retrato ===== */
+#hudTL .v26{display:flex;flex-direction:column;gap:5px}
+#hudTL .hrow{display:flex;align-items:center;gap:2px;flex-wrap:wrap;max-width:200px}
+#hudTL .ht{position:relative;width:20px;height:18px;display:inline-block}
+#hudTL .ht svg{position:absolute;left:0;top:0;width:20px;height:18px;overflow:visible}
+#hudTL .ht .he{fill:#f3d9df;stroke:var(--ink);stroke-width:2}
+#hudTL .ht .hf{position:absolute;left:0;top:0;height:18px;overflow:hidden}
+#hudTL .ht .hf svg{width:20px}
+#hudTL .ht .hh{fill:#ff5f7e;stroke:var(--ink);stroke-width:2}
+#hudTL .hrow em{font-style:normal;font-size:11px;font-weight:700;color:var(--ink-2);margin-left:4px}
+#hudTL .v26.low .ht{animation:hbeat .6s ease-in-out infinite}@keyframes hbeat{50%{transform:scale(1.15)}}
+#hudTL .vb{display:flex;align-items:center;gap:5px}
+#hudTL .vb b{width:20px;height:20px;display:grid;place-items:center;flex:none}#hudTL .vb b img{width:18px;height:18px;image-rendering:pixelated}
+#hudTL .vb .xpb{font-size:10px;font-weight:700;color:#8f63d8}
+#hudTL .vt{position:relative;flex:1;height:11px;border:2px solid var(--ink);border-radius:999px;background:#3a2f3f;overflow:hidden;box-shadow:inset 0 2px 0 rgba(0,0,0,.25)}
+#hudTL .vt i{display:block;height:100%;border-radius:999px;box-shadow:inset 0 2px 0 rgba(255,255,255,.45)}
+#hudTL .vb.st .vt i{background:linear-gradient(90deg,#9be36a,#c8f59a)}#hudTL .vb.st .vt i.tired{background:linear-gradient(90deg,#ffb3b3,#e0394c)}
+#hudTL .vb.fd .vt i{background:linear-gradient(90deg,#ffb35a,#ffd98a)}#hudTL .vb.fd.hungry .vt{animation:hbeat 1s ease-in-out infinite}
+#hudTL .vb.xp .vt{height:8px}#hudTL .vb.xp .vt i{background:linear-gradient(90deg,#b48cff,#e2c8ff)}
+#hudTL .vb span{min-width:22px;font-size:11px;font-weight:700;color:var(--ink-2);text-align:right}
+#hudTL{position:relative}
+#hudTL .dial{position:absolute;width:96px;height:96px;border-radius:50%;pointer-events:auto;z-index:0}
+#hudTL .dial .sky{position:absolute;inset:0;border-radius:50%;border:3px solid var(--ink);box-shadow:0 3px 0 rgba(20,20,27,.35);transition:background 2s}
+#hudTL .dial .dstars{position:absolute;inset:6px;border-radius:50%;background-image:radial-gradient(1.5px 1.5px at 20% 30%,#fff,transparent),radial-gradient(1.5px 1.5px at 70% 20%,#fff,transparent),radial-gradient(1px 1px at 40% 60%,#fff,transparent),radial-gradient(1px 1px at 80% 55%,#fff,transparent),radial-gradient(1.5px 1.5px at 30% 80%,#fff,transparent);transition:opacity 2s}
+#hudTL .dial .orb{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;image-rendering:pixelated;filter:drop-shadow(0 0 6px rgba(255,230,150,.9));transition:transform .4s linear}
+#hudTL .pfw.ondial{position:relative;z-index:1;margin:12px 12px 12px 16px}
 </style>
 </head>
 <body class="ttl">
@@ -1032,7 +1058,7 @@ body.calm *{animation-duration:0s!important;transition-duration:0s!important}
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v25</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v26</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script src="bundle.js"></script>

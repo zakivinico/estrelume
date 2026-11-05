@@ -2,6 +2,26 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v26: cabelos divertidos, casas variadas, corações com sol e lua, arena aberta da Vovó, pulo e parkour
+**Cabelos**
+- 10 penteados novos da Fofinha: rabo de lado com laço, tranças, afro fofo, moicano, chanel com franja, coquinhos de coelho, chiquinhas com estrelas, topete de onda, orelhinhas de gato e rabo alto com xuxinha. Quatro são de graça; os outros ficam no Ateliê da Fifi.
+- Todas as franjas viraram mechinhas separadas com uma mecha mais clara de brilho.
+
+**Casas**
+- Modelos novos de casa (KayKit Medieval Hexagon, CC0): duas casinhas em quatro cores, taverna e mercado. As casas das vilas se alternam entre eles, em vez de repetirem sempre os mesmos dois modelos. A sua casa e a da Vovó continuam como eram.
+
+**HUD de vida, fôlego e fome**
+- A vida virou uma fileira de corações (20 de vida por coração) que pulsam quando a vida está baixa.
+- Fôlego e saciedade ficaram em barras arredondadas com ícone, e a saciedade pisca quando você está com fome.
+- Atrás do retrato há um céu que muda de cor com a hora (amanhecer, dia, entardecer e noite estrelada), com um sol ou uma lua de carinha andando num arco para mostrar o horário.
+
+**Arena da Vovó num campo aberto**
+- O Desafio da Vovó Rosa (e a arena de duelos) foi para a **Arena das Flores**, num campo aberto (o mais perto da praça que couber, hoje na Praia do Sol), sem parede de vidro: círculo de pedra, postes com bandeirinhas e tochas. Durante a luta, um anel de pétalas acende no chão para marcar o limite. A arena aparece no mapa.
+
+**Pulo e parkour**
+- <kbd>C</kbd> pula (o Álbum foi para a tecla <kbd>L</kbd>); no controle é o LT e no celular há um botão ⤒. Pular gasta um pouquinho de fôlego, e no ar dá para passar por cima de cercas, pedrinhas e arbustos.
+- **Circuito de Parkour** ao lado da arena, na areia: nove plataformas cada vez mais altas até a estrela lá no topo. Tem cronômetro e recorde; a primeira vez dá +120🪙 e +10⭐.
+
 ## v25: interface mais clara e adaptável, só a base Fofinha, título com shader e música, abertura com cenários e amigos
 **Interface (inspirada em Zelda: Breath of the Wild, Animal Crossing: New Horizons, Stardew Valley e Pokémon Let's Go)**
 - **Estrelofone**: o menu virou um celular com apps coloridos (Mochila, Mapa, Diário, Álbum, Habilidades, Desejos, Visual, Casa, Amigos, Salvar, Carregar, Ajustes, Como jogar, Créditos e Título). Cada app mostra a tecla de atalho e uma descrição, e dá para navegar com as setas ou o controle.
