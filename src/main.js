@@ -5570,6 +5570,9 @@ openWish = function () { wishOpen = true; if (gwTab !== 'banner') return gwSub(g
 { const base = boatFire; boatFire = function () { if (!KR.on || !KR.g) return base(); const a0 = P.ang, dx = KR.x - P.x, dz = KR.z - P.z, ta = Math.atan2(dx, dz); let da = ((ta - a0 + Math.PI * 3) % (Math.PI * 2)) - Math.PI; if (Math.abs(da) < 0.9 && Math.hypot(dx, dz) < 18) P.ang = a0 + da * 0.85; try { return base(); } finally { P.ang = a0; } }; }
 { const base = v14Update; v14Update = function (dt) { base(dt); if (P.boat && keys.Space && !modalOpen() && !dlg && boatCd <= 0) boatFire(); }; }
 
+// "Aleatório" na base fofinha também sorteia penteado, roupa, cores e rosto (só o que você já tem)
+{ const base = randLook; randLook = function (fromTitle) { base(fromTitle); if (!crLook || !crIsKM(fromTitle)) return; const own = (cat, k) => (fromTitle ? (WARD_FREE[cat] || []).includes(k) : owns(cat, k)), pk = (T, cat) => { const ks = Object.keys(T).filter((k) => !cat || own(cat, k)); return pick(ks.length ? ks : Object.keys(T)); };
+  Object.assign(crLook, { kb: pk(KM_BODIES, 'kb'), kh: pk(KM_HEADS, 'kh'), ct: pk(KCOL, 'kc'), cb: pk(KCOL, 'kc'), cs: pk(KCOL, 'kc'), hc: pk(HAIRC, 'hc'), sk: pk(SKINS), ey: pk(KM_EYES), ec: pk(KM_ECOL), br: pk(KM_BROWS), mo: pk(KM_MOUTH), fc: pk(KM_CHEEK) }); }; }
 // ---------- inconsistências da auditoria ----------
 let lastCoins = null;
 function moneyBump(sel, up) { const m = document.querySelector(sel); if (!m) return; m.classList.remove('bump', 'bumpd'); void m.offsetWidth; m.classList.add(up ? 'bump' : 'bumpd'); }
