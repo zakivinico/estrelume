@@ -864,7 +864,7 @@ function nearestSpecial() {
   ];
   landmarkSpecials(list); extraDoors(list); seaSpecials(list);
   if (mode === 'out') { const cr = nearestCritter(); if (cr) list.push({ d: Math.hypot(P.x - cr.x, P.z - cr.z) - 0.6, label: cr.prod ? `💗 Fazer carinho em ${cr.name}` : '💗 Fazer carinho na galinha', act: () => petCritter(cr) }); }
-  if (mode === 'out') for (const n of npcs) { const d = Math.hypot(P.x - n.x, P.z - n.z) - 0.4; if (d > 1) continue; const st = npcSt(n.d.id), rq = npcReq(n), can = st.d !== S.day && (S.inv[rq.item] || 0) >= rq.q; if (n.hidden) { list.push({ d, label: '🙈 Achei você, Pipo!', act: () => findPipo(n) }); continue; } list.push({ d, label: can ? `🎁 Entregar ${rq.q}× ${ITEMS[rq.item].n} para ${n.d.n}` : `Conversar com ${n.d.n}`, act: () => (can ? deliverNpc(n) : talkNpc(n)) }); }
+  if (mode === 'out') for (const n of npcs) { const d = Math.hypot(P.x - n.x, P.z - n.z) - 0.4; if (d > 1 || npcAway(n)) continue; const st = npcSt(n.d.id), rq = npcReq(n), can = st.d !== S.day && (S.inv[rq.item] || 0) >= rq.q; if (n.hidden) { list.push({ d, label: '🙈 Achei você, Pipo!', act: () => findPipo(n) }); continue; } list.push({ d, label: can ? `🎁 Entregar ${rq.q}× ${ITEMS[rq.item].n} para ${n.d.n}` : `Conversar com ${n.d.n}`, act: () => (can ? deliverNpc(n) : talkNpc(n)) }); }
   let best = null; for (const s of list) if (s.d < 0.75 && (!best || s.d < best.d)) best = s; return best;
 }
 function sellAll() {
@@ -1140,7 +1140,7 @@ function openMap_v9() {
   x.strokeStyle = '#14141b'; x.lineWidth = 4; x.strokeRect(2, 2, W * s - 4, H * s - 4);
   const ic = (e, tx, ty, lab) => { x.font = '22px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; { const em = (String(e).match(EMO_RE) || [])[0]; x.imageSmoothingEnabled = false; x.drawImage(iconCanvas(EMO[em ? emoKey(em) : ''] || 'star', 28), tx * s - 14, ty * s - 14); } if (lab) { x.font = 'bold 12px "Pixelify Sans", sans-serif'; x.lineWidth = 3; x.strokeStyle = '#fff'; x.strokeText(lab, tx * s, ty * s + 18); x.fillStyle = '#14141b'; x.fillText(lab, tx * s, ty * s + 18); } };
   ic('🏠', H1.x + 2, H1.y + 1.5, 'Casa'); ic('🏡', H2.x + 2, H2.y + 1.5, 'Rosa'); ic('⭐', SHRINE.x + 1, SHRINE.y + 1, 'Poço'); ic('🧺', BOX.x + 1, BOX.y + 1, 'Barraca'); ic('🛍️', SHOP.x + 1.5, SHOP.y + 1.5, 'Lojinha'); ic('📜', BOARD.x + 0.5, BOARD.y + 0.5); ic('🎣', dockStart + 2.5, 44.5, 'Píer'); ic('🌾', 33.5, 41, 'Minha Fazenda'); ic('👵', rosa.x, rosa.z); ic('🌻', 98.5, 33.5, 'Vila Girassol'); ic('⚒️', SMITH.x + 1.5, SMITH.y + 1.5); ic('🏖️', 50, BEACHY + 1.5, 'Praia do Sol'); ic('🔮', 22, 15); ic('⛏️', MINE.x + 2, MINE.y + 1.5, 'Caverna'); ic('🗼', TOWER.x + 1.5, TOWER.y + 1.5, 'Torre'); ic('🛖', HUT.x + 1.5, HUT.y + 1, 'Cabana'); ic('👗', ATELIE.x + 1.5, ATELIE.y + 1.5, 'Ateliê'); ic('🐑', 15, 43, 'Pasto');
-  for (const n of npcs) { x.fillStyle = '#fff'; x.strokeStyle = '#14141b'; x.lineWidth = 2; x.beginPath(); x.arc(n.x * s, n.z * s, 6, 0, 7); x.fill(); x.stroke(); x.font = 'bold 11px sans-serif'; x.lineWidth = 3; x.strokeStyle = '#fff'; x.strokeText(n.d.n, n.x * s, n.z * s - 12); x.fillStyle = '#14141b'; x.fillText(n.d.n, n.x * s, n.z * s - 12); }
+  for (const n of npcs) { if (npcAway(n)) continue; x.fillStyle = '#fff'; x.strokeStyle = '#14141b'; x.lineWidth = 2; x.beginPath(); x.arc(n.x * s, n.z * s, 6, 0, 7); x.fill(); x.stroke(); x.font = 'bold 11px sans-serif'; x.lineWidth = 3; x.strokeStyle = '#fff'; x.strokeText(n.d.n, n.x * s, n.z * s - 12); x.fillStyle = '#14141b'; x.fillText(n.d.n, n.x * s, n.z * s - 12); }
   for (const sl of slimes) if (!sl.dead) { x.fillStyle = sl.c ? '#ef9597' : '#adbc3a'; x.beginPath(); x.arc(sl.x * s, sl.z * s, 3.5, 0, 7); x.fill(); }
   const st = TUT[S.tstep]; if (st && mode === 'out') { const [ox, , oz] = st.at(); x.strokeStyle = '#ffcb2a'; x.lineWidth = 4; x.beginPath(); x.arc(ox * s, oz * s, 12, 0, 7); x.stroke(); }
   const px = mode === 'in' ? HOME.x : P.x, pz = mode === 'in' ? HOME.z : P.z; x.save(); x.translate(px * s, pz * s); x.rotate(-P.ang + Math.PI); x.fillStyle = '#e0394c'; x.strokeStyle = '#fff'; x.lineWidth = 2; x.beginPath(); x.moveTo(0, -10); x.lineTo(7, 7); x.lineTo(0, 3); x.lineTo(-7, 7); x.closePath(); x.fill(); x.stroke(); x.restore();
@@ -1387,8 +1387,8 @@ function update(dt) {
   // modelos
   if (player) { player.obj.position.set(P.x, P.boat ? 0.74 + Math.sin(gtime * 2) * 0.05 : mode === 'out' && tAt(Math.floor(P.x), Math.floor(P.z)) === DK ? DECKY : 0, P.z); player.obj.rotation.y = angLerp(player.obj.rotation.y, P.ang, Math.min(1, dt * 14)); player.obj.visible = !(P.hurt > 0 && Math.floor(gtime * 16) % 2); player.update(paused ? 0 : dt, P.boat ? 'Sit_Floor_Idle' : P.bike ? 'Sit_Chair_Idle' : P.moving ? (P.run && !P.tired ? 'Running_A' : 'Walking_A') : 'Idle'); if (P.bike && bikeObj) { player.obj.position.y = 0.36; bikeObj.position.set(P.x, 0, P.z); bikeObj.rotation.y = player.obj.rotation.y; player.obj.position.x -= Math.sin(player.obj.rotation.y) * 0.12; player.obj.position.z -= Math.cos(player.obj.rotation.y) * 0.12; } }
   if (rosaC) { rosaC.obj.visible = mode === 'out'; rosaC.obj.position.set(rosa.x, 0, rosa.z); rosaC.obj.rotation.y = angLerp(rosaC.obj.rotation.y, dlg ? Math.atan2(P.x - rosa.x, P.z - rosa.z) : rosa.ang, Math.min(1, dt * 8)); rosaC.update(paused ? 0 : dt, rosa.moving ? 'Walking_A' : 'Idle'); }
-  for (const n of npcs) { const vis = mode === 'out' && Math.abs(n.x - P.x) < 34 && Math.abs(n.z - P.z) < 26; n.c.obj.visible = vis; const st = npcSt(n.d.id); n.emo.visible = vis && (st.d !== S.day || n.hidden || SQ.some((q) => q.giver === n.d.id && !S.sq[q.id] && q.need())) && !dlg; n.emo.position.set(n.x, 1.85 * (n.d.sc || 1) + 0.1 + Math.sin(gtime * 4 + n.x) * 0.05, n.z); if (!vis) continue; n.c.obj.position.set(n.x, 0, n.z); const talking = dlg && dlg.name === n.d.n; n.c.obj.rotation.y = angLerp(n.c.obj.rotation.y, talking ? Math.atan2(P.x - n.x, P.z - n.z) : n.ang, Math.min(1, dt * 8)); n.c.update(paused ? 0 : dt, n.moving ? (n.d.fast ? 'Running_A' : 'Walking_A') : n.evAnim || 'Idle'); }
-  if (ticoC) { ticoC.obj.visible = mode === 'out'; ticoC.obj.rotation.y = angLerp(ticoC.obj.rotation.y, Math.hypot(P.x - ticoC.obj.position.x, P.z - ticoC.obj.position.z) < 5 ? Math.atan2(P.x - ticoC.obj.position.x, P.z - ticoC.obj.position.z) : 0, Math.min(1, dt * 5)); ticoC.update(paused ? 0 : dt, 'Idle'); }
+  for (const n of npcs) { const vis = mode === 'out' && !npcAway(n) && Math.abs(n.x - P.x) < 34 && Math.abs(n.z - P.z) < 26; n.c.obj.visible = vis; const st = npcSt(n.d.id); n.emo.visible = vis && (st.d !== S.day || n.hidden || SQ.some((q) => q.giver === n.d.id && !S.sq[q.id] && q.need())) && !dlg; n.emo.position.set(n.x, 1.85 * (n.d.sc || 1) + 0.1 + Math.sin(gtime * 4 + n.x) * 0.05, n.z); if (!vis) continue; n.c.obj.position.set(n.x, 0, n.z); const talking = dlg && dlg.name === n.d.n; n.c.obj.rotation.y = angLerp(n.c.obj.rotation.y, talking ? Math.atan2(P.x - n.x, P.z - n.z) : n.ang, Math.min(1, dt * 8)); n.c.update(paused ? 0 : dt, n.moving ? (n.d.fast ? 'Running_A' : 'Walking_A') : n.evAnim || 'Idle'); }
+  if (ticoC) { ticoC.obj.visible = mode === 'out' && !shopOpen(); ticoC.obj.rotation.y = angLerp(ticoC.obj.rotation.y, Math.hypot(P.x - ticoC.obj.position.x, P.z - ticoC.obj.position.z) < 5 ? Math.atan2(P.x - ticoC.obj.position.x, P.z - ticoC.obj.position.z) : 0, Math.min(1, dt * 5)); ticoC.update(paused ? 0 : dt, 'Idle'); }
   // câmera
   const D = camDist * (dlg ? 0.8 : 1) * (wishCam ? 0.62 : 1);
   FISH22.w = lerp(FISH22.w, P.fishing && mode === 'out' && !P.boat ? (P.fishing.phase === 'reel' ? 1 : 0.6) : 0, 1 - Math.pow(0.03, dt));
@@ -1442,7 +1442,7 @@ function drawOverlay() {
   octx.clearRect(0, 0, ov.width, ov.height); if (titleOn) return; octx.textAlign = 'center'; octx.lineJoin = 'round';
   for (const f of floats) { const [x, y] = toScr(f.x, f.y + (1 - f.life) * 0.9, f.z); const s = f.big ? 1 + Math.max(0, f.life - 0.8) * 2.5 : 1; octx.globalAlpha = clamp(f.life * 2, 0, 1); octx.font = `700 ${Math.round((f.big ? 24 : 20) * s)}px "Pixelify Sans", sans-serif`; octx.lineWidth = 5; octx.strokeStyle = C.ink; octx.strokeText(f.t, x, y); octx.fillStyle = f.c; octx.fillText(f.t, x, y); }
   octx.globalAlpha = 1;
-  if (mode === 'out') { octx.font = '700 14px "Pixelify Sans", sans-serif'; const LB = []; for (const n of [...npcs.map((n) => [n.x, n.z, n.d.n, 2.05 * (n.d.sc || 1)]), [rosa.x, rosa.z, 'Vovó Rosa', 2.05], [SHOP.x + 1.5, SHOP.y + 3.4, 'Tico', 2.05]].sort((a, b) => Math.hypot(a[0] - P.x, a[1] - P.z) - Math.hypot(b[0] - P.x, b[1] - P.z))) { if (Math.hypot(n[0] - P.x, n[1] - P.z) > 6) continue; const [x, y, fr] = toScr(n[0], n[3], n[1]); if (!fr) continue; const hw = octx.measureText(n[2]).width / 2 + 4; if (LB.some((b) => Math.abs(b[0] - x) < b[2] + hw && Math.abs(b[1] - y) < 18)) continue; LB.push([x, y, hw]); octx.lineWidth = 4; octx.strokeStyle = C.ink; octx.strokeText(n[2], x, y); octx.fillStyle = '#fff4dd'; octx.fillText(n[2], x, y); } }
+  if (mode === 'out') { octx.font = '700 14px "Pixelify Sans", sans-serif'; const LB = []; for (const n of [...npcs.filter((n) => !npcAway(n)).map((n) => [n.x, n.z, n.d.n, 2.05 * (n.d.sc || 1)]), [rosa.x, rosa.z, 'Vovó Rosa', 2.05], ...(shopOpen() ? [] : [[SHOP.x + 1.5, SHOP.y + 3.4, 'Tico', 2.05]])].sort((a, b) => Math.hypot(a[0] - P.x, a[1] - P.z) - Math.hypot(b[0] - P.x, b[1] - P.z))) { if (Math.hypot(n[0] - P.x, n[1] - P.z) > 6) continue; const [x, y, fr] = toScr(n[0], n[3], n[1]); if (!fr) continue; const hw = octx.measureText(n[2]).width / 2 + 4; if (LB.some((b) => Math.abs(b[0] - x) < b[2] + hw && Math.abs(b[1] - y) < 18)) continue; LB.push([x, y, hw]); octx.lineWidth = 4; octx.strokeStyle = C.ink; octx.strokeText(n[2], x, y); octx.fillStyle = '#fff4dd'; octx.fillText(n[2], x, y); } }
   // barras de vida dos slimes feridos
   if (mode !== 'in') for (const s of slimes) { if (s.dead || s.hp >= s.max) continue; const [x, y, fr] = toScr(s.x, 0.95 + s.y, s.z); if (!fr) continue; octx.fillStyle = C.ink; octx.fillRect(x - 22, y - 5, 44, 9); octx.fillStyle = s.elite ? '#ffcb2a' : '#e0394c'; octx.fillRect(x - 20, y - 3, 40 * clamp(s.hp / s.max, 0, 1), 5); if (s.lvl) { octx.font = '700 11px "Pixelify Sans", sans-serif'; octx.textAlign = 'right'; octx.fillStyle = '#fff'; octx.strokeStyle = C.ink; octx.lineWidth = 3; octx.strokeText('Nv' + s.lvl, x - 24, y + 4); octx.fillText('Nv' + s.lvl, x - 24, y + 4); octx.textAlign = 'left'; } }
   const st = TUT[S.tstep];
@@ -6231,6 +6231,140 @@ function viewEnjoy(v) {
 { const base = v14Update; v14Update = function (dt) { base(dt); if (VIEWS.t > 0) { VIEWS.t -= dt; if (VIEWS.t <= 0 || mode !== 'out') { VIEWS.t = 0; camDist = VIEWS.d0; } }
   for (const v of VIEWS.list) if (!(S.views && S.views[v.id]) && mode === 'out' && Math.abs(P.x - v.x) < 16 && Math.abs(P.z - v.z) < 12 && rand() < dt * 3) emit(PG, { x: v.x + (rand() - 0.5) * 0.6, y: 1.2 + GH(v.x, v.z) * 0, z: v.z, vx: 0, vz: 0, vy: 0.9, g: 0, life: 1, max: 1, c: '#ffe18d' }); }; }
 
+/* =================== v24: base Fofinha redonda (pelúcia), barracas fora do caminho, moradores num lugar só e brilho nas portas =================== */
+// ---------- base Fofinha nova: peças redondas presas nos ossos do esqueleto Kenney ----------
+// Cabeça grandona e redonda, corpinho de feijão, bracinhos curtos com mãozinha redonda e pezinhos de sapato.
+// As animações continuam as do Kenney (os ossos são os mesmos); as malhas antigas ficam escondidas.
+// Cada osso ganha UMA malha com cor nos vértices (VCMAT), então são poucas chamadas de desenho por personagem.
+const FOFA = { ref: null, geo: {}, G: null };
+function fofaRef() { if (FOFA.ref) return FOFA.ref; const o = cloneM('ch_km'); o.position.set(0, 0, 0); o.rotation.set(0, 0, 0); o.scale.set(1, 1, 1); o.updateMatrixWorld(true);
+  const R = {}; o.traverse((n) => { if (n.isBone) { const p = new THREE.Vector3(), s = new THREE.Vector3(); n.getWorldPosition(p); n.getWorldScale(s); R[n.name] = { p, s: s.x }; } }); return (FOFA.ref = R); }
+function fofaG() { if (FOFA.G) return FOFA.G; const G = {
+  ball: new THREE.SphereGeometry(1, 20, 14), hi: new THREE.SphereGeometry(1, 30, 22), cap: new THREE.SphereGeometry(1, 28, 16, 0, Math.PI * 2, 0, Math.PI * 0.56), half: new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+  cyl: new THREE.CylinderGeometry(1, 1, 1, 16), cone: new THREE.ConeGeometry(1, 1, 12), skirt: new THREE.CylinderGeometry(0.72, 1, 1, 18, 1, true), box: new THREE.BoxGeometry(1, 1, 1), ring: new THREE.TorusGeometry(1, 0.22, 8, 22) };
+  for (const g of Object.values(G)) { if (g.index) { const ng = g.toNonIndexed(); g.copy(ng); } g.deleteAttribute('uv'); } return (FOFA.G = G); }
+// peças: [bone, geo, cor, x, y, z (mundo, em repouso), sx, sy, sz, rx, ry, rz]
+function fofaParts(lk) {
+  const sk = kmHex(SKINS, lk.sk, null) || '#f4c29b', hc = kmHex(HAIRC, lk.hc, KM_HAIRC[lk.hc] || null) || KM_HAIRC.castanho, ct = kmHex(KCOL, lk.ct) || '#ffd45a', cb = kmHex(KCOL, lk.cb) || '#a88cf0', cs = kmHex(KCOL, lk.cs) || '#f4f1ea';
+  const P = [], A = (b, g, c, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) => P.push([b, g, c, x, y, z, sx, sy, sz, rx, ry, rz]);
+  const dark = (h, k = 0.75) => '#' + new THREE.Color(h).multiplyScalar(k).getHexString(), WHITE = '#fbf7f0';
+  // cabeça
+  const HC = [0, 0.83, -0.01]; A('head', 'hi', sk, HC[0], HC[1], HC[2], 0.335, 0.31, 0.31);
+  for (const m of [-1, 1]) A('head', 'ball', sk, m * 0.325, 0.8, -0.02, 0.06, 0.075, 0.05);
+  A('head', 'ball', dark(sk, 0.93), 0, 0.775, 0.3, 0.035, 0.028, 0.025); // narizinho
+  // cabelo
+  const capB = (tilt = 0.32, s = 1.07) => A('head', 'cap', hc, HC[0], HC[1] + 0.005, HC[2] - 0.01, 0.335 * s, 0.31 * s, 0.31 * s, -tilt, 0, 0);
+  const bang = (w = 0.26, y = 1.03) => A('head', 'ball', hc, 0, y, 0.2, w, 0.085, 0.14, 0.5, 0, 0);
+  const bun = (x, y, z, r) => A('head', 'ball', hc, x, y, z, r, r, r);
+  switch (lk.kh) {
+    case 'fa': capB(); bang(); bun(0, 1.18, -0.08, 0.13); break; // coque alto
+    case 'fb': capB(); bang(); bun(-0.26, 1.07, -0.04, 0.1); bun(0.26, 1.07, -0.04, 0.1); break; // coquinhos
+    case 'fc': capB(); bang(0.24, 1.0); bun(0, 1.16, -0.12, 0.12); A('head', 'ring', ct, 0, 1.03, -0.02, 0.335, 0.335, 0.335, Math.PI / 2 - 0.35, 0, 0); break; // coque com faixa
+    case 'fd': capB(); bang(); bun(0, 0.97, -0.33, 0.14); break; // coque redondo atrás
+    case 'fe': capB(0.15, 1.08); bang(0.27, 1.02); A('head', 'ball', hc, 0, 0.72, -0.13, 0.34, 0.36, 0.22); break; // liso comprido
+    case 'ff': capB(); bang(); for (const m of [-1, 1]) { A('head', 'ball', hc, m * 0.36, 0.78, -0.08, 0.09, 0.15, 0.09); A('head', 'ball', ct, m * 0.33, 0.9, -0.06, 0.045, 0.045, 0.045); } break; // chiquinhas
+    case 'ma': for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2, rr = 0.25; A('head', 'ball', hc, Math.cos(a) * rr * 1.15, 1.04 + Math.sin(i * 2.3) * 0.04, -0.06 + Math.sin(a) * rr, 0.1, 0.09, 0.1); } A('head', 'ball', hc, 0, 1.1, -0.05, 0.22, 0.12, 0.22); break; // cacheadinho
+    case 'mb': A('head', 'half', hc, 0, 0.7, 0.07, 0.29, 0.13, 0.25, Math.PI, 0, 0); break; // careca e barba
+    case 'mc': capB(0.32, 1.05); A('head', 'half', ct, 0, 1.0, -0.02, 0.33, 0.2, 0.32); A('head', 'cyl', dark(ct, 0.85), 0, 1.0, 0.24, 0.2, 0.025, 0.14); break; // quepe
+    case 'md': capB(0.3, 1.04); for (let i = 0; i < 7; i++) { const a = -0.9 + i * 0.3; A('head', 'cone', hc, Math.sin(a) * 0.22, 1.12 + Math.cos(i) * 0.02, -0.05 + Math.cos(a) * 0.05, 0.07, 0.17, 0.07, -0.4, 0, -a * 0.6); } break; // espetado
+    case 'me': capB(); A('head', 'ball', hc, 0.05, 1.1, 0.16, 0.18, 0.11, 0.13, 0.4, 0, -0.3); for (const m of [-1, 1]) A('head', 'ring', '#2a2230', m * 0.11, 0.84, 0.305, 0.075, 0.075, 0.075); A('head', 'box', '#2a2230', 0, 0.85, 0.31, 0.07, 0.012, 0.012); break; // topete e óculos
+    case 'mf': capB(0.3, 1.06); for (let i = 0; i < 9; i++) { const a = i * 0.7; A('head', 'ball', hc, Math.cos(a) * 0.2, 1.09 + (i % 3) * 0.025, -0.05 + Math.sin(a) * 0.17, 0.1, 0.07, 0.1, i, i * 2, 0); } break; // bagunçado
+    default: capB(); bang();
+  }
+  // corpo e roupa
+  const B = { fa: { sl: 'l', bt: 'p', ex: 'hood' }, fb: { sl: 's', bt: 'k', ex: 'collar' }, fc: { sl: 's', bt: 'd' }, fd: { sl: 'l', bt: 'p', ex: 'lapel' }, fe: { sl: 'l', bt: 'p', ex: 'coat' }, ff: { sl: 'l', bt: 'p', ex: 'zip' },
+    ma: { sl: 's', bt: 'p' }, mb: { sl: 's', bt: 'h', ex: 'big' }, mc: { sl: 'l', bt: 'p', ex: 'belt' }, md: { sl: 'l', bt: 'p', ex: 'tie' }, me: { sl: 's', bt: 'p', ex: 'vest' }, mf: { sl: 's', bt: 'p', ex: 'overall' } }[lk.kb] || { sl: 's', bt: 'p' };
+  const big = B.ex === 'big' ? 1.08 : 1, topC = B.ex === 'vest' ? WHITE : ct;
+  A('spine', 'ball', topC, 0, 0.41, -0.03, 0.2 * big, 0.17, 0.17 * big); // tronco (feijão)
+  A('spine', 'ball', B.bt === 'd' ? ct : cb, 0, 0.32, -0.03, 0.195 * big, 0.11, 0.165 * big); // quadril
+  if (B.bt === 'd') A('spine', 'skirt', ct, 0, 0.255, -0.03, 0.2, 0.16, 0.18);
+  if (B.bt === 'k') A('spine', 'skirt', cb, 0, 0.275, -0.03, 0.2, 0.11, 0.18);
+  A('spine', 'ball', sk, 0, 0.535, -0.02, 0.09, 0.05, 0.085); // pescoço
+  if (B.ex === 'hood') A('spine', 'ball', dark(ct, 0.9), 0, 0.53, -0.17, 0.17, 0.09, 0.08);
+  if (B.ex === 'collar') for (const m of [-1, 1]) A('spine', 'ball', WHITE, m * 0.06, 0.53, 0.09, 0.07, 0.03, 0.05, 0, 0, m * 0.4);
+  if (B.ex === 'lapel' || B.ex === 'tie') { A('spine', 'cone', WHITE, 0, 0.47, 0.125, 0.07, 0.12, 0.03, Math.PI, 0, 0); if (B.ex === 'tie') A('spine', 'box', cb, 0, 0.43, 0.14, 0.035, 0.12, 0.02); else for (const y of [0.42, 0.37]) A('spine', 'ball', dark(ct, 0.6), 0, y, 0.16, 0.018, 0.018, 0.012); }
+  if (B.ex === 'coat') A('spine', 'skirt', WHITE, 0, 0.3, -0.03, 0.215, 0.22, 0.19);
+  if (B.ex === 'zip') A('spine', 'box', dark(ct, 0.7), 0, 0.42, 0.155, 0.018, 0.2, 0.02);
+  if (B.ex === 'belt') { A('spine', 'cyl', dark(cb, 0.6), 0, 0.345, -0.03, 0.198, 0.03, 0.168); A('spine', 'box', '#ffd45a', 0, 0.345, 0.14, 0.05, 0.035, 0.02); }
+  if (B.ex === 'vest') { A('spine', 'ball', ct, 0, 0.41, -0.03, 0.205, 0.165, 0.172); A('spine', 'box', WHITE, 0, 0.44, 0.16, 0.06, 0.16, 0.02); }
+  if (B.ex === 'overall') { A('spine', 'box', cb, 0, 0.4, 0.13, 0.15, 0.12, 0.06); for (const m of [-1, 1]) { A('spine', 'box', cb, m * 0.1, 0.5, 0.07, 0.035, 0.12, 0.17, 0.25, 0, 0); A('spine', 'ball', '#ffd45a', m * 0.08, 0.45, 0.165, 0.018, 0.018, 0.012); } }
+  // braços (em repouso apontam para o lado): manga + mãozinha
+  for (const [b, m] of [['arm-left', 1], ['arm-right', -1]]) { const sx = 0.15 * m;
+    A(b, 'ball', topC === WHITE && B.ex === 'vest' ? WHITE : ct, sx + m * 0.06, 0.425, -0.026, 0.085, 0.07, 0.07);
+    A(b, 'ball', B.sl === 'l' ? ct : sk, sx + m * 0.115, 0.42, -0.026, 0.075, 0.058, 0.058);
+    A(b, 'ball', sk, sx + m * 0.185, 0.416, -0.02, 0.062, 0.062, 0.062); }
+  // pernas curtinhas e sapatos redondos
+  for (const [b, m] of [['leg-left', 1], ['leg-right', -1]]) { const x = 0.11 * m, legC = B.bt === 'p' ? cb : B.bt === 'h' ? cb : sk;
+    A(b, 'ball', legC, x, 0.17, -0.035, 0.08, 0.11, 0.08); if (B.bt === 'h') A(b, 'ball', sk, x, 0.1, -0.035, 0.065, 0.07, 0.065);
+    A(b, 'ball', cs, x, 0.05, 0.0, 0.085, 0.058, 0.118); A(b, 'ball', dark(cs, 0.8), x, 0.012, 0.0, 0.08, 0.018, 0.11); }
+  return P;
+}
+function fofaBuild(lk) { // geometria por osso (no espaço do osso), com cache
+  const key = [lk.kb, lk.kh, lk.sk, lk.hc, lk.ct, lk.cb, lk.cs].join('|'); if (FOFA.geo[key]) return FOFA.geo[key];
+  const R = fofaRef(), G = fofaG(), by = {}, c = new THREE.Color(), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  for (const [b, gk, col, x, y, z, sx, sy, sz, rx, ry, rz] of fofaParts(lk)) { const r = R[b]; if (!r) continue; const g = G[gk].clone(), s = 1 / (r.s || 1);
+    m4.compose(new THREE.Vector3((x - r.p.x) * s, (y - r.p.y) * s, (z - r.p.z) * s), q.setFromEuler(e.set(rx, ry, rz)), new THREE.Vector3(sx * s, sy * s, sz * s)); g.applyMatrix4(m4);
+    c.set(col); const n = g.attributes.position.count, ca = new Float32Array(n * 3); for (let i = 0; i < n; i++) { ca[i * 3] = c.r; ca[i * 3 + 1] = c.g; ca[i * 3 + 2] = c.b; } g.setAttribute('color', new THREE.BufferAttribute(ca, 3)); (by[b] = by[b] || []).push(g); }
+  const out = {}; for (const [b, list] of Object.entries(by)) out[b] = mergeGeometries(list, false); return (FOFA.geo[key] = out);
+}
+function fofaFace(obj, lk) { // rosto pintado numa casquinha na frente da cabeça redonda
+  let hb = null; obj.traverse((o) => { if (!hb && o.isBone && o.name === 'head') hb = o; }); if (!hb) return; const R = fofaRef().head, s = 1 / (R.s || 1);
+  if (obj.userData.kmFace) { obj.userData.kmFace.parent && obj.userData.kmFace.parent.remove(obj.userData.kmFace); obj.userData.kmFace = null; }
+  if (!FOFA.faceGeo) { const w = 1.28, g = new THREE.SphereGeometry(1, 22, 14, Math.PI / 2 - w / 2, w, Math.PI * 0.33, Math.PI * 0.36); FOFA.faceGeo = g; } // olhos grandes, estilo Animal Crossing
+  const tex = kmFaceTex(lk), mat = KM.faceMat[tex.uuid] || (KM.faceMat[tex.uuid] = new THREE.MeshLambertMaterial({ map: tex, transparent: true, alphaTest: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+  const m = new THREE.Mesh(FOFA.faceGeo, mat); m.position.set(0, (0.83 - R.p.y) * s, (-0.01 - R.p.z) * s); m.scale.set(0.338 * s, 0.313 * s, 0.313 * s); m.renderOrder = 2; m.castShadow = false; hb.add(m); obj.userData.kmFace = m; }
+kmLook = function (obj, look) { const lk = Object.assign({}, KM_DEF, look || {}); if (!KM_VAR.includes(lk.kb)) lk.kb = KM_DEF.kb; if (!KM_VAR.includes(lk.kh)) lk.kh = KM_DEF.kh;
+  obj.userData.kmKey = lk.kb + lk.kh; const parts = fofaBuild(lk), bones = {};
+  obj.traverse((o) => { if (o.isSkinnedMesh && (o.name === 'km_Body' || o.name === 'km_Head')) { o.visible = false; o.castShadow = false; } if (o.isBone) bones[o.name] = o; });
+  for (const m of obj.userData.fofa || []) m.parent && m.parent.remove(m); obj.userData.fofa = [];
+  for (const [b, g] of Object.entries(parts)) { const bone = bones[b]; if (!bone) continue; const m = new THREE.Mesh(g, VCMAT); m.castShadow = true; m.receiveShadow = false; m.userData.fofa = 1; bone.add(m); obj.userData.fofa.push(m); }
+  try { fofaFace(obj, lk); } catch (e) { console.error(e); }
+  ACC_TINT.hex = accCol(lk.acc_c); ACC_TINT.pat = lk.acc_p || 'lisa'; try { attachHead(obj, null, lk.acc); } finally { ACC_TINT.hex = null; ACC_TINT.pat = 'lisa'; }
+  try { equipSlots(obj, lk); } catch (e) { console.error(e); } };
+
+// ---------- barracas e bancos da feira longe do caminho (e com espaço em volta, para ninguém atravessar a lona) ----------
+let DRESS_NOPATH = 0;
+{ const base = dressBlocked; dressBlocked = function (x, y) { if (base(x, y)) return true; if (DRESS_NOPATH) for (let j = -DRESS_NOPATH; j <= DRESS_NOPATH; j++) for (let i = -DRESS_NOPATH; i <= DRESS_NOPATH; i++) { const t = tAt(x + i, y + j); if (t === PA || t === WA || t === DK) return true; } return false; }; }
+{ const base = dressProps; dressProps = function (cx, cy, R, keys, count, minD, tiles, size = 1) { const big = keys.some((k) => /stall|market|cart|fountain|bench/.test(k));
+  if (!big) return base(cx, cy, R, keys, count, minD, tiles, size); DRESS_NOPATH = 2; try { return base(cx, cy, R + 3, keys, count, minD + 0.8, tiles.filter((t) => t !== PA), Math.max(size, 3)); } finally { DRESS_NOPATH = 0; } }; }
+
+// ---------- cada morador num lugar só: quem está em casa ou trabalhando na loja não aparece passeando lá fora ----------
+// Lojas abrem das 6h às 20h. Aberta: a lojista fica no balcão. Fechada: ela passeia pelo vale e a porta fica apagada.
+const SHOP_H = [6, 20];
+const shopOpen = () => { const h = hourNow(); return h >= SHOP_H[0] && h < SHOP_H[1]; };
+const KEEPER_SHOP = { duda: 'forja', fifi: 'atelie' };
+residentHome = function (D) { const h = hourNow(); if (D.type === 'rosa') return false; /* a Vovó Rosa fica na praça (é ela quem guia você) */ return h >= 19.5 || h < 6.5 || (h >= 12 && h < 13.5 && hash2(S.day, D.id.length * 7 + D.id.charCodeAt(1), 3) < 0.35); };
+const NPC_HOUSE = {}; let npcHouseDone = false;
+function npcHouses() { if (npcHouseDone) return; npcHouseDone = true; for (const D of doorList()) { const r = residentOf(D); if (r && r.lid) NPC_HOUSE[r.lid] = D; } }
+function npcAway(n) { const id = n.d.id; if (KEEPER_SHOP[id] && shopOpen()) return 'shop'; npcHouses(); const D = NPC_HOUSE[id]; if (D && residentHome(D)) return 'home'; return null; }
+{ const base = enterShop; enterShop = function (id) { if (!shopOpen() && SHOPS[id] && !SHOPS[id].home) { sfx('cancel'); const who = SHOPS[id].who || 'A lojista'; toast(`🔒 <b>${SHOPS[id].n || 'A loja'}</b> está fechada. Abre às ${SHOP_H[0]}h. ${who} está passeando pelo vale.`); return; } return base(id); }; }
+// dentro da loja, de um lado do balcão dá para conversar com a lojista (pedidos e missões dela continuam valendo)
+{ const base = shopSpecials; shopSpecials = function (list) { base(list); const sh = SHOPS[curShop]; if (!sh || sh.home) return; const id = SHOP_WHO[curShop], n = npcs.find((q) => q.d.id === id); if (!n) return;
+  list.push({ d: Math.hypot(P.x - (sh.x + sh.w / 2 + 2.2), P.z - (sh.z + 3.4)) - 0.7, label: `💬 Conversar com ${n.d.n}`, act: () => talkNpc(n) }); }; }
+
+// ---------- brilho saindo das portas abertas ----------
+const DOORGLOW = { list: [], tex: null, pool: null };
+function doorGlowTex() { if (DOORGLOW.tex) return DOORGLOW.tex; const c = document.createElement('canvas'); c.width = 64; c.height = 128; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 128, 0, 0); g.addColorStop(0, 'rgba(255,214,140,0.95)'); g.addColorStop(0.55, 'rgba(255,200,120,0.4)'); g.addColorStop(1, 'rgba(255,190,110,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 128);
+  x.globalCompositeOperation = 'destination-in'; const h = x.createLinearGradient(0, 0, 64, 0); h.addColorStop(0, 'rgba(0,0,0,0)'); h.addColorStop(0.3, 'rgba(0,0,0,1)'); h.addColorStop(0.7, 'rgba(0,0,0,1)'); h.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = h; x.fillRect(0, 0, 64, 128);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return (DOORGLOW.tex = t); }
+function doorPoolTex() { if (DOORGLOW.pool) return DOORGLOW.pool; const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,214,140,0.8)'); g.addColorStop(1, 'rgba(255,200,120,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return (DOORGLOW.pool = t); }
+function doorGlowBuild() {
+  const mk = (x, z, w, kind, ref) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.userData.keep = 1;
+    const m = new THREE.MeshBasicMaterial({ map: doorGlowTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, opacity: 0.8 }), pl = new THREE.Mesh(new THREE.PlaneGeometry(w, 1.5), m); pl.position.set(0, 0.75, 0.02); g.add(pl);
+    const pm = new THREE.MeshBasicMaterial({ map: doorPoolTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.7 }), pool = new THREE.Mesh(new THREE.PlaneGeometry(w + 1, 1.6).rotateX(-Math.PI / 2), pm); pool.position.set(0, 0.03, 0.6); g.add(pool);
+    world.add(g); DOORGLOW.list.push({ g, m, pm, kind, ref, x, z, on: true }); };
+  for (const [id, sh] of Object.entries(SHOPS)) { if (sh.home) continue; const d = id === 'tico' ? [SHOP.x + 1.5, SHOP.y + 3.0] : id === 'forja' ? [SMITH.x + 1.5, SMITH.y + 3.0] : id === 'atelie' ? [ATELIE.x + 1.5, ATELIE.y + 3.0] : null; if (d) mk(d[0], d[1], 1.1, 'shop', id); }
+  mk(HOME.x, HOME.z - 0.6, 1.0, 'home', null);
+  for (const D of doorList()) mk(D.ex, D.ez - 0.6, Math.min(1.4, D.dw * 0.6), 'room', D);
+}
+{ const base = buildWorld; buildWorld = function () { const r = base(); try { doorGlowBuild(); } catch (e) { console.error(e); } return r; }; }
+function doorGlowUpdate(dt) { if (mode !== 'out') return; const night = isNightNow(), h = hourNow(), dusk = h >= 17.5 || h < 7;
+  for (const e of DOORGLOW.list) { const on = e.kind === 'shop' ? shopOpen() : e.kind === 'home' ? true : (() => { const r = residentOf(e.ref); return !r || residentHome(e.ref); })();
+    const k = (on ? 1 : 0) * (dusk ? 1.3 : 1.0) * (0.85 + Math.sin(gtime * 2.3 + e.x) * 0.1 + Math.sin(gtime * 7.1 + e.z) * 0.05); e.m.opacity = Math.min(1, 0.85 * k); e.pm.opacity = Math.min(1, 0.7 * k); e.g.visible = k > 0.01;
+    if (on && rand() < dt * 2.5 && Math.abs(P.x - e.x) < 14 && Math.abs(P.z - e.z) < 10) emit(PG, { x: e.x + (rand() - 0.5) * 0.8, y: 0.2, z: e.z + 0.25, vx: 0, vz: 0.1, vy: 0.55, g: 0, life: 1.4, max: 1.4, c: night ? '#ffe18d' : '#fff3c4' }); } }
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { doorGlowUpdate(dt); } catch (e) {} }; }
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -6274,4 +6408,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
