@@ -2,6 +2,27 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v24: base Fofinha redonda, moradores num lugar só e brilho nas portas
+**Base Fofinha nova**
+- O corpo quadradinho do Kenney deu lugar a um bonequinho redondo, tipo pelúcia: cabeça grande e redonda com orelhinhas e narizinho, corpinho de feijão, bracinhos curtos com mãozinha redonda e sapatinhos redondos.
+- As animações continuam as mesmas (as peças ficam presas nos ossos do esqueleto Kenney).
+- Os 12 penteados foram refeitos: coque alto, coquinhos, coque com faixa, coque redondo, liso comprido, chiquinhas, cacheadinho, careca com barba, quepe, espetado, topete com óculos e bagunçado.
+- As 12 roupas também foram refeitas: moletom com capuz, blusinha com gola, vestido, terninho, jaleco, jaqueta com zíper, camiseta, camisetão com bermuda, uniforme com cinto, terno com gravata, colete e jardineira.
+- Rosto com olhos maiores, estilo Animal Crossing. Acabou a recoloração que pintava o cabelo da cor da pele.
+- Todos os moradores na base nova também mudaram.
+
+**Moradores e lojas**
+- As lojas abrem das 6h às 20h. Com a loja aberta, a Duda, a Fifi e o Tico ficam no balcão e não aparecem passeando lá fora. Com a loja fechada, eles saem para o vale e a porta não deixa entrar.
+- Dentro da Forja e do Ateliê, do lado do balcão, dá para conversar com a lojista (pedidos e missões dela continuam valendo).
+- Quem está em casa (à noite ou no almoço) não aparece mais lá fora ao mesmo tempo. A Vovó Rosa fica sempre na praça.
+- O nome de quem não está ali não fica mais flutuando no ar, nem no mapa.
+
+**Portas**
+- Portas abertas soltam um brilho quente com faíscas subindo, mais forte ao entardecer. A porta de loja fechada e a de casa sem ninguém ficam apagadas.
+
+**Mundo**
+- Barracas, carrinhos, chafariz e bancos da feira ficam longe do caminho (pelo menos 2 tiles) e reservam espaço em volta, para ninguém atravessar a lona.
+
 ## v23: terreno irregular, inimigos novos, elites, acampamentos e mirantes
 **Terreno irregular**
 - O vale ganhou relevo: colinas suaves na grama selvagem, mais altas na Floresta do Norte e nas Terras do Leste e mais baixas na praia. Caminhos, praças, fazenda, arenas, beiras de água e o entorno das construções continuam planos, então as trilhas passam entre os morros.

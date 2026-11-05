@@ -102,3 +102,11 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Para algo precisar de chão plano, coloque um `obj` sólido no tile **antes** do relevo: funções em `PRE_GH` rodam antes de `ghBuild` (os acampamentos usam isso).
 - Inimigos novos em `EN` (`caranguejo`, `pedrolho`), com IA em `newFoeUpdate`. Elites: `makeElite(s)` (aura `ELITE`, `s.elite`, prêmio no `damageSlime`).
 - Acampamentos: `CAMPS.list` (fogueira, barracas, baú `d_chest`), monstros em `campSpawn` (`s.camp`), baú uma vez por dia (`S.campDay`). Mirantes: `VIEWS` no ponto mais alto de cada área (`S.views`).
+
+## Base Fofinha redonda, lojas com horário e portas (v24)
+
+- A base `km` não recolore mais as malhas do Kenney: `kmLook` esconde `km_Body`/`km_Head` e prende peças redondas nos ossos (`fofaParts` descreve cada peça em coordenadas do mundo em repouso; `fofaBuild` junta tudo numa malha por osso com `VCMAT`, com cache por visual; `fofaRef` lê a posição de repouso dos ossos). Penteado novo: um `case` em `fofaParts` pelo `kh`; roupa nova: entrada na tabela `B` (`sl` manga, `bt` parte de baixo, `ex` detalhe). O rosto é `kmFaceTex` numa casquinha esférica (`fofaFace`).
+- `kmPart`/`kmGeo`/`kmFace` (análise de cor da v21) ficaram sem uso pela base nova.
+- Lojas: `shopOpen()` (`SHOP_H`, 6h–20h); `enterShop` recusa quando está fechada. `npcAway(n)` diz se o morador está na loja (`KEEPER_SHOP`) ou em casa (`residentHome`); quem está fora some do mundo, dos nomes e do mapa.
+- Portas: `DOORGLOW` (plano e poça de luz aditivos por porta, criados no carregamento) acende conforme `shopOpen`/`residentHome`.
+- Adereços grandes (barraca, carrinho, chafariz, banco) via `dressProps` ficam a 2 tiles de caminho e água (`DRESS_NOPATH`) e reservam 3×3.
