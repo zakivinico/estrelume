@@ -923,7 +923,7 @@ body[data-input=touch] #hint .key,body[data-input=pad] #hint .key{border-radius:
 body[data-input=pad] #hint .key{background:#ffe18d}
 /* roda de ferramentas */
 #ring{position:fixed;inset:0;z-index:45;display:none;background:radial-gradient(circle at 50% 50%,rgba(20,20,27,.15),rgba(20,20,27,.55));pointer-events:auto}
-#ring.on{display:block;animation:ringin .2s ease-out}@keyframes ringin{from{opacity:0;transform:scale(.9)}}
+#ring.on{display:block}
 #ring .rc{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:150px;height:150px;border-radius:50%;background:#fffaf2;border:4px solid var(--ink);display:grid;place-content:center;text-align:center;box-shadow:0 5px 0 var(--ink)}
 #ring .rc b{font-size:16px}#ring .rc small{font-size:11px;color:var(--ink-2)}
 #ring .rs{position:absolute;transform:translate(-50%,-50%);width:72px;height:72px;border-radius:50%;background:#fff;border:4px solid var(--ink);display:grid;place-items:center;box-shadow:0 4px 0 var(--ink);cursor:pointer;transition:transform .1s}
