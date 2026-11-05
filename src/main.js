@@ -156,7 +156,7 @@ const LAMPS = [[37, 29], [48, 29], [40, 35], [48, 35], [dockStart - 1, 43], [35,
 LAMPS.forEach(([x, y]) => put(x, y, { t: 'lamp' }));
 const FENCE = new Set();
 const FARM = { x0: 27, y0: 36, x1: 40, y1: 46 };
-const inFarm = (x, y, m = 0) => x >= FARM.x0 - m && x <= FARM.x1 + m && y >= FARM.y0 - m && y <= FARM.y1 + m;
+const inFarm = (x, y, m = 0) => FARM.U ? farmU(x, y, m) : x >= FARM.x0 - m && x <= FARM.x1 + m && y >= FARM.y0 - m && y <= FARM.y1 + m;
 FENCE.forEach((k) => { const [x, y] = k.split(',').map(Number); put(x, y, { t: 'fence' }); });
 const R = rng(20261102), forageSpots = [];
 const near = (x, y, t, r) => { for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (inb(x + i, y + j) && tile[I(x + i, y + j)] === t) return true; return false; };
@@ -1115,7 +1115,7 @@ function openShop() {
   const card = (img, n, d, price, owned, act) => `<div class="sitem ${owned ? 'own' : ''}"><img src="${img}"><b>${n}</b><span>${d}</span><button class="btn ${owned ? '' : 'gold'} sm" ${owned || S.coins < price ? 'disabled' : ''} data-buy="${act}">${owned ? 'Comprado' : price + '🪙'}</button></div>`;
   if (shopTab === 'moveis') items = Object.entries(FURN).filter(([, f]) => !f.hidden).map(([k, f]) => card(THUMB['f_' + k], f.n, `${f.w}×${f.h}${f.rug ? ' · tapete' : ''}${f.light ? ' · acende' : ''}${S.furn[k] ? ` · tem ${S.furn[k]}` : ''}`, f.price, false, 'f:' + k)).join('');
   if (shopTab === 'deco') items = Object.entries(FLOORS).map(([k, f]) => card(THUMB['fl_' + k], f.n, 'Piso', f.price, !!S.floorsOwned[k], 'fl:' + k)).join('') + Object.entries(WALLS).map(([k, f]) => card(THUMB['wl_' + k], f.n, 'Papel de parede', f.price, !!S.wallsOwned[k], 'wl:' + k)).join('');
-  if (shopTab === 'fazenda') items = ((S.farmLv || 0) < 2 ? `<div class="sitem big"><img src="${icon('wheat', 64)}"><b>Ampliar fazenda (${(S.farmLv || 0) === 0 ? 'sul' : 'oeste'})</b><span>${(S.farmLv || 0) === 0 ? '+4 fileiras ao sul da cerca' : '+4 colunas a oeste da cerca'}</span><button class="btn candy gold sm" ${S.coins < [1500, 3000][S.farmLv || 0] ? 'disabled' : ''} data-buy="xp:farm">${[1500, 3000][S.farmLv || 0]}🪙</button></div>` : '') + Object.entries(FD).filter(([, f]) => !f.hidden).map(([k, f]) => card(THUMB['fd_' + k], f.n, `Enfeite de fazenda${f.light ? ' · acende' : ''}${S.fd[k] ? ` · tem ${S.fd[k]}` : ''}`, f.price, false, 'fd:' + k)).join('');
+  if (shopTab === 'fazenda') items = (FARM.U ? `<div class="sitem big"><img src="${icon('wheat', 64)}"><b>Terrenos novos</b><span>Compre nas placas 🪧 da cerca da fazenda</span></div>` : (S.farmLv || 0) < 2 ? `<div class="sitem big"><img src="${icon('wheat', 64)}"><b>Ampliar fazenda (${(S.farmLv || 0) === 0 ? 'sul' : 'oeste'})</b><span>${(S.farmLv || 0) === 0 ? '+4 fileiras ao sul da cerca' : '+4 colunas a oeste da cerca'}</span><button class="btn candy gold sm" ${S.coins < [1500, 3000][S.farmLv || 0] ? 'disabled' : ''} data-buy="xp:farm">${[1500, 3000][S.farmLv || 0]}🪙</button></div>` : '') + Object.entries(FD).filter(([, f]) => !f.hidden).map(([k, f]) => card(THUMB['fd_' + k], f.n, `Enfeite de fazenda${f.light ? ' · acende' : ''}${S.fd[k] ? ` · tem ${S.fd[k]}` : ''}`, f.price, false, 'fd:' + k)).join('');
   if (shopTab === 'melhorias') items = Object.entries(UPGRADES).map(([k, u]) => card(THUMB['up_' + k], u.n, u.desc, u.price, !!S.up[k], 'up:' + k)).join('');
   if (shopTab === 'lanches') items = Object.entries(SNACKS).map(([k, s]) => card(THUMB['s_' + k], s.n, s.desc + (S.snacks[k] ? ` · tem ${S.snacks[k]}` : ''), s.price, false, 's:' + k)).join('');
   openModal(`<div class="shophead"><img src="${THUMB.tico}"><div><h2 style="margin:0">🛍️ Lojinha do Tico</h2><p class="lead" style="margin:2px 0 0">"Opa! Tudo fresquinho, direto da carroça. Você tem <b>${S.coins}🪙</b>."</p></div></div>
@@ -1221,7 +1221,7 @@ let cursorOK = false;
 function hintUI() {
   const box = $('hint'); if (titleOn || dlg || modalOpen()) { box.classList.remove('on'); return; }
   let html = '';
-  if (P.fishing) { const ph = P.fishing.phase; html = ph === 'bite' ? '<span class="key">Espaço</span> <b>Agora! Puxe!</b>' : ph === 'mini' ? '<span class="key">Espaço</span> quando o ponteiro estiver na cor' : '<span class="key">Espaço</span> cancelar · espere o ❗'; cursorOK = false; }
+  if (P.fishing) { const ph = P.fishing.phase; html = ph === 'bite' ? '<span class="key">Espaço</span> <b>Agora! Puxe!</b>' : ph === 'reel' ? '<span class="key">Segure Espaço</span> para subir a barra e manter o peixe nela' : ph === 'mini' ? '<span class="key">Espaço</span> quando o ponteiro estiver na cor' : '<span class="key">Espaço</span> cancelar · espere o ❗'; cursorOK = false; }
   else if (farmEd) html = farmEd.tool === 'arar' ? '<span class="hrow"><span class="key">Clique</span> arar a grama (20🪙)</span>' : farmEd.tool === 'grama' ? '<span class="hrow"><span class="key">Clique</span> desfazer canteiro</span>' : farmEd.sel ? `<span class="hrow"><span class="key">Clique</span> colocar ${FD[farmEd.sel].n}</span><span class="hrow"><span class="key">R</span> girar</span>` : '<span class="hrow"><span class="key">Clique</span> num enfeite para pegar</span><span class="hrow"><span class="key">X</span> guardar</span>';
   else if (decor) html = decor.sel ? `<span class="hrow"><span class="key">Clique</span> colocar ${FURN[decor.sel].n}</span><span class="hrow"><span class="key">R</span> girar</span>` : '<span class="hrow"><span class="key">Clique</span> num móvel para pegar</span><span class="hrow"><span class="key">X</span> guardar</span>';
   else { const sp = nearestSpecial(), sh = spaceHint(); cursorOK = sh.ok; if (sp) html += `<span class="hrow"><span class="key">E</span> ${sp.label}</span>`; if (mode === 'out' || !sp) html += `<span class="hrow ${sh.ok ? '' : 'dim'}"><span class="key">${mode === 'in' ? 'V' : 'Espaço'}</span> ${sh.t}</span>`; if (mode === 'out' && inFarm(Math.floor(P.x), Math.floor(P.z))) html += '<span class="hrow"><span class="key">B</span> Personalizar fazenda</span>'; }
@@ -1391,10 +1391,12 @@ function update(dt) {
   if (ticoC) { ticoC.obj.visible = mode === 'out'; ticoC.obj.rotation.y = angLerp(ticoC.obj.rotation.y, Math.hypot(P.x - ticoC.obj.position.x, P.z - ticoC.obj.position.z) < 5 ? Math.atan2(P.x - ticoC.obj.position.x, P.z - ticoC.obj.position.z) : 0, Math.min(1, dt * 5)); ticoC.update(paused ? 0 : dt, 'Idle'); }
   // câmera
   const D = camDist * (dlg ? 0.8 : 1) * (wishCam ? 0.62 : 1);
+  FISH22.w = lerp(FISH22.w, P.fishing && mode === 'out' && !P.boat ? (P.fishing.phase === 'reel' ? 1 : 0.6) : 0, 1 - Math.pow(0.03, dt));
   if (talkEmo) { const w = dlg && dlg.who; talkEmo.visible = !!w && mode === 'out'; if (w) talkEmo.position.set(w.obj.position.x + 0.35, 2.15 * w.obj.scale.y + Math.sin(gtime * 6) * 0.06, w.obj.position.z); }
   if (mode === 'shop' && SHOPS[curShop]) { const sh = SHOPS[curShop], lx = lerp(sh.x + sh.w / 2, P.x, 0.45), lz = lerp(sh.z + sh.h / 2, P.z, 0.4); camPos.set(lx, 7.4 * D, lz + 6.6 * D); camLook.lerp(new THREE.Vector3(lx, 0.6, lz), 1 - Math.pow(0.0006, dt)); }
   else if (mode === 'in') { const lx = lerp(RX + IW / 2, P.x, 0.45), lz = lerp(RZ + IH / 2, P.z, 0.4); camPos.set(lx, 7.4 * D, lz + 6.6 * D); camLook.lerp(new THREE.Vector3(lx, 0.6, lz), 1 - Math.pow(0.0006, dt)); }
   else { const bf = boss && boss.awake && !boss.dead && Math.hypot(boss.x - P.x, boss.z - P.z) < 14; const kf = KR.on && P.boat; const D2 = kf ? D * 1.75 : farmEd ? Math.max(D, 1.3) : bf ? D * 1.18 : D; const lx = kf ? lerp(P.x, KR.x, 0.5) : bf ? lerp(P.x, boss.x, 0.35) : P.x, lz = kf ? lerp(P.z, KR.z, 0.45) : bf ? lerp(P.z, boss.z, 0.35) : P.z; camPos.set(lx, 9.5 * D2, lz + 8.6 * D2); camLook.lerp(new THREE.Vector3(lx, 0.6, lz), 1 - Math.pow(0.0006, dt)); }
+  if (FISH22.w > 0.005 && mode === 'out' && !P.boat && !CUT) { const w = FISH22.w, f = P.fishing, bx = f ? f.bx : P.x, bz = f ? f.bz : P.z, lx = lerp(P.x, bx, 0.5 * w), lz = lerp(P.z, bz, 0.5 * w), k = 1 - 0.45 * w; camPos.set(lx + 1.6 * w, 9.5 * D * k * (1 - 0.18 * w), lz + 8.6 * D * k); camLook.lerp(new THREE.Vector3(lx, 0.4, lz), 1 - Math.pow(0.0006, dt)); }
   if (ADM.fly && mode === 'out') { camPos.set(P.x, 44, P.z + 22); camLook.set(P.x, 0, P.z); }
   if (shake > 0) { const k = shake * shake * 2.4 + shake * 0.4, t = gtime * 38; camPos.x += (Math.sin(t) * 0.6 + Math.sin(t * 2.3 + 1.7) * 0.4) * k; camPos.y += (Math.sin(t * 1.7 + 0.4) * 0.6 + Math.sin(t * 3.1) * 0.4) * k * 0.6; camPos.z += Math.sin(t * 1.3 + 2.1) * k * 0.4; }
   if (camera.position.distanceTo(camPos) > 14) { camera.position.copy(camPos); camLook.copy(mode === 'in' ? new THREE.Vector3(camPos.x, 0.6, camPos.z - 6.6 * D) : new THREE.Vector3(P.x, 0.6, P.z)); }
@@ -2840,10 +2842,10 @@ function decorateVillages() {
   const flagCols = ['#ff8fbd', '#ffe18d', '#9fe8ff', '#c9a2ff', '#b6f06a'];
   const bunting = (x0, z0, x1, z1, h = 2.6) => { if (buntBlocked(x0, z0, x1, z1)) return; /* v20: varal não atravessa casa */ const n = Math.max(4, Math.round(Math.hypot(x1 - x0, z1 - z0) * 1.6)); const pts = []; for (let i = 0; i <= n; i++) { const k = i / n; pts.push(new THREE.Vector3(lerp(x0, x1, k), h - Math.sin(k * Math.PI) * 0.45, lerp(z0, z1, k))); }
     const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: '#6a4a3a' })); world.add(line);
-    for (let i = 1; i < n; i++) { const tri = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.26, 3), lam(flagCols[i % flagCols.length])); tri.rotation.x = Math.PI; tri.position.copy(pts[i]).add(new THREE.Vector3(0, -0.14, 0)); tri.rotation.y = Math.atan2(x1 - x0, z1 - z0); world.add(tri); }
-    for (const [x, z] of [[x0, z0], [x1, z1]]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, h + 0.1, 6), lam('#7a5038')); p.position.set(x, (h + 0.1) / 2, z); p.castShadow = true; world.add(p); solidDecor(x, z); } };
-  const planter = (x, z, rot = 0) => { const g = new THREE.Group(), box = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.32, 0.4), lam('#a8693f')); box.position.y = 0.16; g.add(box); const soil = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.04, 0.32), lam('#5a3a2a')); soil.position.y = 0.33; g.add(soil); for (let k = 0; k < 4; k++) { const f = cloneM(k % 2 ? 'q_flower_r' : 'q_flower_y'); f.position.set(-0.3 + k * 0.2, 0.33, (k % 2) * 0.06 - 0.03); f.scale.multiplyScalar(0.55); g.add(f); } g.position.set(x, 0, z); g.rotation.y = rot; solidDecor(x, z); g.traverse((n) => { if (n.isMesh) n.castShadow = true; }); world.add(g); };
-  const bench = (x, z, rot = 0) => { const g = new THREE.Group(), w = lam('#b07a50'), d = lam('#6a4a3a'); for (let k = 0; k < 3; k++) { const s = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.12), w); s.position.set(0, 0.42, -0.14 + k * 0.14); g.add(s); } const back = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.28, 0.05), w); back.position.set(0, 0.68, -0.22); g.add(back); for (const sx of [-0.5, 0.5]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, 0.4), d); l.position.set(sx, 0.21, -0.02); g.add(l); } g.position.set(x, 0, z); g.rotation.y = rot; solidDecor(x, z); g.traverse((n) => { if (n.isMesh) n.castShadow = true; }); world.add(g); };
+    const bg = new THREE.Group(); for (let i = 1; i < n; i++) { const tri = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.26, 3), lam(flagCols[i % flagCols.length])); tri.rotation.x = Math.PI; tri.position.copy(pts[i]).add(new THREE.Vector3(0, -0.14, 0)); tri.rotation.y = Math.atan2(x1 - x0, z1 - z0); bg.add(tri); }
+    for (const [x, z] of [[x0, z0], [x1, z1]]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, h + 0.1, 6), lam('#7a5038')); p.position.set(x, (h + 0.1) / 2, z); bg.add(p); solidDecor(x, z); } world.add(bakeVC(bg)); };
+  const planter = (x, z, rot = 0) => { const g = new THREE.Group(), box = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.32, 0.4), lam('#a8693f')); box.position.y = 0.16; g.add(box); const soil = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.04, 0.32), lam('#5a3a2a')); soil.position.y = 0.33; g.add(soil); for (let k = 0; k < 4; k++) { const f = cloneM(k % 2 ? 'q_flower_r' : 'q_flower_y'); f.position.set(-0.3 + k * 0.2, 0.33, (k % 2) * 0.06 - 0.03); f.scale.multiplyScalar(0.55); g.add(f); } g.position.set(x, 0, z); g.rotation.y = rot; solidDecor(x, z); bakeVC(g); g.traverse((n) => { if (n.isMesh) n.castShadow = true; }); world.add(g); };
+  const bench = (x, z, rot = 0) => { const g = new THREE.Group(), w = lam('#b07a50'), d = lam('#6a4a3a'); for (let k = 0; k < 3; k++) { const s = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.12), w); s.position.set(0, 0.42, -0.14 + k * 0.14); g.add(s); } const back = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.28, 0.05), w); back.position.set(0, 0.68, -0.22); g.add(back); for (const sx of [-0.5, 0.5]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, 0.4), d); l.position.set(sx, 0.21, -0.02); g.add(l); } g.position.set(x, 0, z); g.rotation.y = rot; solidDecor(x, z); bakeVC(g); g.traverse((n) => { if (n.isMesh) n.castShadow = true; }); world.add(g); };
   const barrelFlowers = (x, z) => { const b = cloneM('k_barrel'); b.position.set(x, 0, z); solidDecor(x, z); b.scale.multiplyScalar(0.8); world.add(b); for (let k = 0; k < 3; k++) { const f = cloneM('q_flower_r'); f.position.set(x + (k - 1) * 0.12, 0.62, z); f.scale.multiplyScalar(0.6); world.add(f); } };
   // praça do Poço
   bunting(37.6, 29.4, 48.4, 29.4); bunting(37.6, 35.6, 48.4, 35.6); bunting(37.6, 29.4, 37.6, 35.6, 2.4);
@@ -3184,7 +3186,7 @@ function vfx_v13(name, x, y, z, o = {}) {
   obj.position.set(x, y, z); obj.scale.setScalar(o.size || 1); obj.renderOrder = 5; (mode === 'cave' ? cave.group : mode === 'shop' && SHOPS[curShop] ? SHOPS[curShop].g : world).add(obj);
   vfxList.push({ obj, t, sheet, frames: sheet ? t0.userData.frames : 1, life: o.life || 0.5, max: o.life || 0.5, s0: o.size || 1, grow: o.grow ?? 1.4, spin: o.spin || 0, vy: o.vy || 0, op: o.op ?? 1, follow: o.follow });
 }
-function vfxUpdate_v13(dt) { for (let i = vfxList.length - 1; i >= 0; i--) { const v = vfxList[i]; v.life -= dt; const k = 1 - v.life / v.max; if (v.life <= 0) { v.obj.parent && v.obj.parent.remove(v.obj); if (v.sheet) v.t.dispose(); vfxList.splice(i, 1); continue; }
+function vfxUpdate_v13(dt) { for (let i = vfxList.length - 1; i >= 0; i--) { const v = vfxList[i]; v.life -= dt; const k = 1 - v.life / v.max; if (v.life <= 0) { v.obj.parent && v.obj.parent.remove(v.obj); if (v.sheet) v.t.dispose(); if (v.obj.material) v.obj.material.dispose(); if (v.obj.isMesh && v.obj.geometry) v.obj.geometry.dispose(); /* v22: sem vazar memória de vídeo */ vfxList.splice(i, 1); continue; }
   if (v.follow) v.obj.position.set(v.follow.x, v.obj.position.y, v.follow.z); v.obj.position.y += v.vy * dt; const s = v.s0 * (1 + (v.grow - 1) * k); v.obj.scale.set(s, s, s); const m = v.obj.material; if (v.sheet) { const f = Math.min(v.frames - 1, Math.floor(k * v.frames)); v.t.offset.x = f / v.frames; m.opacity = v.op; } else m.opacity = v.op * (k < 0.15 ? k / 0.15 : 1 - (k - 0.15) / 0.85); if (v.spin) { if (m.rotation !== undefined && v.obj.isSprite) m.rotation += v.spin * dt; else v.obj.rotation.y += v.spin * dt; } } }
 /* ---------- amigas e amigos humanos (KayKit) como companheiros do Poço ---------- */
 const HUMANS = [
@@ -5642,8 +5644,348 @@ paintGround = function () {
   mat.customProgramCacheKey = () => 'chao-shader-v22';
   mesh.material = mat; GCV.mesh = mesh; GCV.img = null; GCV.cv = null; GSPLAT.ms = GCV.ms = Math.round(performance.now() - t0);
 };
+// ---------- mais leve: verificação de shader só no modo de testes, sombra a 30 Hz na qualidade Alta ----------
+renderer.debug.checkShaderErrors = /admin=1|debug=1/.test(location.search); // pedir o log de cada shader trava a 1ª vez que ele é usado
+{ let half = 0; const base = shadowThrottle; shadowThrottle = function (dt) { base(dt); if (renderer.shadowMap.enabled && SET.quality === 'alta' && mode === 'out') { renderer.shadowMap.autoUpdate = false; half ^= 1; if (half || P.moving) renderer.shadowMap.needsUpdate = true; } }; }
+// ---------- efeitos de golpe estilo Genshin: corte em shader, faíscas em estrela e onda de choque ----------
+// (e sem vazar memória: os efeitos antigos criavam geometria e material novos a cada golpe e nunca liberavam)
+stepFx = function (dt) { for (let i = fxList.length - 1; i >= 0; i--) { const f = fxList[i]; f.t += dt; const k = clamp(f.t / f.dur, 0, 1); f.upd(f, k); if (f.t >= f.dur) { scene.remove(f.o); fxList.splice(i, 1); if (f.pool) { f.pool.busy = false; continue; } f.o.traverse((m) => { if (m.material && !m.userData.keep) m.material.dispose(); if (m.isMesh && m.geometry && !m.isSprite && !m.userData.keep) m.geometry.dispose(); }); } } };
+const SLASH_VS = `varying vec2 vU; void main() { vU = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+const SLASH_FS = `uniform vec3 uCol; uniform float uHead, uA, uLen; varying vec2 vU;
+void main() { float a = vU.x, r = vU.y; if (a > uHead) discard; float trail = smoothstep(uHead - uLen, uHead, a);
+  float core = exp(-pow((r - 0.62) * 5.0, 2.0)), rim = smoothstep(0.0, 0.35, r) * (1.0 - smoothstep(0.82, 1.0, r));
+  float tip = 1.0 - smoothstep(uHead - 0.04, uHead, a) * 0.35; float alpha = trail * (core * 1.15 + rim * 0.45) * uA * tip * smoothstep(0.0, 0.06, a);
+  vec3 c = mix(uCol, vec3(1.0), clamp(core * trail * 1.1, 0.0, 1.0)); gl_FragColor = vec4(c * alpha, alpha); }`;
+function slashGeo(r0, r1, arc) { const g = new THREE.RingGeometry(r0, r1, 40, 1, 0, arc), pos = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), y = pos.getY(i); uv.setXY(i, clamp(Math.atan2(y, x) / arc, 0, 1), (Math.hypot(x, y) - r0) / (r1 - r0)); } return g; }
+const SLASH = { geo: slashGeo(0.42, 1.18, Math.PI * 1.05), geoBig: slashGeo(0.5, 1.55, Math.PI * 1.15), pool: [] };
+function slashMat() { return new THREE.ShaderMaterial({ vertexShader: SLASH_VS, fragmentShader: SLASH_FS, uniforms: { uCol: { value: new THREE.Color('#9fd8ff') }, uHead: { value: 0 }, uA: { value: 1 }, uLen: { value: 0.6 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, premultipliedAlpha: true }); }
+function slashFromPool(big) { let p = SLASH.pool.find((q) => !q.busy && q.big === big); if (!p) { const m = new THREE.Mesh(big ? SLASH.geoBig : SLASH.geo, slashMat()); m.userData.keep = 1; m.rotation.x = -Math.PI / 2; m.renderOrder = 6; const g = new THREE.Group(); g.add(m); p = { g, m, big, busy: false }; SLASH.pool.push(p); } p.busy = true; return p; }
+// um corte fica escondido na cena desde o carregamento, para o shader já estar compilado
+{ const p = slashFromPool(false); p.busy = false; p.g.visible = false; scene.add(p.g); }
+let slashN = 0;
+fxSlash = function (x, z, ang, col = '#ffffff', big = false, rev = false) {
+  const p = slashFromPool(!!big), g = p.g, m = p.m, U = m.material.uniforms; U.uCol.value.set(col === '#ffffff' || col === '#e8f6ff' ? '#9fd8ff' : col); U.uHead.value = 0; U.uA.value = 1; U.uLen.value = big ? 0.75 : 0.6;
+  slashN++; const tilt = big ? 0 : (slashN % 2 ? 0.32 : -0.32) * (rev ? -1 : 1); g.visible = true; g.position.set(x, big ? 0.55 : 0.72, z); g.rotation.set(0, 0, 0); g.rotation.order = 'YXZ';
+  const a0 = rev ? ang - Math.PI * 0.5 + 0.2 : ang + Math.PI * 0.5 + 0.35; g.rotation.y = a0; g.rotation.z = tilt; m.scale.set(rev ? -1 : 1, 1, 1); scene.add(g);
+  const dur = big ? 0.3 : 0.22; fxList.push({ o: g, t: 0, dur, pool: p, upd: (f, k) => { U.uHead.value = Math.min(1.08, k / 0.55); U.uA.value = k < 0.55 ? 1 : 1 - (k - 0.55) / 0.45; g.scale.setScalar(0.92 + k * 0.16); } });
+  if (big) { fxFlash(x, 0.7, z, col, 1.6, 0.2); }
+};
+// impacto: faíscas finas em estrela, onda de choque e um brilho rápido
+const SPARK = { geo: new THREE.PlaneGeometry(0.06, 0.62).translate(0, 0.31, 0) }; SPARK.geo.userData = {};
+function fxImpact(x, y, z, col = '#ffffff', crit = false) { const g = new THREE.Group(); g.position.set(x, y, z); const n = crit ? 9 : 6, mats = [];
+  for (let i = 0; i < n; i++) { const mt = new THREE.MeshBasicMaterial({ color: i % 2 ? col : '#ffffff', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }); mats.push(mt); const m = new THREE.Mesh(SPARK.geo, mt); m.userData.keep = 1; m.rotation.z = (i / n) * Math.PI * 2 + rand() * 0.4; m.scale.y = 0.6 + rand() * 0.7; g.add(m); }
+  g.lookAt(camera.position); scene.add(g);
+  fxList.push({ o: g, t: 0, dur: crit ? 0.3 : 0.22, upd: (f, k) => { g.scale.setScalar((crit ? 1.25 : 0.95) * (0.35 + Math.sqrt(k) * 0.9)); for (const mt of mats) mt.opacity = 1 - k * k; } });
+  fxRing(x, 0.08, z, col, crit ? 1.8 : 1.2, 0.28); if (crit) fxFlash(x, y, z, '#fff6c8', 1.4, 0.16); }
+// o arco antigo em folha de sprites sai: o golpe novo (shader) já desenha o corte, mais limpo
+{ const base = vfx; vfx = function (name, ...a) { if (/^slash_arc/.test(name)) return null; return base(name, ...a); }; }
+// golpe final do combo: um segundo corte cruzado e um brilho dourado no ponto de impacto
+{ const base = swordAttack; swordAttack = function (spin) { base(spin); if (spin || P.combo !== 3) return; const n = Math.hypot(P.fx, P.fz) || 1, ux = P.fx / n, uz = P.fz / n;
+  setTimeout(() => { const hx = P.x + ux * 1.0, hz = P.z + uz * 1.0; fxSlash(P.x, P.z, Math.atan2(ux, uz) + 0.25, '#fff3c4', true, true); fxImpact(hx, 0.5, hz, '#ffe18d', true); }, 230); }; }
+{ const base = hitSlime; hitSlime = function (s, mult, ux, uz, col, kb) { const hp0 = s.hp, r = base(s, mult, ux, uz, col, kb); try { const dmg = hp0 - s.hp; fxImpact(s.x, 0.45, s.z, col || '#9fd8ff', dmg > 0 && mult >= 2); } catch (e) {} return r; }; }
+
 // trocar um tile (arar, desfazer canteiro...) só atualiza o mapinha
 { const base = setTileColor; setTileColor = function (x, y) { base(x, y); if (!GSPLAT.data) return; for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) splatTexel(x + i, y + j); GSPLAT.tex.needsUpdate = true; }; }
+
+/* ---------- v22: pesca com zoom e minigame de barra (segure para subir) ---------- */
+// fase 'reel': o peixe sobe e desce numa coluna; segure Espaço (ou o dedo/clique) para a barra verde subir.
+// Com o peixe dentro da barra, o medidor enche; fora, esvazia. Cheio = pegou; vazio = escapou.
+const FISH22 = { hold: false, w: 0, img: {}, tex: null, spr: null, leap: null };
+function fishImg(k) { let im = FISH22.img[k]; if (!im && THUMB['i_' + k]) { im = new Image(); im.src = THUMB['i_' + k]; FISH22.img[k] = im; } return im; }
+{ // peixe que salta da água quando é fisgado (sprite criado no carregamento, para o shader já estar pronto)
+  const cv = document.createElement('canvas'); cv.width = cv.height = 8; FISH22.tex = new THREE.CanvasTexture(cv); FISH22.tex.colorSpace = THREE.SRGBColorSpace;
+  FISH22.spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: FISH22.tex, transparent: true, depthWrite: false })); FISH22.spr.scale.set(0.8, 0.8, 1); FISH22.spr.visible = false; FISH22.spr.userData.keep = 1; scene.add(FISH22.spr);
+}
+canvas.addEventListener('pointerdown', () => { if (P.fishing && P.fishing.phase === 'reel') FISH22.hold = true; });
+addEventListener('pointerup', () => (FISH22.hold = false)); addEventListener('pointercancel', () => (FISH22.hold = false)); addEventListener('blur', () => (FISH22.hold = false));
+$('tA').addEventListener('touchstart', () => { if (P.fishing) FISH22.hold = true; }, { passive: true }); $('tA').addEventListener('touchend', () => (FISH22.hold = false), { passive: true });
+function fishHeld() { return !!(keys.Space || FISH22.hold); }
+{ const base = fishPress; fishPress = function () {
+  const f = P.fishing; if (!f) return;
+  if (f.phase === 'reel') return; // no minigame novo, o que conta é segurar
+  base(); const g = P.fishing; if (!g || g.phase !== 'mini') return;
+  // troca o ponteiro antigo pela barra
+  const r = g.rar; g.phase = 'reel'; g.t = 0; g.item = ['peixe', 'palhaco', 'baiacu'][r];
+  g.zb = Math.min(0.5, [0.3, 0.24, 0.18][r] + PERK.zone() * 0.8); g.by = 0; g.bv = 0; g.fy = 0.35; g.ft = 0.5; g.fv = 0; g.tt = 0; g.pr = 0.28;
+  g.tr = r && rand() < 0.4 ? { y: 0.15 + rand() * 0.7, t: 0, got: false, show: 1.2 + rand() * 2 } : null;
+  sfx('alert'); shake = Math.max(shake, 0.12); burst(g.bx, 0, g.bz, ['#71ddee', '#ffffff'], 14, 2.2); fxRing(g.bx, -0.05, g.bz, '#ffffff', 1.2, 0.4); anim('Throw', 0.6);
+}; }
+function fishFinish(ok) {
+  const f = P.fishing; if (!f) return;
+  if (ok) { f.phase = 'mini'; f.zc = 0.5; f.zw = 2; f.nd = 0.5; const it = f.item, bx = f.bx, bz = f.bz, im = fishImg(it); fishPress();
+    if (im && im.complete) { FISH22.tex.image = im; FISH22.tex.needsUpdate = true; FISH22.leap = { t: 0, x0: bx, z0: bz, x1: P.x, z1: P.z }; FISH22.spr.visible = true; }
+    sfx('splash', bx, bz); }
+  else { f.phase = 'mini'; f.zc = 0; f.zw = 0; f.nd = 1; fishPress(); }
+}
+{ const base = updateFishing; updateFishing = function (dt) {
+  base(dt); const f = P.fishing; if (!f || f.phase !== 'reel') return;
+  const r = f.rar, held = fishHeld();
+  // barra: sobe segurando, cai com "gravidade" e quica no fundo
+  f.bv += (held ? 3.4 : -2.8) * dt; f.bv = clamp(f.bv, -1.5, 1.5); f.by += f.bv * dt;
+  if (f.by < 0) { f.by = 0; f.bv = Math.abs(f.bv) > 0.4 ? -f.bv * 0.3 : 0; } if (f.by > 1 - f.zb) { f.by = 1 - f.zb; f.bv = Math.min(0, f.bv); }
+  // peixe: comum nada manso, raro muda de ideia, lendário dá arrancadas
+  f.tt -= dt; if (f.tt <= 0) { const dart = r === 2 && rand() < 0.45; f.ft = clamp(dart ? f.fy + (rand() < 0.5 ? -1 : 1) * (0.35 + rand() * 0.3) : 0.05 + rand() * 0.9, 0.03, 0.97); f.tt = [1.3, 0.9, 0.6][r] * (0.5 + rand()); if (dart) f.tt *= 0.6; }
+  const sp = [2.2, 3.4, 5.2][r]; f.fv = lerp(f.fv, (f.ft - f.fy) * sp, 1 - Math.pow(0.002, dt)); f.fy = clamp(f.fy + f.fv * dt + Math.sin(gtime * 9 + r) * 0.0015 * (r + 1), 0, 1);
+  const inside = f.fy >= f.by - 0.02 && f.fy <= f.by + f.zb + 0.02; f.inside = inside;
+  f.pr = clamp(f.pr + (inside ? 0.3 : -[0.15, 0.19, 0.24][r]) * dt, 0, 1);
+  // brilho (tesouro): fique com ele dentro da barra por 1 s
+  const tr = f.tr; if (tr && !tr.got) { tr.show -= dt; if (tr.show <= 0) { if (tr.y >= f.by && tr.y <= f.by + f.zb) tr.t += dt; else tr.t = Math.max(0, tr.t - dt * 0.5); if (tr.t >= 1) { tr.got = true; S.stars += 5; sfx('secret'); floatText(P.x, 2.3, P.z, '+5⭐ Brilho do lago!', C.gold, true); burst(f.bx, 0.2, f.bz, ['#ffe18d', '#ffffff'], 16, 2.5, true, true); } } }
+  // água agitada onde o peixe está
+  if (rand() < dt * (inside ? 5 : 2.5)) fxRing(f.bx + (f.fy - 0.5) * 0.6, -0.06, f.bz, inside ? '#ffffff' : '#bfefff', 0.45, 0.4);
+  if (bobber) { bobber.position.x = f.bx + (f.fy - 0.5) * 0.6 + Math.sin(gtime * 17) * 0.02 * (r + 1); bobber.position.y = -0.1 + Math.sin(gtime * 11) * 0.03; if (line && handProp) { const tip = new THREE.Box3().setFromObject(handProp).max; line.geometry.setFromPoints([tip, bobber.position]); } }
+  if (player && player.obj) player.obj.rotation.z = (held ? -0.06 : 0.02) * Math.sin(gtime * 14);
+  if (f.pr >= 1) fishFinish(true); else if (f.pr <= 0) fishFinish(false);
+}; }
+{ const base = endFish; endFish = function () { base(); FISH22.hold = false; if (player && player.obj) player.obj.rotation.z = 0; }; }
+// salto do peixe até a mão
+function fishLeapUpdate(dt) { const L = FISH22.leap; if (!L) return; L.t += dt / 0.7; const t = Math.min(1, L.t); FISH22.spr.position.set(lerp(L.x0, L.x1, t), 0.2 + Math.sin(t * Math.PI) * 2.1 + t * 1.2, lerp(L.z0, L.z1, t)); FISH22.spr.material.rotation = t * 6.28; const s = 0.55 + Math.sin(t * Math.PI) * 0.35; FISH22.spr.scale.set(s, s, 1); if (L.t >= 1.15) { FISH22.leap = null; FISH22.spr.visible = false; } }
+// barra na tela
+{ const base = drawOverlay; drawOverlay = function () {
+  base(); fishLeapUpdate(1 / 60);
+  const f = P.fishing; if (!f || f.phase !== 'reel') return;
+  const [px, py] = toScr(P.x, 1.2, P.z), H2 = Math.min(260, innerHeight * 0.42), W2 = 46, x0 = Math.min(innerWidth - W2 - 70, px + 70), y0 = clamp(py - H2 / 2, 70, innerHeight - H2 - 110), x = octx;
+  const rc = ['#adbc3a', C.pink, '#ffcb8d'][f.rar];
+  x.save(); x.fillStyle = C.ink; x.fillRect(x0 - 6, y0 - 6, W2 + 12 + 26, H2 + 12);
+  const gr = x.createLinearGradient(0, y0, 0, y0 + H2); gr.addColorStop(0, '#8fe6f5'); gr.addColorStop(1, '#2f7fb4'); x.fillStyle = gr; x.fillRect(x0, y0, W2, H2);
+  // barra do jogador
+  const bh = f.zb * H2, byp = y0 + H2 - f.by * H2 - bh; x.fillStyle = f.inside ? 'rgba(140,236,120,0.92)' : 'rgba(140,236,120,0.55)'; x.fillRect(x0 + 3, byp, W2 - 6, bh); x.fillStyle = 'rgba(255,255,255,0.65)'; x.fillRect(x0 + 3, byp, W2 - 6, 3); x.fillRect(x0 + 3, byp + bh - 3, W2 - 6, 3);
+  // brilho
+  if (f.tr && !f.tr.got && f.tr.show <= 0) { const ty = y0 + H2 - f.tr.y * H2; x.fillStyle = '#ffe18d'; x.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + gtime * 2, rr = i % 2 ? 4 : 10; x.lineTo(x0 + W2 / 2 + Math.cos(a) * rr, ty + Math.sin(a) * rr); } x.fill(); x.fillStyle = '#fff'; x.fillRect(x0 + 4, ty + 12, (W2 - 8) * f.tr.t, 3); }
+  // peixe
+  const fyp = y0 + H2 - f.fy * H2, im = fishImg(f.item), wob = Math.sin(gtime * 12) * 3;
+  if (im && im.complete) x.drawImage(im, x0 + W2 / 2 - 17 + wob, fyp - 17, 34, 34); else { x.fillStyle = rc; x.fillRect(x0 + 10, fyp - 8, W2 - 20, 16); }
+  // medidor
+  const mx = x0 + W2 + 8, mh = H2 * f.pr; x.fillStyle = '#3b3b4f'; x.fillRect(mx, y0, 14, H2); x.fillStyle = f.pr > 0.66 ? '#8cec78' : f.pr > 0.33 ? '#ffe18d' : '#ff9554'; x.fillRect(mx, y0 + H2 - mh, 14, mh);
+  x.font = '700 15px "Pixelify Sans", sans-serif'; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = C.ink; x.fillStyle = rc; const lb = ['Peixe comum', 'Peixe raro!', '★ Lendário! ★'][f.rar]; x.strokeText(lb, x0 + (W2 + 26) / 2, y0 - 14); x.fillText(lb, x0 + (W2 + 26) / 2, y0 - 14);
+  x.font = '600 13px "Pixelify Sans", sans-serif'; x.fillStyle = '#fff'; const tip = matchMedia('(pointer:coarse)').matches ? 'Segure o botão' : 'Segure ESPAÇO'; x.strokeText(tip, x0 + (W2 + 26) / 2, y0 + H2 + 24); x.fillText(tip, x0 + (W2 + 26) / 2, y0 + H2 + 24);
+  x.restore();
+}; }
+
+/* ---------- v22: bancada construída por você, dentro de casa ---------- */
+// Não existe mais bancada pronta lá fora. Dentro de casa há um "canto de obra" marcado no chão;
+// com madeira e pedra você constrói a bancada ali (ela vira um móvel comum, que pode mudar de lugar no modo decorar).
+const BENCH22 = { need: { madeira: 10, pedra: 4 }, g: null, cell: null, busy: 0 };
+placeCraftBench = function () { CRAFT.spots.length = 0; // um modelo escondido na cena deixa o shader da bancada pronto desde o carregamento
+  if (MODELS.kn_workbench && !BENCH22.warm) { const o = cloneM('kn_workbench'); o.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); o.position.set(-50, -20, -50); o.visible = false; o.userData.keep = 1; scene.add(o); BENCH22.warm = o; } };
+function benchCell() {
+  if (!S.home || !S.home.items) return null;
+  const xs = []; for (let x = IW - 3; x >= 1; x--) xs.push(x);
+  for (const y of [0, 1]) for (const x of xs) if (canPlace('workbench', x, y, 0)) return [x, y];
+  return null;
+}
+function benchSpotBuild() {
+  const g = new THREE.Group(), lm = new THREE.MeshBasicMaterial({ color: '#ffe18d', transparent: true, opacity: 0.85 });
+  for (const [w, d, x, z] of [[2, 0.07, 0, -0.47], [2, 0.07, 0, 0.47], [0.07, 1, -0.97, 0], [0.07, 1, 0.97, 0]]) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.02, d), lm); m.position.set(x, 0.012, z); g.add(m); }
+  g.userData.line = lm;
+  // pilha de tábuas e pedras esperando a obra
+  const pile = new THREE.Group(), wood = ['#c08a55', '#a8743f', '#d39a62'];
+  for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.07, 0.16), new THREE.MeshLambertMaterial({ color: wood[i % 3] })); m.position.set(-0.35, 0.04 + Math.floor(i / 2) * 0.07, -0.1 + (i % 2) * 0.18); m.rotation.y = i > 1 ? 0.25 : 0; pile.add(m); }
+  for (let i = 0; i < 3; i++) { const m = new THREE.Mesh(new THREE.DodecahedronGeometry(0.11, 0), new THREE.MeshLambertMaterial({ color: ['#9aa0ac', '#868c98', '#b0b5c0'][i] })); m.position.set(0.45 + (i % 2) * 0.16, 0.09, -0.12 + i * 0.13); pile.add(m); }
+  g.add(bakeVC(pile)); g.userData.keep = 1; return g;
+}
+function benchSpotSync() {
+  if (!room) return; if (!BENCH22.g) { BENCH22.g = benchSpotBuild(); }
+  if (BENCH22.g.parent !== room) room.add(BENCH22.g);
+  const c = S.bench22 ? null : benchCell(); BENCH22.cell = c; BENCH22.g.visible = !!c;
+  if (c) BENCH22.g.position.set(RX + c[0] + 1, 0, RZ + c[1] + 0.5);
+}
+{ const base = buildRoom; buildRoom = function () { base(); try { benchSpotSync(); wallScan(); } catch (e) { console.error(e); } }; }
+{ const base = rebuildFurniture; rebuildFurniture = function () { base(); try { if (BENCH22.g) benchSpotSync(); } catch (e) {} lpAdopt(); }; }
+// luz nova (abajur, lanterna) entra no pool na hora: senão ela conta como luz real por até 1,5 s e recompila tudo
+function lpAdopt() { try { if (LP.real && LP.real.length) lpScan(); } catch (e) {} }
+{ const base = rebuildFarmDecor; rebuildFarmDecor = function () { base(); lpAdopt(); }; }
+function openBenchBuild() {
+  const rows = Object.entries(BENCH22.need).map(([k, n]) => `<span class="oreq ${(S.inv[k] || 0) >= n ? 'ok' : ''}"><img src="${THUMB['i_' + k] || ''}">${S.inv[k] || 0}/${n} ${ITEMS[k] ? ITEMS[k].n : k}</span>`).join('');
+  const ok = Object.entries(BENCH22.need).every(([k, n]) => (S.inv[k] || 0) >= n);
+  openModal(`<div class="shophead"><img src="${THUMB['f_workbench'] || THUMB['fd_bancada'] || ''}"><div><h2 style="margin:0">🔨 Construir a bancada</h2><p class="lead" style="margin:2px 0 0">Com ela você faz móveis, enfeites e lanches com o que achar pelo vale, sem gastar 🪙.</p></div></div>
+    <div class="forge"><div class="fcard ${ok ? '' : 'dim'}"><img src="${THUMB['f_workbench'] || ''}"><div class="grow"><b>Bancada de Trabalho</b><span>${rows}</span></div><button class="btn ${ok ? 'candy mint' : ''} sm" id="bbuild" ${ok ? '' : 'disabled'}>Construir</button></div></div>
+    <p class="note">Madeira vem das árvores (machado) e pedra das rochas (picareta). Depois, no modo decorar (<span class="key">V</span>), dá para mudar a bancada de lugar.</p>`);
+  const b = $('bbuild'); if (b) b.onclick = () => { closeModal(); benchBuild(); };
+}
+function benchBuild() {
+  const c = BENCH22.cell; if (!c || BENCH22.busy || S.bench22) return;
+  if (!Object.entries(BENCH22.need).every(([k, n]) => (S.inv[k] || 0) >= n)) { sfx('cancel'); return; }
+  for (const [k, n] of Object.entries(BENCH22.need)) { S.inv[k] -= n; if (S.inv[k] <= 0) delete S.inv[k]; }
+  const cx = RX + c[0] + 1, cz = RZ + c[1] + 0.5; BENCH22.busy = 1; P.ang = Math.atan2(cx - P.x, cz - P.z); P.useT = 1.8;
+  for (let i = 0; i < 4; i++) setTimeout(() => { if (mode !== 'in') return; anim('1H_Melee_Attack_Chop', 1.8); sfx(i % 2 ? 'woodcut' : 'impact'); shake = Math.max(shake, 0.06); burst(cx + (rand() - 0.5), 0.4, cz, ['#d8b48a', '#fff3c4', '#a8743f'], 10, 1.8); }, i * 380);
+  setTimeout(() => { BENCH22.busy = 0; if (mode !== 'in') { for (const [k, n] of Object.entries(BENCH22.need)) S.inv[k] = (S.inv[k] || 0) + n; return; }
+    const cc = benchCell() || c; S.home.items.push({ id: 'workbench', x: cc[0], y: cc[1], r: 0 }); S.bench22 = 1; rebuildFurniture(); rebuildOcc && rebuildOcc();
+    sfx('quest'); anim('Cheer', 1.3); burst(cx, 0.8, cz, ['#ffe18d', '#ffffff', '#ffcb8d'], 26, 3, true, true); fxRing(cx, 0.05, cz, '#ffe18d', 1.8, 0.5);
+    floatText(cx, 1.6, cz, 'Bancada pronta!', C.gold, true); toast('🔨 <b>Bancada pronta!</b> Chegue perto e aperte <span class="key">E</span> para fabricar.'); gainXp(5); lastHud = ''; hud(); writeSlot('ve3d-auto'); }, 1600);
+}
+// quem já usava a bancada de fora ganha a dela dentro de casa
+{ const base = enterHouse; enterHouse = function () { base(); setTimeout(() => { try { if (!S.bench22 && (S.crafted || 0) > 0 && mode === 'in') { const c = benchCell(); if (c) { S.home.items.push({ id: 'workbench', x: c[0], y: c[1], r: 0 }); S.bench22 = 1; rebuildFurniture(); toast('🔨 Sua <b>bancada</b> agora fica aqui dentro de casa!'); } } benchSpotSync(); if (!HOME22.walls.length) wallScan(); } catch (e) {} }, 700); }; }
+
+/* ---------- v22: piso e parede trocados de dentro de casa ---------- */
+// Sem menu: no modo decorar, clique na parede para trocar o papel de parede, ou no chão vazio para trocar o piso.
+// Fora do modo decorar, perto da parede, E troca o papel de parede.
+const HOME22 = { walls: [] };
+function wallScan() { HOME22.walls = []; if (!wallMats[0]) return; room.traverse((o) => { if (o.isMesh && Array.isArray(o.material) && o.material[0] === wallMats[0]) HOME22.walls.push(o); }); }
+function nextOwned(cur, owned) { const ks = Object.keys(owned); if (ks.length < 2) return null; return ks[(ks.indexOf(cur) + 1) % ks.length]; }
+function homeCycle(kind, px, pz) {
+  const isW = kind === 'wall', owned = isW ? S.wallsOwned : S.floorsOwned, cur = isW ? S.home.wall : S.home.floor, nx = nextOwned(cur, owned);
+  if (!nx) { sfx('cancel'); toast(isW ? '🎨 Você só tem este papel de parede. Compre outros na <b>Lojinha do Tico</b>.' : '🪵 Você só tem este piso. Compre outros na <b>Lojinha do Tico</b>.'); return; }
+  if (isW) S.home.wall = nx; else S.home.floor = nx; setFloorWall();
+  const def = isW ? WALLS[nx] : FLOORS[nx], ks = Object.keys(owned), i = ks.indexOf(nx) + 1;
+  sfx('accept'); setTimeout(() => sfx('switch'), 120);
+  if (isW) { for (let k = 0; k < 3; k++) burst(px + (k - 1) * 0.8, 1.2 + k * 0.3, pz, [def.a, def.b, '#ffffff'], 8, 1.6, true, true); }
+  else { fxRing(px, 0.03, pz, def.a, 2.6, 0.5); fxRing(px, 0.03, pz, '#ffffff', 1.6, 0.35); burst(px, 0.2, pz, [def.a, def.b], 14, 2); }
+  toast(`${isW ? '🎨 Parede' : '🪵 Piso'}: <b>${def.n}</b> (${i}/${ks.length})`); if (decor) renderDecor();
+}
+function wallNear() { const lx = P.x - RX, lz = P.z - RZ, d = Math.min(lz, lx, IW - lx); return d; }
+{ const base = decorAction; decorAction = function () {
+  if (decor && !decor.sel && HOME22.walls.length) { // parede ou chão vazio
+    mv.set((mouse.x / innerWidth) * 2 - 1, -(mouse.y / innerHeight) * 2 + 1); ray.setFromCamera(mv, camera);
+    const hw = ray.intersectObjects(HOME22.walls, false)[0], hf = ray.intersectObject(floorMesh, false)[0];
+    if (hw && (!hf || hw.distance < hf.distance) && hw.point.y > 0.5) { homeCycle('wall', hw.point.x, hw.point.z + 0.3); return; }
+    if (decor.cell) { const [cx, cy] = decor.cell, i = occ[cy * IW + cx] ?? rugOcc[cy * IW + cx]; if (i === null || i === undefined) { homeCycle('floor', RX + cx + 0.5, RZ + cy + 0.5); return; } }
+  }
+  return base();
+}; }
+{ const base = renderDecor; renderDecor = function () {
+  base(); const r2 = $('decor').querySelector('.drow2'); if (r2) r2.remove();
+  const sp = $('decor').querySelector('.dhead > span'); if (sp) sp.innerHTML = 'Escolha um móvel e clique no chão. <span class="key">R</span> gira · clique num móvel para pegar · <b>clique na parede</b> ou no <b>chão vazio</b> para trocar papel de parede e piso · <span class="key">Esc</span> sai';
+}; }
+{ const base = craftSpecials; craftSpecials = function (list) {
+  base(list); if (mode !== 'in') return;
+  if (!S.bench22 && BENCH22.cell && !BENCH22.busy) { const [x, y] = BENCH22.cell; list.push({ d: distRect(P.x, P.z, RX + x, RZ + y, 2, 1) - 0.1, label: '🔨 Construir a bancada aqui', act: openBenchBuild }); }
+  if (!decor && Object.keys(S.wallsOwned).length > 1) { const d = wallNear(); if (d < 0.9) list.push({ d: 0.5 + d * 0.2, label: '🎨 Trocar o papel de parede', act: () => homeCycle('wall', P.x, P.z - 0.4) }); }
+}; }
+// o contorno do canto de obra pisca de leve
+{ const base = drawOverlay; drawOverlay = function () { base(); if (BENCH22.g && BENCH22.g.visible && mode === 'in') BENCH22.g.userData.line.opacity = 0.55 + Math.sin(gtime * 4) * 0.3; }; }
+
+/* ---------- v22: fazenda que começa pequena e cresce por terrenos (estilo Stardew) ---------- */
+// A fazenda começa num canteirinho cercado. Em volta há terrenos cheios de mato, galhos, pedrinhas e tocos.
+// Cada terreno vizinho tem uma placa 🪧: compre com 🪙, a cerca se abre e você limpa o terreno com as ferramentas (ou com E).
+const LOTS22 = [
+  { id: 'ini', n: 'Canteirinho', r: [[30, 37, 36, 41]], price: 0 },
+  { id: 'leste', n: 'Terreno do Leste', r: [[37, 36, 40, 46]], price: 250 },
+  { id: 'meio', n: 'Terreno do Meio', r: [[30, 36, 36, 36], [30, 42, 36, 46]], price: 300 },
+  { id: 'oeste', n: 'Terreno do Oeste', r: [[27, 36, 29, 46]], price: 450 },
+  { id: 'sul', n: 'Campo do Sul', r: [[27, 47, 40, 50]], price: 900 },
+  { id: 'bosque', n: 'Clareira do Bosque', r: [[23, 36, 26, 50]], price: 1500 },
+];
+const DEB22 = { mato: { n: 'mato', tool: ['espada', 'machado'], hand: 1 }, galho: { n: 'galho', tool: ['machado'], hand: 1 }, pedrinha: { n: 'pedrinha', tool: ['picareta'], hand: 1 }, toco: { n: 'toco', tool: ['machado'], hand: 0, hp: 2 } };
+const FARM22 = { mesh: null, signs: [], fresh: false, geo: null };
+const lotTiles = (L) => { const t = []; for (const [x0, y0, x1, y1] of L.r) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) t.push([x, y]); return t; };
+const lotHas = (L, x, y) => L.r.some(([x0, y0, x1, y1]) => x >= x0 && x <= x1 && y >= y0 && y <= y1);
+const hash22 = (x, y) => { let h = (x * 374761393 + y * 668265263) ^ 0x5bd1e995; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+function farmU(x, y, m) { const U = FARM.U; if (!m) return inb(x, y) && U.has(I(x, y)); for (let j = -m; j <= m; j++) for (let i = -m; i <= m; i++) if (inb(x + i, y + j) && U.has(I(x + i, y + j))) return true; return false; }
+function farm22Init() {
+  if (S.farm22) return; const lots = []; for (let i = 0; i < obj.length; i++) if (obj[i] && obj[i].t === 'debris') obj[i] = null; // sobras de um save anterior
+  if (FARM22.fresh) lots.push('ini');
+  else { // save antigo: mantém a área que já era da fazenda
+    const L = [{ x0: 27, y1: 46 }, { x0: 27, y1: 50 }, { x0: 23, y1: 50 }][Math.min(2, S.farmLv || 0)];
+    for (const lot of LOTS22) if (lot.r.every(([x0, y0, x1, y1]) => x0 >= L.x0 && y1 <= L.y1)) lots.push(lot.id);
+  }
+  const deb = {};
+  for (const lot of LOTS22) { const owned = lots.includes(lot.id); if (owned && !FARM22.fresh) continue;
+    for (const [x, y] of lotTiles(lot)) { if (!inb(x, y) || tile[I(x, y)] !== GR || obj[I(x, y)]) continue; if (S.farm.soil.some(([a, b]) => a === x && b === y)) continue; if (S.farm.decor.some((d) => d.x === x && d.y === y)) continue; if (lot.id === 'ini' && (x === 33 || x === 34)) continue;
+      const h = hash22(x, y), dens = lot.id === 'ini' ? 0.22 : 0.5; if (h > dens) continue; const k2 = hash22(y + 7, x + 3);
+      deb[x + ',' + y] = lot.id === 'ini' ? (k2 < 0.6 ? 'mato' : k2 < 0.85 ? 'galho' : 'pedrinha') : k2 < 0.45 ? 'mato' : k2 < 0.65 ? 'galho' : k2 < 0.88 ? 'pedrinha' : 'toco'; } }
+  S.farm22 = { lots, deb };
+}
+function farm22U() { const U = new Set(); for (const lot of LOTS22) if (S.farm22.lots.includes(lot.id)) for (const [x, y] of lotTiles(lot)) if (inb(x, y)) U.add(I(x, y)); FARM.U = U;
+  let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1; for (const i of U) { const x = i % W, y = (i / W) | 0; x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } Object.assign(FARM, { x0, y0, x1, y1 }); }
+setFarmBounds = function () { if (!S.farm22) farm22Init(); farm22U(); };
+defaultFarm = function () { const soil = []; for (let y = 38; y <= 39; y++) for (let x = 31; x <= 35; x++) soil.push([x, y]); return { soil, decor: [{ id: 'espantalho', x: 36, y: 38, r: 0 }, { id: 'carrinho', x: 30, y: 41, r: 1 }, { id: 'flores', x: 30, y: 37, r: 0 }] }; };
+{ const base = applyState; applyState = function (d) { FARM22.fresh = !d || !d.S || !d.S.farm; return base(d); }; }
+// cerca em volta da união dos terrenos, com porteira onde o caminho chega (x 33-34, no norte)
+rebuildFarmFence = function () {
+  if (farmFence) world.remove(farmFence); farmFence = new THREE.Group(); world.add(farmFence);
+  for (let i = 0; i < obj.length; i++) if (obj[i] && (obj[i].t === 'ffence' || obj[i].t === 'lotsign')) obj[i] = null;
+  const U = FARM.U, ff = new Set();
+  for (const i of U) { const x = i % W, y = (i / W) | 0; for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) { const nx = x + k, ny = y + j; if (!inb(nx, ny) || U.has(I(nx, ny))) continue; ff.add(nx + ',' + ny); } }
+  for (const gx of [33, 34]) { let my = 1e9; for (const i of U) if (i % W === gx) my = Math.min(my, (i / W) | 0); if (my < 1e9) ff.delete(gx + ',' + (my - 1)); }
+  // placas dos terrenos à venda ficam na própria cerca
+  for (const s of FARM22.signs) world.remove(s); FARM22.signs = [];
+  for (const lot of LOTS22) { if (S.farm22.lots.includes(lot.id)) continue; const cand = [];
+    for (const k of ff) { const [x, y] = k.split(',').map(Number); if (!lotHas(lot, x, y)) continue; for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) if (U.has(I(x + dx, y + dy))) { cand.push([x, y, dx, dy]); break; } }
+    if (!cand.length) continue; cand.sort((a, b) => a[0] + a[1] - (b[0] + b[1])); const [x, y, dx, dy] = cand[(cand.length / 2) | 0];
+    ff.delete(x + ',' + y); const o = obj[I(x, y)]; if (o && o.t !== 'debris') continue; delete S.farm22.deb[x + ',' + y];
+    put(x, y, { t: 'lotsign', lot: lot.id }); let sg; try { sg = makeSign('Terreno à venda'); } catch (e) { sg = makeSign_old('Terreno à venda'); } sg.position.set(x + 0.5, 0, y + 0.5); sg.rotation.y = Math.atan2(dx, dy); sg.scale.setScalar(0.75); sg.userData.keep = 1; sg.userData.lot = lot.id; world.add(sg); FARM22.signs.push(sg); }
+  for (const k of [...ff]) { const [x, y] = k.split(',').map(Number); const o = obj[I(x, y)]; if (tAt(x, y) === WA || (o && o.t !== 'debris' && o.t !== 'ffence')) { ff.delete(k); continue; } delete S.farm22.deb[k]; put(x, y, { t: 'ffence' }); }
+  buildFenceMesh(farmFence, ff, 'wood');
+};
+SOLID.add('lotsign');
+function debrisPlace() { for (let i = 0; i < obj.length; i++) if (obj[i] && obj[i].t === 'debris') obj[i] = null;
+  for (const [k, kind] of Object.entries(S.farm22.deb)) { const [x, y] = k.split(',').map(Number); if (!inb(x, y) || obj[I(x, y)] || tile[I(x, y)] !== GR) { delete S.farm22.deb[k]; continue; } put(x, y, { t: 'debris', k: kind, hp: DEB22[kind].hp || 1 }); } }
+function debrisMesh() {
+  if (FARM22.mesh) { world.remove(FARM22.mesh); FARM22.mesh.traverse((n) => { if (n.isMesh) n.geometry.dispose(); }); FARM22.mesh = null; }
+  if (!FARM22.geo) FARM22.geo = { blade: new THREE.ConeGeometry(0.05, 0.34, 4).translate(0, 0.17, 0), stone: new THREE.DodecahedronGeometry(0.15, 0), stick: new THREE.CylinderGeometry(0.03, 0.04, 0.62, 5).rotateZ(Math.PI / 2), stump: new THREE.CylinderGeometry(0.2, 0.25, 0.3, 9).translate(0, 0.15, 0), top: new THREE.CylinderGeometry(0.18, 0.18, 0.02, 9), mats: { g: [lam('#6fa83a'), lam('#8cc152'), lam('#5d8f33')], s: [lam('#9aa0ac'), lam('#868c98')], w: [lam('#8a5a3b'), lam('#a8743f')], top: lam('#e0b583') } };
+  const G = FARM22.geo, g = new THREE.Group();
+  for (const [k, kind] of Object.entries(S.farm22.deb)) { const [x, y] = k.split(',').map(Number), h = hash22(x, y), h2 = hash22(y, x), cx = x + 0.5 + (h - 0.5) * 0.3, cz = y + 0.5 + (h2 - 0.5) * 0.3;
+    if (kind === 'mato') for (let i = 0; i < 5; i++) { const m = new THREE.Mesh(G.blade, G.mats.g[i % 3]), a = i * 1.3 + h * 6; m.position.set(cx + Math.cos(a) * 0.14, 0, cz + Math.sin(a) * 0.14); m.rotation.set(Math.sin(a) * 0.35, 0, Math.cos(a) * 0.35); m.scale.setScalar(0.8 + ((i * 7 + h * 10) % 3) * 0.2); g.add(m); }
+    else if (kind === 'pedrinha') for (let i = 0; i < 2; i++) { const m = new THREE.Mesh(G.stone, G.mats.s[i]); m.position.set(cx + (i ? 0.16 : -0.08), 0.08, cz + (i ? 0.08 : -0.05)); m.scale.set(1.2 - i * 0.45, 0.7 - i * 0.2, 1 - i * 0.35); m.rotation.y = h * 6; g.add(m); }
+    else if (kind === 'galho') for (let i = 0; i < 2; i++) { const m = new THREE.Mesh(G.stick, G.mats.w[i]); m.position.set(cx, 0.04 + i * 0.05, cz); m.rotation.y = h * 6 + i * 0.9; g.add(m); }
+    else { const m = new THREE.Mesh(G.stump, G.mats.w[0]); m.position.set(cx, 0, cz); g.add(m); const t = new THREE.Mesh(G.top, G.mats.top); t.position.set(cx, 0.31, cz); g.add(t); }
+  }
+  if (!g.children.length) return; bakeVC(g); g.userData.keep = 1; g.traverse((n) => { if (n.isMesh) { n.castShadow = false; n.receiveShadow = true; } }); world.add(g); FARM22.mesh = g;
+}
+{ const base = applyFarm; applyFarm = function () { if (S.farm && !S.farm22) farm22Init(); if (S.farm22) { farm22U(); debrisPlace(); } base(); try { debrisMesh(); } catch (e) { console.error(e); } }; }
+{ const base = farmOk; farmOk = function (x, y) { if (farmEd && farmEd.zone === 'farm' && FARM.U && !FARM.U.has(I(x, y))) return false; return base(x, y); }; }
+expandFarm = function () { // recompensa de missão: o próximo terreno vizinho sai de graça
+  const lot = LOTS22.find((l) => !S.farm22.lots.includes(l.id) && lotNext(l)); if (!lot) return; lotGrant(lot, true); };
+function lotNext(lot) { return lotTiles(lot).some(([x, y]) => [[0, 1], [0, -1], [1, 0], [-1, 0]].some(([dx, dy]) => FARM.U.has(I(x + dx, y + dy)))); }
+function lotGrant(lot, free) {
+  S.farm22.lots.push(lot.id); applyFarm(); sfx('secret'); shake = 0.25; const t = lotTiles(lot), [cx, cy] = t[(t.length / 2) | 0];
+  burst(cx + 0.5, 1, cy + 0.5, ['#ffe18d', '#a8e08a', '#ffffff'], 40, 3, true, true); fxRing(cx + 0.5, 0.05, cy + 0.5, '#ffe18d', 3.5, 0.7);
+  toast(`🌾 <b>${lot.n}</b> agora é seu${free ? ' (presente!)' : ''}! Limpe o mato com a espada, os galhos com o machado e as pedrinhas com a picareta, ou com <span class="key">E</span>.`); gainXp(8); lastHud = ''; hud(); writeSlot('ve3d-auto');
+}
+function openLot(id) {
+  const lot = LOTS22.find((l) => l.id === id); if (!lot) return; const n = lotTiles(lot).length, deb = lotTiles(lot).filter(([x, y]) => S.farm22.deb[x + ',' + y]).length, ok = S.coins >= lot.price;
+  openModal(`<h2>🪧 ${lot.n}</h2><p class="lead">Um pedaço de terra de <b>${n} quadradinhos</b> colado na sua fazenda${deb ? `, com <b>${deb}</b> montinhos de mato, galhos e pedras para limpar` : ''}. Depois de limpo, dá para arar, plantar e enfeitar.</p>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:10px"><button class="btn ${ok ? 'candy gold' : ''}" id="lbuy" ${ok ? '' : 'disabled'}>Comprar por ${lot.price}🪙</button><button class="btn" id="lno">Agora não</button></div>${ok ? '' : `<p class="note">Faltam ${lot.price - S.coins}🪙. Venda colheitas e peixes na Barraca.</p>`}`);
+  $('lno').onclick = closeModal; const b = $('lbuy'); if (b) b.onclick = () => { if (S.coins < lot.price) return sfx('cancel'); S.coins -= lot.price; sfx('coin'); closeModal(); lotGrant(lot, false); };
+}
+// limpar mato, galhos, pedrinhas e tocos
+function debrisAt(x, y) { const o = inb(x, y) && obj[I(x, y)]; return o && o.t === 'debris' ? o : null; }
+function clearDebris(x, y, how) {
+  const o = debrisAt(x, y); if (!o) return false; const D = DEB22[o.k];
+  if (!FARM.U.has(I(x, y))) { toast('🪧 Esse terreno ainda não é seu. Compre na placa da cerca.'); return true; }
+  if (how === 'hand' && !D.hand) { toast('🪓 Esse toco é duro: use o <b>machado</b>.'); sfx('cancel'); return true; }
+  if (how !== 'hand' && !D.tool.includes(how)) return false;
+  P.useT = 0.35; anim(how === 'hand' ? 'PickUp' : '1H_Melee_Attack_Chop', 1.8); const cx = x + 0.5, cz = y + 0.5;
+  if (--o.hp > 0) { sfx('chop'); burst(cx, 0.3, cz, ['#a8693f', '#e0b583'], 8, 1.6); shake = Math.max(shake, 0.05); return true; }
+  obj[I(x, y)] = null; delete S.farm22.deb[x + ',' + y];
+  const col = o.k === 'mato' ? ['#8cc152', '#6fa83a', '#ffffff'] : o.k === 'pedrinha' ? ['#9aa0ac', '#ffffff'] : ['#a8743f', '#e0b583'];
+  burst(cx, 0.3, cz, col, 12, 2); fxRing(cx, 0.04, cz, '#ffffff', 0.9, 0.35); sfx(o.k === 'pedrinha' ? 'impact' : o.k === 'mato' ? 'plant' : 'woodcut');
+  if (o.k === 'galho') drop(cx, cz, 'item', 'madeira', 1); else if (o.k === 'toco') drop(cx, cz, 'item', 'madeira', 3); else if (o.k === 'pedrinha') drop(cx, cz, 'item', 'pedra', 1 + (hash22(x, y + S.day) < 0.4 ? 1 : 0)); else { const h = rand(); if (h < 0.15) drop(cx, cz, 'item', 'trevo', 1); else if (h < 0.25) drop(cx, cz, 'item', 'flor', 1); }
+  S.cleared = (S.cleared || 0) + 1; if (S.cleared % 10 === 0) { gainXp(3); floatText(P.x, 2, P.z, 'Fazenda mais limpinha!', C.yellow, true); }
+  debrisMesh(); return true;
+}
+{ const base = useTool; useTool = function () {
+  if (mode === 'out' && !P.boat && !P.fishing && !P.bike) { const [tx, ty] = facing(), o = debrisAt(tx, ty), t = TOOLS[S.slot] && TOOLS[S.slot].id; if (o && t && DEB22[o.k].tool.includes(t)) { if (t === 'picareta' && !PICKS[gear().pick]) { /* sem picareta: segue o normal */ } else if (clearDebris(tx, ty, t)) return; } }
+  return base();
+}; }
+{ const base = craftSpecials; craftSpecials = function (list) {
+  base(list); if (mode !== 'out' || !S.farm22) return;
+  const [tx, ty] = facing(), o = debrisAt(tx, ty); if (o && FARM.U.has(I(tx, ty)) && DEB22[o.k].hand) list.push({ d: 0.2, label: o.k === 'mato' ? '🌿 Arrancar o mato' : o.k === 'galho' ? '🪵 Pegar o galho' : '🪨 Tirar a pedrinha', act: () => clearDebris(tx, ty, 'hand') });
+  for (const sg of FARM22.signs) { const L = LOTS22.find((l) => l.id === sg.userData.lot); list.push({ d: Math.hypot(P.x - sg.position.x, P.z - sg.position.z) - 0.7, label: `🪧 ${L.n}: ${L.price}🪙`, act: () => openLot(L.id) }); }
+}; }
+// o mato volta a crescer um pouco a cada dia (só em grama livre dentro da fazenda)
+{ const base = newDay; newDay = function (slept) { base(slept); try { if (!S.farm22 || !FARM.U) return; const free = []; for (const i of FARM.U) { const x = i % W, y = (i / W) | 0; if (tile[i] === GR && !obj[i] && !(Math.floor(P.x) === x && Math.floor(P.z) === y)) free.push([x, y]); }
+  const n = Math.min(free.length, 1 + ((rand() * 3) | 0)); for (let k = 0; k < n; k++) { const [x, y] = free.splice((rand() * free.length) | 0, 1)[0]; S.farm22.deb[x + ',' + y] = rand() < 0.75 ? 'mato' : 'galho'; put(x, y, { t: 'debris', k: S.farm22.deb[x + ',' + y], hp: 1 }); } debrisMesh(); } catch (e) { console.error(e); } }; }
+
+/* ---------- v22: áreas (só desenha o que está perto) e nome da área ao entrar ---------- */
+// Tudo o que está além da névoa sai do desenho (por camada): o mapa inteiro existe, mas só a área em volta é desenhada.
+const AREAS22 = { list: [], seen: new WeakSet(), t: 0, n: -1, far: 56, reg: null, el: null, hid: 0 };
+function areaAdd(o) { if (AREAS22.seen.has(o)) return; AREAS22.seen.add(o); if (o.isInstancedMesh || o.isLight || o === GCV.mesh || o.userData.noArea) return;
+  const bb = new THREE.Box3().setFromObject(o); if (bb.isEmpty()) return; const c = bb.getCenter(new THREE.Vector3()), sz = bb.getSize(new THREE.Vector3()), r = Math.hypot(sz.x, sz.z) / 2; if (r > 26) return;
+  AREAS22.list.push({ o, dx: c.x - o.position.x, dz: c.z - o.position.z, r, off: false }); }
+function areaSet(e, off) { e.off = off; e.o.traverse((n) => { if (n.isLight) return; if (off) { if (n.userData.lm0 === undefined) n.userData.lm0 = n.layers.mask; n.layers.mask = 0; } else if (n.userData.lm0 !== undefined) { n.layers.mask = n.userData.lm0; delete n.userData.lm0; } }); }
+function areaUpdate(dt) {
+  if (!ready || mode !== 'out') return; AREAS22.t -= dt; if (AREAS22.t > 0) return; AREAS22.t = 0.25;
+  if (AREAS22.n !== world.children.length) { AREAS22.n = world.children.length; for (const o of world.children) areaAdd(o); AREAS22.list = AREAS22.list.filter((e) => e.o.parent === world || (e.off && areaSet(e, false), false)); }
+  const cx = camera.position.x, cz = camera.position.z, far = AREAS22.far; let hid = 0;
+  for (const e of AREAS22.list) { const d = Math.hypot(e.o.position.x + e.dx - cx, e.o.position.z + e.dz - cz) - e.r, off = d > far + (e.off ? -3 : 0); if (off !== e.off) areaSet(e, off); if (off) hid++; } AREAS22.hid = hid;
+  const r = regionAt(P.x, P.z); if (r !== AREAS22.reg) { if (AREAS22.reg) areaTitle(r.n); AREAS22.reg = r; }
+}
+function areaTitle(n) {
+  let el = AREAS22.el; if (!el) { el = AREAS22.el = document.createElement('div'); el.id = 'areaT'; document.body.appendChild(el); }
+  el.innerHTML = `<i></i><b>${n}</b><i></i>`; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); sfxP && sfxP('switch', 0.3, 0.8);
+}
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { areaUpdate(dt); } catch (e) {} }; }
 
 /* =================== início, título e carregamento =================== */
 let ready = false;
@@ -5688,4 +6030,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { GSPLAT, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
