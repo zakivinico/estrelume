@@ -998,6 +998,39 @@ body.calm #lvup.on{animation-duration:3s!important}body.calm #itemget img{animat
 .scrot30{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;z-index:3;pointer-events:auto;background:rgba(255,250,242,.85);border:2px solid var(--c-line,#5a3d68);border-radius:999px;padding:3px 6px;font:600 12px var(--font);color:var(--c-line,#5a3d68);white-space:nowrap}
 .scrot30 .btn{min-width:30px;height:28px;padding:0 6px;font-size:16px;line-height:1}
 #fps27{position:fixed;left:50%;top:4px;transform:translateX(-50%);z-index:70;background:rgba(20,20,27,.7);color:#fff;font:600 12px var(--font);padding:2px 8px;border-radius:8px;pointer-events:none}
+/* v1.31: desejo épico */
+#wcv131{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none}
+.w131{position:relative;transform-origin:50% 85%}
+.w131 .wglow.on131{opacity:.85;transition:box-shadow .4s,background .4s;animation:wgl131 1.2s ease-in-out infinite alternate}
+@keyframes wgl131{from{transform:scale(1.4)}to{transform:scale(2.6)}}
+.w131.charge131{animation:chg131 1.25s cubic-bezier(.5,0,1,.5) forwards}
+@keyframes chg131{0%{transform:none}20%{transform:translate(-2px,1px) scale(1.02,.98)}40%{transform:translate(3px,-1px) scale(.98,1.03)}60%{transform:translate(-4px,2px) scale(1.04,.96)}80%{transform:translate(5px,-2px) scale(.96,1.05)}100%{transform:translate(0,4px) scale(1.12,.86)}}
+.w131.pop131{animation:pop131 .7s cubic-bezier(.2,1.7,.4,1) forwards}
+@keyframes pop131{0%{transform:scale(1.12,.86)}35%{transform:scale(.88,1.18) translateY(-14px)}70%{transform:scale(1.04,.97)}100%{transform:none}}
+.rays131{position:absolute;left:50%;top:22%;width:160vmax;height:160vmax;margin:-80vmax;z-index:2;opacity:0;pointer-events:none;background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--c,#fff) 55%,transparent) 0 6deg,transparent 6deg 18deg);-webkit-mask:radial-gradient(circle,#000 0,transparent 55%);mask:radial-gradient(circle,#000 0,transparent 55%)}
+.rays131.on{animation:ray131 1.2s ease-out forwards}
+@keyframes ray131{0%{opacity:0;transform:scale(.3) rotate(0)}25%{opacity:1}100%{opacity:.0;transform:scale(1.2) rotate(40deg)}}
+#wish.quake131{animation:qk131 .45s linear}
+@keyframes qk131{10%{transform:translate(-9px,5px)}25%{transform:translate(8px,-6px)}40%{transform:translate(-6px,-4px)}55%{transform:translate(5px,5px)}70%{transform:translate(-3px,2px)}85%{transform:translate(2px,-1px)}}
+.wtip.bump131{animation:tb131 .5s cubic-bezier(.2,1.8,.4,1)}
+@keyframes tb131{0%{transform:scale(.6);opacity:.2}60%{transform:scale(1.15)}100%{transform:none;opacity:1}}
+body.calm .w131.charge131,body.calm .w131 .wglow.on131,body.calm .rays131.on{animation-duration:.01s}
+/* v1.31: cozinha */
+.ck131l{display:grid;gap:8px;max-height:58vh;overflow:auto;padding-right:4px}
+.ck131c .grow span{display:block}
+.ck131{text-align:center}
+.ck131 h2{margin:4px 0}
+.ck131 .ckst{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;margin:4px 0 6px}
+.ck131 .ckst span{padding:3px 10px;border-radius:999px;background:#f3e3ec;color:#8a6a80;font-weight:700}
+.ck131 .ckst span.on{background:#ff8fbd;color:#fff;transform:scale(1.08);box-shadow:0 3px 0 #c95f8f}
+.ck131 .ckst span.ok{background:#9fe08a;color:#2e5a24}
+.ck131 .ckst i{opacity:.5;font-style:normal}
+.ck131 .ckhow{margin:0 0 8px;min-height:2.4em}
+#ckcv{width:min(520px,100%);height:auto;aspect-ratio:520/220;border-radius:18px;touch-action:none;display:block;margin:0 auto}
+.ck131 .ckbtns{display:flex;gap:10px;justify-content:center;margin-top:10px}
+.ck131 .ckbtns .btn{min-width:130px;font-size:1.1em;touch-action:none;user-select:none}
+.ck131.done .ckimg{width:120px;height:120px;image-rendering:auto;animation:popin .6s cubic-bezier(.2,1.6,.4,1) both}
+.ck131.done .ckstars{font-size:42px;color:#ffc93c;letter-spacing:6px;text-shadow:0 3px 0 #c98a2a;animation:tb131 .6s cubic-bezier(.2,1.8,.4,1) both}
 </style>
 </head>
 <body class="ttl">
@@ -1077,7 +1110,7 @@ body.calm #lvup.on{animation-duration:3s!important}body.calm #itemget img{animat
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v31</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v1.31</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script>/*GAME*/</script>

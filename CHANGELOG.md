@@ -2,6 +2,49 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.31: combate fluido, pulo no Espaço, escadas, cômodos, cozinha, desejo épico e cores vivas
+A numeração passa a ser 1.31 (a seção no código é `v1.31`).
+
+**Teclas novas**
+- **Espaço pula** (andando ao ar livre). **C usa a ferramenta e ataca** (segure C para o giro). No barco, pescando, em casa e nos menus, o Espaço continua como antes.
+- No controle: **A** usa a ferramenta e **LT** pula. O Álbum fica só no **L**.
+
+**Combate da Fofinha**
+- Mira suave: o golpe vira para o inimigo mais próximo à sua frente.
+- Golpe apertado no meio do dash sai assim que ele acaba.
+- Com inimigo por perto, a espada ataca em vez de colher a flor ou a concha da frente.
+- Movimento por cima das animações: giro do tronco alternado, inclinação, squash e stretch, pulinho no 3º golpe, giro completo no golpe carregado e susto ao levar dano.
+- Dash mais longo e macio (0,55 s, desacelera aos poucos), só com um rastro suave no lugar da explosão de poeira.
+
+**Personagem e ferramentas**
+- O brilho do cabelo escuro não fica mais cinza: clareia na mesma cor.
+- Óculos na altura dos olhos e do tamanho certo do rosto redondo.
+- Espada num tamanho de mão, apontando para a frente.
+- Regador novo: corpo arredondado, bico fino com chuveirinho, alça em arco e florzinhas.
+
+**Casas**
+- Dá para subir as escadas das casas: a altura dos degraus é medida no carregamento.
+- O brilho das portas fica no alto da escada, alinhado à porta de verdade.
+- As casas dos moradores ganharam cômodos: um quarto separado por parede com passagem e uma cozinha com fogão e pia.
+- Na sua casa: Divisória, Meia parede com plantinhas e Arco de passagem (Lojinha do Tico) para montar seus cômodos, e dois níveis novos de reforma, o Casarão do Vale (17×11) e a Mansão Estrelada (19×12).
+
+**Cozinha**
+- Fogãozinho Rosa (você ganha um; coloque em casa no modo decorar). Também dá para cozinhar na cozinha das casas dos moradores.
+- 8 pratos: Sopa de Cenoura, Salada do Vale, Espetinho de Peixe, Bolinho de Arroz, Geleia de Frutinhas, Torta de Maçã, Panquecas com Mel e Ensopado de Abóbora. Cada um mata a fome e dá vida, fôlego ou corrida turbo, e vende bem.
+- Minigames em cada receita: 🔪 cortar na marquinha, 🥄 mexer alternando ← →, 🔥 segurar o fogo na faixa verde e 🧂 apertar no anel dourado.
+- Os ingredientes só saem da mochila no fim, e nunca dá errado: capricho de 85% ou mais rende porção dupla.
+- Despensa com farinha, ovo, manteiga, arroz e açúcar, e a Panela de Cobre, que deixa as faixas dos minigames 30% maiores.
+
+**Poço e praça**
+- Desejo épico em 5 tempos: as moedinhas caem no poço, a luz carrega em espiral, a cor "promove" de azul para lilás e para dourado só quando o resultado merece, as estrelas sobem com rastro e tudo explode em flash, tremida e raios. Com o modo calmo ligado, a animação é mais suave.
+- Poço dos Desejos novo: pedras lilás, água que brilha, telhadinho rosa com estrela e flores em volta.
+- A praça do Poço ficou maior (16×8 tiles, era 12×7), com postes, bancos e varais nas bordas.
+
+**Cores**
+- As cores dos modelos seguem a mesma curva viva: tons apagados ganham mais saturação, cinzas e brancos ficam como estão. Texturas repetidas são processadas uma vez só (26 únicas em ~0,3 s no carregamento). Para comparar com as cores antigas, use `?novib=1`.
+
+**Desempenho:** igual à v29 (bench: 566 ms em média no SwiftShader) e nenhum shader novo durante o jogo.
+
 ## v31: roupas novas, estampas e tipos de sapato
 Ideias pesquisadas:
 - as categorias e os estilos de roupa do Animal Crossing (blusas, vestidos, casacos, fantasias, vários estilos);
