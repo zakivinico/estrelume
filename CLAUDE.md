@@ -61,6 +61,7 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Efeitos: `sfx(nome, x?, z?)` (com posição = pan e distância). Sons novos: arquivo em `game/assets/sfx/<nome>.ogg` e o nome em `EXTRA_SFX`. Variações aleatórias de um mesmo evento ficam em `ALT2`; volumes em `SFXV`.
 - Ambiência: camadas `amb_*` com volume-alvo em `ambTargets()`. Passos por terreno: `STEP_SETS` + `stepSet()`.
 - Converta com ffmpeg para OGG mono normalizado (veja o commit da v17). Só use sons CC0 e registre o crédito em `game/assets/CREDITS-v17-sons.md`.
+- Desde a v28 os efeitos de interface, magia, golpes e vinhetas são **sintetizados** por `tools/sons_cozy.py` (kalimba, marimba, sininhos, caixinha de música, bolhas, madeira, sopros, com reverb de quarto). O estilo é cozy/ASMR: nada de onda quadrada ou de 8 bits. Para mudar um som, edite a receita em `S['nome']` e rode `python3 tools/sons_cozy.py`. Toda nota passa por `soft_end` (sem isso, o corte vira estalo). O `tone()` do jogo é um seno com ataque suave.
 
 ## Economia, craft, casa e PvP (v18)
 

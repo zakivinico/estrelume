@@ -30,3 +30,11 @@ Convertidos para OGG mono, com volume normalizado, por ffmpeg. Fonte e autor de 
 | ani_cluck_2 | Hens Lays (s0978) | Joseph Sardin | https://bigsoundbank.com/hens-lays-s0978.html |
 | ani_quack_1, ani_quack_2 | Ducks (s0276) | Joseph Sardin | https://bigsoundbank.com/ducks-s0276.html |
 | amb_village | Outdoor Market 1 (s2728), recortado, com filtro e loop | Joseph Sardin | https://bigsoundbank.com/outdoor-market-1-s2728.html |
+
+## Sons cozy da v28 (feitos para o Estrelume, CC0)
+
+Gerados por `tools/sons_cozy.py` (síntese em Python: kalimba, marimba, sininhos de vidro, caixinha de música, bolhas, madeira, sopros e "puf", com reverb de quarto). Substituem os efeitos de 8 bits que vinham do pacote Ninja Adventure:
+
+accept, alert, bonus, boom, cancel, coin, fanfare, fireball, fx, gold, hit, hit2, hover, hurt, impact, jingle_4, jingle_5, jingle_a, jump, kill, magic, magic2, magic3, menu, menu2, newthing, pick, pop, pop_c_1..3, powerup, powerup2, quest, secret, spirit, success, swing, switch, sword, voice, voice2.
+
+Para refazer depois de mexer numa receita: `python3 tools/sons_cozy.py` (precisa de numpy, scipy e ffmpeg).
