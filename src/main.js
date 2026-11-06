@@ -1172,7 +1172,7 @@ function openHelp() {
   const ic = (u) => `<img class="hi" src="${u}">`;
   openModal(`<h2>❓ Como jogar</h2>
   <div class="help">
-   <div class="hc"><h4>${ic(THUMB.t_espada)} Controles</h4><p><span class="key">WASD</span> andar · <span class="key">Shift</span> correr · <span class="key">Espaço</span>/<span class="key">clique</span> usar item no <b>quadrado branco</b> · <span class="key">E</span> falar, colher, entrar · <span class="key">Q</span> esquiva · segure <span class="key">Espaço</span> golpe giratório · <span class="key">1</span>–<span class="key">8</span> trocar item · <span class="key">R</span> <span class="key">F</span> <span class="key">T</span> habilidades · <span class="key">U</span> comer · <span class="key">Z</span> bicicleta · <span class="key">G</span> poço · <span class="key">C</span> álbum · <span class="key">I</span> mochila · <span class="key">K</span> habilidades · <span class="key">J</span> diário (missões, histórias, amigos) · <span class="key">M</span> mapa · <span class="key">B</span> fazenda · <span class="key">Esc</span> menu · <span class="key">+</span>/<span class="key">−</span> zoom</p></div>
+   <div class="hc"><h4>${ic(THUMB.t_espada)} Controles</h4><p><span class="key">WASD</span> andar · <span class="key">Shift</span> correr · <span class="key">Espaço</span>/<span class="key">clique</span> usar item no <b>quadrado branco</b> · <span class="key">E</span> falar, colher, entrar · <span class="key">Q</span> esquiva · segure <span class="key">Espaço</span> golpe giratório · <span class="key">1</span>–<span class="key">8</span> trocar item · <span class="key">R</span> <span class="key">F</span> <span class="key">T</span> habilidades · <span class="key">U</span> comer · <span class="key">Z</span> bicicleta · <span class="key">G</span> poço · <span class="key">L</span> álbum · <span class="key">C</span> pular · <span class="key">I</span> mochila · <span class="key">K</span> habilidades · <span class="key">J</span> diário (missões, histórias, amigos) · <span class="key">M</span> mapa · <span class="key">B</span> fazenda · <span class="key">Esc</span> menu · <span class="key">+</span>/<span class="key">−</span> zoom</p></div>
    <div class="hc"><h4>${ic(THUMB.i_ametista)} Caverna e mineração</h4><p>A <b>Caverna Cintilante</b> fica ao norte da floresta. Compre a picareta (4) na <b>Forja da Duda</b> e minere pedra, cobre, ferro, cristais, ametista e ouro. A porta de cristal no fundo guarda o <b>Rei Slime</b>: fale com a Mestra Íris na torre para conseguir a chave.</p></div>
    <div class="hc"><h4>${ic(THUMB.i_ferro)} Forja e Ateliê</h4><p>A <b>Forja da Duda</b> troca 🪙 Moedas e minérios por espadas, picaretas, bicicleta, botas e amuleto. No <b>Ateliê da Fifi</b> você compra roupas, acessórios, penteados, tintas de cabelo e rastros.</p></div>
    <div class="hc"><h4>${ic(THUMB.i_leite)} Fôlego, animais e histórias</h4><p>Correr e minerar gastam <b>fôlego</b> (anel verde em volta da personagem); ele volta quando você anda devagar. Faça carinho nos animais do pasto para ganhar lã, leite e trufas. Procure <b>pergaminhos</b> brilhando pelo vale: eles contam a história do Vale Estrelinha (diário, <span class="key">J</span>).</p></div>
@@ -6447,7 +6447,9 @@ const INPUT = { pad: false, prev: {}, t: 0 };
 const PADMAP = { 0: 'Space', 1: 'KeyQ', 2: 'KeyE', 3: 'KeyI', 4: 'BracketLeft', 5: 'BracketRight', 9: 'Escape', 8: 'KeyM', 12: 'ArrowUp', 13: 'ArrowDown', 14: 'ArrowLeft', 15: 'ArrowRight' };
 function padUpdate() { const gps = navigator.getGamepads ? navigator.getGamepads() : []; const gp = gps && [...gps].find((g) => g && g.connected); if (!gp) { if (INPUT.pad) { INPUT.pad = false; uiApply(); } return; }
   if (!INPUT.pad) { INPUT.pad = true; uiApply(); toast('🎮 Controle conectado! <b>A</b> usar · <b>X</b> falar · <b>B</b> esquivar · <b>Y</b> mochila · <b>LB/RB</b> trocar item · <b>Start</b> menu'); }
-  const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0, dz = 0.35; keys.KeyD = ax > dz; keys.KeyA = ax < -dz; keys.KeyS = ay > dz; keys.KeyW = ay < -dz; keys.ShiftLeft = !!(gp.buttons[7] && gp.buttons[7].pressed) || Math.hypot(ax, ay) > 0.95;
+  const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0, dz = 0.35, sd = ax > dz, sa = ax < -dz, ss = ay > dz, sw = ay < -dz, run = !!(gp.buttons[7] && gp.buttons[7].pressed) || Math.hypot(ax, ay) > 0.95;
+  /* só escreve nas teclas quando o analógico está em uso (ou acabou de soltar): assim o teclado continua andando com um controle parado conectado */
+  if (sd || sa || ss || sw || INPUT.stick) { keys.KeyD = sd; keys.KeyA = sa; keys.KeyS = ss; keys.KeyW = sw; INPUT.stick = sd || sa || ss || sw; } if (run || INPUT.run) { keys.ShiftLeft = run; INPUT.run = run; }
   for (const [i, code] of Object.entries(PADMAP)) { const on = !!(gp.buttons[i] && gp.buttons[i].pressed), was = !!INPUT.prev[i]; INPUT.prev[i] = on;
     if (on && !was) { if (code === 'BracketLeft' || code === 'BracketRight') { setSlot(S.slot + (code === 'BracketLeft' ? -1 : 1)); continue; } const c2 = padBack(i) ? 'Escape' : code; dispatchEvent(new KeyboardEvent('keydown', { code: c2, key: c2 === 'Space' ? ' ' : c2, bubbles: true })); }
     if (!on && was) dispatchEvent(new KeyboardEvent('keyup', { code, key: code === 'Space' ? ' ' : code, bubbles: true })); } }
@@ -6455,7 +6457,7 @@ addEventListener('gamepadconnected', () => padUpdate());
 
 // ---------- roda de ferramentas (segure X, como o anel do Animal Crossing) ----------
 const RING = { on: false, sel: -1, el: null };
-function ringOpen() { if (RING.on || modalOpen() || decor || farmEd || titleOn || mode === 'in') return; const owned = TOOLS.map((t, i) => ({ t, i })).filter(({ t }) => ownsTool(t.id)); if (owned.length < 2) return;
+function ringOpen() { if (RING.on || modalOpen() || decor || farmEd || titleOn || mode === 'in' || CUT || dlg || P.dead) return; const owned = TOOLS.map((t, i) => ({ t, i })).filter(({ t }) => ownsTool(t.id)); if (owned.length < 2) return;
   let el = RING.el; if (!el) { el = RING.el = document.createElement('div'); el.id = 'ring'; document.body.appendChild(el); }
   const R = Math.min(150, innerHeight * 0.26);
   el.innerHTML = `<div class="rc"><b id="rname">${TOOLS[S.slot].n}</b><small>solte X para escolher</small></div>` + owned.map(({ t, i }, k) => { const a = (k / owned.length) * Math.PI * 2 - Math.PI / 2, src = THUMB['t_' + t.id] || ''; return `<div class="rs ${i === S.slot ? 'on' : ''}" data-i="${i}" style="left:calc(50% + ${Math.cos(a) * R}px);top:calc(50% + ${Math.sin(a) * R}px)"><img src="${src}"><em>${t.key || ''}</em></div>`; }).join('');
@@ -6469,7 +6471,9 @@ addEventListener('mousemove', (e) => { if (!RING.on) return; const dx = e.client
 document.addEventListener('click', (e) => { const s = e.target.closest && e.target.closest('#ring .rs'); if (s) { ringPick(+s.dataset.i); ringClose(true); } }, true);
 
 // ---------- avisos estilo balão (ícone + texto) e dica de ação mais clara ----------
-{ const base = v14Update; v14Update = function (dt) { base(dt); INPUT.t -= dt; if (INPUT.t <= 0) { INPUT.t = 0.05; try { padUpdate(); } catch (e) {} } }; }
+{ const base = v14Update; v14Update = function (dt) { base(dt); }; }
+/* o controle é lido fora do laço do jogo: com um menu aberto o laço fica pausado e o controle parava de responder */
+setInterval(() => { try { padUpdate(); } catch (e) {} }, 50);
 setTimeout(() => { try { uiApply(); } catch (e) {} }, 0);
 
 
@@ -6489,7 +6493,7 @@ function partyUpdate(dt) {
   const tl = $('rTL'), r = tl ? tl.getBoundingClientRect() : { bottom: 110, left: 12 }; el.style.display = titleOn || document.body.classList.contains('incut') ? 'none' : ''; el.style.top = Math.round(r.bottom + 8) + 'px'; el.style.left = Math.round(r.left + 4) + 'px'; el.style.transform = 'none';
   { const chip = $('mpchip'); if (chip) chip.style.display = 'none'; }
   el.innerHTML = `<div class="pm" style="background:rgba(255,225,141,.95)"><b style="font-size:12px">👥 Partida ${MP.code} · ${list.length + 1}/${PARTY.max}</b></div>` + list.map(({ id, p }) => { const d = mode === 'out' && (p.m || 'out') === 'out' ? Math.hypot((p.x || 0) - P.x, (p.z || 0) - P.z) : 999, hp = p.mh ? clamp(p.hp / p.mh, 0, 1) : 1, src = partyThumb(id, p);
-    return `<div class="pm ${d > 25 ? 'far' : ''}">${src ? `<img src="${src}">` : '<img>'}<div><b>${escapeHtml(String(p.n || 'Amiga').slice(0, 14))} <small style="display:inline">Nv ${p.lv || 1}</small></b><small>${escapeHtml(partyWhere(p))}${d < 999 ? ' · ' + Math.round(d) + ' m' : ''}</small><div class="hpb" style="width:${Math.round(hp * 90)}px"></div></div><span class="dot"></span></div>`; }).join('');
+    return `<div class="pm ${d > 25 ? 'far' : ''}">${src ? `<img src="${src}">` : '<img>'}<div><b>${escapeHtml(String(p.n || 'Amiga').slice(0, 14))} <small style="display:inline">Nv ${Math.max(1, Math.floor(+p.lv) || 1)}</small></b><small>${escapeHtml(partyWhere(p))}${d < 999 ? ' · ' + Math.round(d) + ' m' : ''}</small><div class="hpb" style="width:${Math.round(hp * 90)}px"></div></div><span class="dot"></span></div>`; }).join('');
   // quem passou do limite não aparece no mundo
   for (const { id } of partyOrder().slice(PARTY.max - 1)) { const c = MP.chars[id]; if (c && c.obj) c.obj.visible = false; }
 }
@@ -6508,7 +6512,7 @@ const lookKM = (outfit = S.outfit, lk = lookFull()) => { const base = Object.ass
 setOutfit_v12 = function (force) { const k = S.outfit || 'km', key = k + JSON.stringify(OUT_KM[k] || 0); if (player && player.okey === key && !force) return; const old = player; player = new Char('km'); player.okey = key; player.obj.userData.ck = 'km'; applyLook(player.obj, lookKM(k)); refreshMeThumb();
   if (old) { player.obj.position.copy(old.obj.position); player.obj.rotation.y = old.obj.rotation.y; scene.remove(old.obj); } handKey = null; updateHand(); };
 refreshMeThumb = function () { try { const o = cloneM('ch_km'); o.userData.ck = 'km'; applyLook(o, lookKM()); THUMB.me = thumb(o, { char: true, head: true }); const f = $('pface'); if (f) f.src = THUMB.me; } catch (e) { console.error(e); } };
-{ const base = applyState; applyState = function (d) { const r = base(d); if (!S.outfit || OLD_BASES.includes(S.outfit)) S.outfit = 'km'; if (S.look && !KM_VAR.includes(S.look.kb)) S.look = lookKM(null, S.look); return r; }; }
+{ const base = applyState; applyState = function (d) { const r = base(d); if (!S.outfit || (OLD_BASES.includes(S.outfit) && !OUT_KM[S.outfit])) S.outfit = 'km'; if (S.look && !KM_VAR.includes(S.look.kb)) S.look = lookKM(null, S.look); return r; }; }
 // conjuntos de aventureiro no Ateliê e no Álbum: retrato da Fofinha vestida
 function outfitThumbs() { for (const o of OUTFITS) try { THUMB['o_' + o.id] = kmThumb(Object.assign({}, KM_DEF, OUT_KM[o.id] || {}), true); } catch (e) {} try { THUMB.o_rogue = kmThumb(Object.assign({}, KM_DEF), true); THUMB.o_km = THUMB.o_rogue; } catch (e) {} }
 // criador: só a base Fofinha
@@ -6671,13 +6675,13 @@ function arenaFind() { // procura em todo o mapa um campo livre (vila ou praia),
 function clearNature(x0, y0, x1, y1, round) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { if (!inb(x, y)) continue; if (round && Math.hypot(x - round[0], y - round[1]) > round[2]) continue; const o = obj[I(x, y)]; if (!o || !NATURE.test(o.t)) continue; try { if (o.apples) { o.fruit = false; try { setFruit(o); } catch (e) {} } if (o.t === 'bush' && o.inst) { INST.q_bush.set(o.inst[0], ZERO); INST.q_bushb.set(o.inst[1], ZERO); } else if (o.inst && INST[o.inst[0]]) INST[o.inst[0]].set(o.inst[1], ZERO); if (o.ri !== undefined && INST[o.v ? 'q_rockm' : 'q_rock']) INST[o.v ? 'q_rockm' : 'q_rock'].set(o.ri, ZERO); } catch (e) {} obj[I(x, y)] = null; } }
 function arenaBuild() { const f = arenaFind(); if (!f) return; const [x, y, r] = f; clearNature(x - r - 1, y - r - 1, x + r + 1, y + r + 1, [x, y, r + 1.5]); ARENA26.cx = x + 0.5; ARENA26.cz = y + 0.5; ARENA26.R = r - 1.2; ARENA26.ok = true;
   RB.cx = PVP.cx = ARENA26.cx; RB.cz = PVP.cz = ARENA26.cz; RB.R = PVP.R = ARENA26.R;
-  for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (Math.hypot(i, j) <= r && Math.abs(Math.hypot(i, j) - (r - 0.6)) < 0.7 && (i * 7 + j * 3) % 4 === 0) put(x + i, y + j, { t: 'part', arena: 1 });
+  for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {} /* v27: os blocos invisíveis do anel saíram; só o tile de cada poste é sólido (mais abaixo) */
   const g = new THREE.Group(); g.userData.keep = 1; const c = ARENA26.cx, z = ARENA26.cz, R = ARENA26.R;
   const floor = new THREE.Mesh(new THREE.RingGeometry(R - 0.5, R + 0.25, 64).rotateX(-Math.PI / 2), lam('#e8dcc4')); floor.position.set(c, 0.025, z); floor.receiveShadow = true; g.add(floor);
   const inner = new THREE.Mesh(new THREE.CircleGeometry(1.4, 40).rotateX(-Math.PI / 2), lam('#f3c8d8')); inner.position.set(c, 0.03, z); g.add(inner);
   const deco = new THREE.Group(), cols = ['#ff8fbd', '#ffe18d', '#9fe8ff', '#c9a2ff'];
   for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2, px = c + Math.cos(a) * (R + 0.8), pz = z + Math.sin(a) * (R + 0.8);
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 1.6, 8), lam('#cfc4b2')); post.position.set(px, 0.8, pz); deco.add(post);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 1.6, 8), lam('#cfc4b2')); post.position.set(px, 0.8, pz); deco.add(post); { const tx = Math.floor(px), tz = Math.floor(pz); if (inb(tx, tz) && !obj[I(tx, tz)]) put(tx, tz, { t: 'part', arena: 1 }); }
     const cap = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), lam('#e8dcc4')); cap.position.set(px, 1.66, pz); deco.add(cap);
     const fl = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.34, 0.03), lam(cols[i % 4])); fl.position.set(px + Math.cos(a + 1.57) * 0.28, 1.35, pz + Math.sin(a + 1.57) * 0.28); fl.rotation.y = -a; deco.add(fl); }
   g.add(bakeVC(deco)); world.add(g); ARENA26.g = g;
@@ -6708,7 +6712,15 @@ function jumpUpdate(dt) { if (mode !== 'out') { P.jy = 0; P.jv = 0; return; } co
     if (PK26.run && P.jy < 0.02 && gtime - PK26.t0 > 1.5) PK26.run = false; }
   if (PK26.goal) { PK26.goal.rotation.y += dt * 1.5; PK26.goal.position.y = PK26.goalY + Math.sin(gtime * 2) * 0.08; } }
 { const base = moveC; moveC = function (o, dx, dz, r = 0.28) { if (o !== P || P.boat || mode !== 'out') return base(o, dx, dz, r); const x0 = o.x, z0 = o.z;
-  if (P.jy > 0.45) { for (const [ax, az] of [[dx, 0], [0, dz]]) { if (!ax && !az) continue; const nx = o.x + ax, nz = o.z + az, t = obj[I(Math.floor(nx), Math.floor(nz))], tl = tAt(Math.floor(nx), Math.floor(nz)); const ok = !solidW(nx, nz) || (t && LOW26.has(t.t) && tl !== WA); if (ok && !regionBlocked(nx, nz)) { o.x = nx; o.z = nz; } } }
+  /* v27: no ar testa os 4 cantos (como no chão), deixando passar só por cima do que é baixo; e quem pousou encostada num sólido consegue sair andando */
+  const lowOk = (x, z) => { const t = obj[I(Math.floor(x), Math.floor(z))]; return t && LOW26.has(t.t) && tAt(Math.floor(x), Math.floor(z)) !== WA; };
+  const cell = (x, z, air) => !solidW(x, z) || (air && lowOk(x, z));
+  const bad = (x, z, air) => !cell(x - r, z - r, air) + !cell(x + r, z - r, air) + !cell(x - r, z + r, air) + !cell(x + r, z + r, air);
+  /* pousou em cima de algo baixo (cerca, arbusto, pedrinha): até sair dali vale a regra do ar */
+  const air = P.jy > 0.45 || (!cell(o.x, o.z, false) && lowOk(o.x, o.z)), stuck = bad(o.x, o.z, air) > 0;
+  if (air || stuck) { for (const [ax, az] of [[dx, 0], [0, dz]]) { if (!ax && !az) continue; const nx = o.x + ax, nz = o.z + az, nb = bad(nx, nz, air);
+    /* presa: pode andar se o centro continua livre e não afunda mais no sólido */
+    const ok = stuck ? cell(nx, nz, air) && nb <= bad(o.x, o.z, air) : nb === 0; if (ok && !regionBlocked(nx, nz)) { o.x = nx; o.z = nz; } } }
   else base(o, dx, dz, r);
   if (PK26.plats.length && platBlock(o.x, o.z)) { if (!platBlock(o.x, z0)) o.z = z0; else if (!platBlock(x0, o.z)) o.x = x0; else { o.x = x0; o.z = z0; } } }; }
 function parkourBuild() { if (!ARENA26.ok) return; const R0 = ARENA26.R + 2.6; let ox = 0, oz = 0, okA = false;
@@ -6729,7 +6741,7 @@ PRE_GH.push(() => { arenaBuild(); parkourBuild(); });
 // pulo no desenho: a personagem sobe P.jy (a câmera sobe um pouco junto)
 { const base = renderer.render.bind(renderer); renderer.render = function (sc, cam) { const j = sc === scene && mode === 'out' && player ? P.jy || 0 : 0; if (!j) return base(sc, cam); player.obj.position.y += j; const cj = cam === camera ? j * 0.45 : 0; cam.position.y += cj; try { return base(sc, cam); } finally { player.obj.position.y -= j; cam.position.y -= cj; } }; }
 // teclas: C pula, L abre o Álbum; no celular, um botão de pulo
-addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (e.code === 'KeyC' && ready && !titleOn) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) doJump(); } else if (e.code === 'KeyL' && ready && !titleOn && !e.repeat && !dlg) { e.preventDefault(); if ($('modal').classList.contains('on')) { closeModal(); sfx('cancel'); } else if (!modalOpen()) openAlbum(); } }, true);
+addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (e.code === 'KeyC' && ready && !titleOn) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) doJump(); } else if (e.code === 'KeyL' && ready && !titleOn && !e.repeat && !dlg && !CUT && !P.dead) { e.preventDefault(); if ($('modal').classList.contains('on')) { closeModal(); sfx('cancel'); } else if (!modalOpen()) openAlbum(); } }, true);
 PADMAP[6] = 'KeyC';
 { const a = APPS.find((q) => q.k === 'album'); if (a) a.key = 'L'; }
 setTimeout(() => { try { const ta = $('tA'); if (ta && !$('tJ')) { ta.insertAdjacentHTML('afterend', '<button class="btn tbtn" id="tJ" style="right:100px;bottom:176px">⤒</button>'); $('tJ').addEventListener('touchstart', (e) => { e.preventDefault(); doJump(); }, { passive: false }); }
@@ -6801,7 +6813,7 @@ const INTRO_SC = () => [
   { h: 22.5, who: 'Narradora', lines: ['Era uma vez um vale escondido entre as montanhas...', 'Toda noite, estrelinhas caíam do céu e viravam flores que brilhavam no escuro.'], cam: (k) => { camPos.set(42 + k * 4, 6 + k * 2, 64 - k * 4); camLook.set(52, 13 - k * 2, 28); } },
   { h: 18.8, who: 'Narradora', lines: ['No meio da vila fica o Poço dos Desejos.', 'Dizem que ele guarda a luz das estrelas... e que quem faz um pedido com carinho ganha um amiguinho!'], cam: (k) => { const a = 0.7 + k * 0.6, cx = SHRINE.x + 1, cz = SHRINE.y + 1; camPos.set(cx + Math.cos(a) * 7, 4, cz + Math.sin(a) * 7); camLook.set(cx, 1.2, cz); } },
   { h: 17.2, who: 'Narradora', lines: ['Mas um dia uma névoa sonolenta cobriu parte do vale.', 'As estrelas pararam de cair, e os caminhos para longe ficaram escondidos.'], cam: (k) => { camPos.set(32 + k * 5, 9, 42 - k * 2); camLook.set(42 + k * 6, 1.5, 14); } },
-  { h: 7.3, who: 'Vovó Rosa', lines: [() => `Querida ${escapeHtml(S.name)}, a fazendinha da família está esperando por você.`, 'Venha morar no vale: plante, pesque, faça amigos... e me ajude a acordar as estrelas.', 'Com muito amor, sua Vovó Rosa. 💗'], cam: (k) => { camPos.set(CUT.x0 + 2.8, 2, CUT.z0 + 3.2); camLook.set(CUT.x0, 1.05, CUT.z0); }, me: 'read' },
+  { h: 7.3, who: 'Vovó Rosa', lines: [() => `${gA('Querida', 'Querido')} ${escapeHtml(S.name)}, a fazendinha da família está esperando por você.`, 'Venha morar no vale: plante, pesque, faça amigos... e me ajude a acordar as estrelas.', 'Com muito amor, sua Vovó Rosa. 💗'], cam: (k) => { camPos.set(CUT.x0 + 2.8, 2, CUT.z0 + 3.2); camLook.set(CUT.x0, 1.05, CUT.z0); }, me: 'read' },
   { h: 7.6, who: '', lines: ['Bem-vinda ao Vale Estrelinha!'], cam: null, me: 'walk' },
 ];
 function introLine() { const sc = INTRO_SC()[INTRO.sc]; if (!sc) return ''; let l = sc.lines[INTRO.ln]; if (typeof l === 'function') l = l(); if (sc.who === '' && S.gender === 'm') l = l.replace('Bem-vinda', 'Bem-vindo'); return l; }
@@ -6837,6 +6849,59 @@ addEventListener('keydown', (e) => { if (RING.on && e.code === 'Escape') { e.pre
 addEventListener('blur', () => ringClose(false));
 document.addEventListener('visibilitychange', () => { if (document.hidden) ringClose(false); });
 document.addEventListener('pointerdown', (e) => { if (RING.on && !(e.target.closest && e.target.closest('#ring .rs'))) ringClose(false); }, true);
+
+// ---------- estados que ficavam presos (voltar ao título, carregar) ----------
+// Conversa, luta da Vovó, arena de duelo, abertura, roda, pulo, barco, pesca e cômodos: tudo volta ao normal ao ir para o título ou carregar um save.
+function resetTransient() {
+  try { if (dlg) { dlg = null; $('dlg').classList.remove('on', 'pop'); const ch = $('dlgch'); if (ch) ch.remove(); } } catch (e) {}
+  try { if (RB.on) rosaCleanup(); } catch (e) {}
+  try { if (PVP.on) { PVP.on = false; if (PVP.wall) PVP.wall.visible = false; const h = $('pvphud'); if (h) h.remove(); } } catch (e) {}
+  try { if (CUT) endIntro(); } catch (e) {}
+  try { if (KR && KR.on) krakenEnd(false); } catch (e) {}
+  try { ringClose(false); } catch (e) {}
+  P.jy = 0; P.jv = 0; P.charging = false;
+  try { if (P.fishing) endFish(); } catch (e) {}
+  try { if (decor) closeDecor(); if (farmEd) closeFarm(); } catch (e) {}
+}
+{ const base = toTitle; toTitle = function () { resetTransient(); try { toggleBike(false); } catch (e) {}
+  /* saindo de dentro de casa, loja ou caverna, o vale ficava escondido atrás da tela inicial */
+  if (mode !== 'out') { mode = 'out'; world.visible = true; room.visible = false; cave.group.visible = false; for (const t of Object.values(SHOPS)) if (t && t.g) t.g.visible = false; for (const t of Object.values(ROOMS || {})) if (t && t.g) t.g.visible = false; scene.fog = FOG; }
+  return base(); }; }
+{ const base = applyState; applyState = function (d) { resetTransient(); return base(d); }; }
+/* a fala atrasada da Vovó (depois de perder a luta) não aparece por cima da tela inicial */
+{ const base = say; say = function (...a) { if (titleOn) return; return base(...a); }; }
+
+// ---------- tamanho da interface ----------
+// "Automática" ficava sempre em 0,88 e "Pequena" podia sair maior que ela; ao girar ou redimensionar, a escolha se perdia.
+{ const UI_K = () => UIS[SET.uis] || 1;
+  const raw = () => { const w = innerWidth, h = innerHeight; let s = Math.max(0.62, Math.min(1.12, Math.min(w / 1366, h / 768) * 1.04));
+    /* o HUD usa transform: scale, então as larguras medidas são as "cruas" (sem a escala) */
+    const W3 = (ids) => ids.reduce((a, id) => a + (($(id) && $(id).offsetWidth) || 0), 0) + 70, wb = W3(['rBL', 'rBC', 'rBR']), wt = W3(['rTL', 'rTC', 'rTR']);
+    const ht = (($('rTR') && $('rTR').offsetHeight) || 0) + (($('rBR') && $('rBR').offsetHeight) || 0) + 50, fit = Math.min(w / Math.max(wb, 1), w / Math.max(wt, 1), h / Math.max(ht, 1));
+    return [Math.max(0.5, Math.min(s, fit)), fit]; };
+  layoutUI = function () { const [s, fit] = raw(), v = Math.max(0.5, Math.min(s * 0.88 * UI_K(), fit)), cur = parseFloat(document.documentElement.style.getPropertyValue('--hs')) || 0;
+    if (Math.abs(v - cur) > 0.004) document.documentElement.style.setProperty('--hs', v.toFixed(3)); };
+  /* o layoutUI original continua no resize e no setInterval e só escreve quando o valor dele muda: "s" devolve sempre a medida atual, então ele nunca mais escreve por cima */
+  Object.defineProperty(layoutUI, 's', { get: () => raw()[0], set: () => {}, configurable: true });
+  addEventListener('resize', () => layoutUI()); setInterval(() => layoutUI(), 800); }
+
+// ---------- amigos ----------
+/* o selo "Partida" piscava: o painel de amigos escondia e o mpChip mostrava de novo */
+{ const base = mpChip; mpChip = function () { base(); const c = $('mpchip'); if (c && PARTY.el && PARTY.el.style.display !== 'none' && Object.keys(MP.peers || {}).length) c.style.display = 'none'; }; }
+/* quem passou do limite de 4 continuava aparecendo (o mpUpdate mostrava de novo a cada quadro) */
+{ const base = mpUpdate; mpUpdate = function (dt) { base(dt); try { if (Object.keys(MP.peers).length >= PARTY.max) for (const { id } of partyOrder().slice(PARTY.max - 1)) { const c = MP.chars[id]; if (c && c.obj) { c.obj.visible = false; if (c.lbl) c.lbl.visible = false; } } } catch (e) {} }; }
+{ const base = mpJoin; mpJoin = async function (code) { const ok = await base(code); if (ok) setTimeout(() => { try { partyCheckFull(); } catch (e) {} }, 8000); return ok; }; }
+
+// ---------- arena: nada de enfeite dentro do círculo ----------
+{ const base = dressBlocked; dressBlocked = function (x, y) { if (ARENA26.ok && Math.hypot(x + 0.5 - ARENA26.cx, y + 0.5 - ARENA26.cz) < ARENA26.R + 2.2) return true; return base(x, y); }; }
+
+// ---------- retratos: personagem da base Fofinha sem a marca "km" usava a animação antiga (mil avisos no carregamento) ----------
+{ const base = thumb; const isKm = (o) => { let y = false; o.traverse((n) => { if (!y && n.name === 'km_Body') y = true; }); return y; };
+  thumb = function (k, opt = {}) { if (k && typeof k !== 'string' && opt.char && k.userData && k.userData.ck !== 'km' && isKm(k)) k.userData.ck = 'km'; return base(k, opt); }; }
+
+// ---------- Sugestões no Estrelofone (o formulário só existia no menu antigo) ----------
+{ const i = APPS.findIndex((a) => a.k === 'title'); APPS.splice(i < 0 ? APPS.length : i, 0, { k: 'feedback', n: 'Sugestões', ic: 'letter', c: '#ffc2dc', d: 'Mande uma ideia ou conte um bug' }); }
+{ const base = phoneAct; phoneAct = function (k) { if (k === 'feedback') { sfx('accept'); return openFeedback(); } return base(k); }; }
 
 /* =================== início, título e carregamento =================== */
 let ready = false;
@@ -6881,4 +6946,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { get moveC() { return moveC; }, LOW26, resetTransient, PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };

@@ -29,6 +29,18 @@ Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js
 - A roda de ferramentas fecha com <kbd>Esc</kbd>, com um clique fora dela ou quando a janela do jogo perde o foco. Antes ela podia ficar aberta para sempre.
 - No controle, o <kbd>B</kbd> fecha a janela aberta (antes só o Start fechava).
 
+**Caça aos bugs (correção)**
+- A roupa equipada no Álbum (Cavaleiro, Bárbaro, Mago, Andarilho) sumia toda vez que o jogo era carregado.
+- **Controle:** parava de responder com qualquer menu aberto (inclusive na tela inicial), e um controle parado conectado travava o andar pelo teclado. Agora o controle funciona nos menus e só mexe nas teclas quando o analógico está em uso.
+- **Pulo:** pousar em cima de uma cerca, arbusto ou pedrinha, ou encostada numa parede, podia deixar a personagem presa. No ar a colisão agora usa o corpo inteiro (só passa por cima do que é baixo), e quem ficou encostada consegue sair andando.
+- **Voltar ao título** no meio de uma conversa, da luta da Vovó, de um duelo, do Kraken ou da abertura deixava tudo isso preso ao continuar. De dentro de casa, loja ou caverna, o vale ficava escondido atrás da tela inicial. Agora tudo volta ao normal.
+- **Tamanho da interface:** "Automática" ficava fixa e "Pequena" podia sair maior que ela; ao redimensionar a janela ou girar o celular, a escolha se perdia.
+- **Menos animação:** os avisos de nível, de item novo e o nome da área sumiam na hora. Agora continuam aparecendo.
+- **Arena das Flores:** blocos invisíveis no anel do chão (e postes que dava para atravessar). Agora só os postes são sólidos, e nenhum enfeite nasce dentro do círculo.
+- **Abertura:** <kbd>L</kbd> (Álbum) e <kbd>X</kbd> (roda) funcionavam por baixo dela. A carta da Vovó diz "Querido" para personagens masculinos.
+- **Amigos:** o selo "Partida" piscava, a quinta pessoa da sala às vezes continuava aparecendo, e o nível de quem estava na sala não era tratado antes de ir para a tela.
+- O formulário de **Sugestões** voltou, agora como app do Estrelofone. A ajuda mostra <kbd>L</kbd> para o Álbum e <kbd>C</kbd> para pular.
+
 ## v26: cabelos divertidos, casas variadas, corações com sol e lua, arena aberta da Vovó, pulo e parkour
 **Cabelos**
 - 10 penteados novos da Fofinha: rabo de lado com laço, tranças, afro fofo, moicano, chanel com franja, coquinhos de coelho, chiquinhas com estrelas, topete de onda, orelhinhas de gato e rabo alto com xuxinha. Quatro são de graça; os outros ficam no Ateliê da Fifi.
