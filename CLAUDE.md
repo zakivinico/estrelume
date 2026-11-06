@@ -161,3 +161,9 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Expressões dos moradores: `EXPR30` (olhos, boca, sobrancelha, balão, gesto e som), `npcExpress(n, k)` troca o rosto com `fofaFace` (mesmo material, sem shader novo) e mostra o balão `n.e30b`; `emoUpdate30` decide quando acontece (cumprimento a menos de 3,2, surpresa com você correndo, sono à noite, pensando na chuva, aleatório). Expressão nova: entrada em `EXPR30` e som `emo_*` em `tools/sons_cozy.py`.
 - Criador: `crSel30(k, v)` toca o som da escolha (`sel_color` com a altura pela cor, `sel_hair`, `sel_cloth`, `sel_face`, `sel_pop`). Ao reabrir o criador, `CR30.quiet` cala os sons de abrir janela e `CR30.mute` cala o brilho do `scPower`. Girar: `CR30.yaw`/`vel` (arrastar no `SC.cv`, botões `data-rot30`, Q/E); o balanço automático (`CR30.sway`) some enquanto você gira.
 - Peles da Fofinha no criador: `SKINS_KM` (sem a "Original", que era igual à Pêssego).
+
+## Roupas, estampas e sapatos (v31)
+
+- Roupas da Fofinha: entrada na tabela `B` de `fofaParts` (`sl`: `s`, `l`, `puff`, `wide`; `bt`: `p`, `h`, `k`, `d`, `bal`, `midi`, `robe`, `coatL`; `ex`: o detalhe) e o código em `KM_VAR` (lista de roupas válidas: sem isso o `kmLook` troca pela padrão). Nome em `KM_BODIES`, preço em `WARD_PRICE.kb` ou grátis em `WARD_FREE.kb`.
+- Estampas: chave `kp` (de `KM_PAT`) com cor `kpc`. A peça recebe a estampa pelo 13º item de `A(...)`; o `fofaBuild` da v31 troca a geometria por uma mais fina (`ballP`, `skirtP`) e pinta cada triângulo com `patColor` (u = volta em torno da peça, v = altura). Estampa nova: um `case` em `patColor` e o nome em `KM_PAT`.
+- Sapatos: chave `ksh` (`KM_SHOE`: `redondo`, `bota`, `sapatilha`; `pata` só no kigurumi). Chaves novas do visual entram no `KM_DEF` e no cache do `fofaBuild`.
