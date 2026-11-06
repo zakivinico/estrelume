@@ -132,7 +132,7 @@ for (let it = 0; it < 8; it++) { let ch = false;
     if (!me && ((n && s) || (l && r))) { tile[I(x, y)] = WA; ch = true; }
   } if (!ch) break; }
 const rect = (x0, y0, x1, y1, t) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (inb(x, y)) tile[I(x, y)] = t; };
-rect(37, 29, 48, 35, PA); rect(91, 26, 106, 36, PA); rect(94, 25, 95, 25, PA); rect(100, 25, 101, 25, PA);
+rect(35, 28, 50, 35, PA); rect(41, 36, 50, 36, PA); /* v1.31: praça do Poço maior (era 37–48 × 29–35) */ rect(91, 26, 106, 36, PA); rect(94, 25, 95, 25, PA); rect(100, 25, 101, 25, PA);
 for (let x = 6; x < W - 6; x++) for (const y of [32, 33]) if (tile[I(x, y)] === GR) tile[I(x, y)] = PA;
 for (let y = 6; y < H - 6; y++) for (const x of [42, 43]) if (tile[I(x, y)] === GR) tile[I(x, y)] = PA;
 for (let x = 44; x <= 68; x++) for (const y of [12, 13]) if (tile[I(x, y)] === GR) tile[I(x, y)] = PA;
@@ -152,7 +152,7 @@ multi(SHRINE.x, SHRINE.y, 2, 2, { t: 'shrine' }); multi(BOX.x, BOX.y, 2, 2, { t:
 const VH1 = { x: 93, y: 22 }, VH2 = { x: 99, y: 22 }, SMITH = { x: 102, y: 28 }, VWELL = { x: 97, y: 28 };
 multi(VH1.x, VH1.y, 4, 3, { t: 'house', m: 'k_home_b' }); multi(VH2.x, VH2.y, 4, 3, { t: 'house', m: 'k_home_a' }); multi(SMITH.x, SMITH.y, 3, 3, { t: 'smith' }); multi(VWELL.x, VWELL.y, 2, 2, { t: 'vwell' });
 const ATELIE = { x: 93, y: 33 }, TOWER = { x: 24, y: 8 }, MINE = { x: 72, y: 7 }; multi(ATELIE.x, ATELIE.y, 3, 3, { t: 'atelie' }); multi(TOWER.x, TOWER.y, 3, 3, { t: 'tower' }); multi(MINE.x, MINE.y, 4, 3, { t: 'mine' }); houseBack(VH1.x, VH1.y); houseBack(VH2.x, VH2.y);
-const LAMPS = [[37, 29], [48, 29], [40, 35], [48, 35], [dockStart - 1, 43], [35, 29], [54, 31], [91, 26], [106, 26], [91, 36], [106, 36], [44, 60]];
+const LAMPS = [[50, 28], [50, 37], [36, 35], [41, 37], [dockStart - 1, 43], [35, 28], /* v1.31: postes da praça nas bordas */ [54, 31], [91, 26], [106, 26], [91, 36], [106, 36], [44, 60]];
 LAMPS.forEach(([x, y]) => put(x, y, { t: 'lamp' }));
 const FENCE = new Set();
 const FARM = { x0: 27, y0: 36, x1: 40, y1: 46 };
@@ -411,7 +411,7 @@ function prepare(k, gltf) {
   root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = !isChar; const ms = Array.isArray(o.material) ? o.material : [o.material];
     ms.forEach((m0, mi) => { const m = toLambert29(m0); if (m !== m0) { if (Array.isArray(o.material)) o.material[mi] = m; else o.material = m; } if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
       if (k === 'q_fence') { m.map = null; m.color.set('#9c6546'); m.needsUpdate = true; }
-      else if (!m.map && m.color && /^(q_|p_|m_|st_|un_|gem|ore|w_|a_)/.test(k)) { const hsl = {}; m.color.getHSL(hsl); m.color.setHSL(hsl.h, Math.min(1, hsl.s * 1.18), Math.min(0.92, hsl.l * 1.2 + 0.03)); }
+      else if (!m.map && m.color && /^(q_|p_|m_|st_|un_|gem|ore|w_|a_)/.test(k)) { const hsl = {}; m.color.getHSL(hsl); m.color.setHSL(hsl.h, hsl.s, Math.min(0.92, hsl.l * 1.2 + 0.03)); } /* v1.31: a saturação agora vem da curva única (vibMat131) */
       m.roughness = 1; m.metalness = 0;
       if (WINDY[k] || OCCL.has(k)) { o.geometry.computeBoundingBox(); const s = (o.geometry.boundingBox.max.y - o.geometry.boundingBox.min.y) || 1; windify(m, (WINDY[k] || 0) * s * (/^(st_|un_|k_pine)/.test(k) ? 0.5 : 1), o.geometry.boundingBox.max.y || 1, OCCL.has(k), /leaves|leaf/i.test(m.name || '') || (k.startsWith('st_') && m.color && m.color.g > m.color.r), o.geometry.boundingBox.min.y); } }); } });
   const box = new THREE.Box3().setFromObject(root), size = box.getSize(new THREE.Vector3()), f = fitOf(k);
@@ -468,7 +468,7 @@ function buildWorld() {
       case 'flower': o.m = mat4(cx, 0, cz, ry, 1); o.inst = [FL_M[o.c], INST[FL_M[o.c]].add(o.m)]; break;
       case 'clover': case 'mush': { const k = o.t === 'clover' ? 'q_clover' : 'q_mush'; o.m = mat4(cx, 0, cz, ry, 1); o.inst = [k, INST[k].add(o.m)]; break; }
       case 'house': { const g = cloneM(houseModel(o, x, y)); g.position.set(x + 2, 0, y + 1.6); world.add(g); break; }
-      case 'shrine': { const g = cloneM('k_well'); g.position.set(x + 1, 0, y + 1); world.add(g); orb = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 1), new THREE.MeshBasicMaterial({ color: '#ffe8a0' })); orb.position.set(x + 1, 1.15, y + 1); world.add(orb); const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffd27a, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); s.scale.set(1.6, 1.6, 1); orb.add(s); const l = new THREE.PointLight(0xffd27a, 0, 7, 1.5); l.position.set(x + 1, 1.4, y + 1); world.add(l); lampLights.push(l); break; }
+      case 'shrine': { const g = wellKM131(); /* v1.31: poço novo feito sob medida */ g.position.set(x + 1, 0, y + 1); world.add(g); orb = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 1), new THREE.MeshBasicMaterial({ color: '#ffe8a0' })); orb.position.set(x + 1, 1.15, y + 1); world.add(orb); const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffd27a, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); s.scale.set(1.6, 1.6, 1); orb.add(s); const l = new THREE.PointLight(0xffd27a, 0, 7, 1.5); l.position.set(x + 1, 1.4, y + 1); world.add(l); lampLights.push(l); break; }
       case 'box': { buildStall(x, y); break; }
       case 'shop': { const g = cloneM('k_tavern_red'); g.position.set(x + 1.5, 0, y + 1.5); world.add(g); const sign = makeSign('Lojinha do Tico'); sign.position.set(x + 1.5, 0, y + 3.2); world.add(sign); break; }
       case 'mill': { const g = cloneM('k_windmill'); g.position.set(x + 1.5, 0, y + 1.5); world.add(g); g.traverse((n) => { if (/fan|blade|wing/i.test(n.name || '')) millFan = n; }); break; }
@@ -678,12 +678,12 @@ let emoBang, emoHeart, emoShop;
 /* =================== tutorial / missões =================== */
 const TUT = [
   { txt: 'Converse com a <b>Vovó Rosa</b> na praça', keys: ['E'], ev: 'talk', at: () => [rosa.x, 2.2, rosa.z] },
-  { txt: 'Pegue a <b>Semente de Cenoura</b> e plante num canteiro', keys: ['5', 'Espaço'], ev: 'plant', at: () => [33.5, 0.9, 38.5] },
-  { txt: 'Regue a sementinha com o <b>Regador</b>', keys: ['2', 'Espaço'], ev: 'water', at: () => (S.lastPlant ? [S.lastPlant[0] + 0.5, 0.9, S.lastPlant[1] + 0.5] : [33.5, 0.9, 38.5]) },
+  { txt: 'Pegue a <b>Semente de Cenoura</b> e plante num canteiro', keys: ['5', 'C'], ev: 'plant', at: () => [33.5, 0.9, 38.5] },
+  { txt: 'Regue a sementinha com o <b>Regador</b>', keys: ['2', 'C'], ev: 'water', at: () => (S.lastPlant ? [S.lastPlant[0] + 0.5, 0.9, S.lastPlant[1] + 0.5] : [33.5, 0.9, 38.5]) },
   { txt: 'Faça um desejo no <b>Poço dos Desejos</b>', keys: ['E'], ev: 'wish', at: () => [SHRINE.x + 1, 3, SHRINE.y + 1] },
   { txt: 'Colha a cenoura quando ela aparecer <b>pronta ✨</b>', keys: ['E'], ev: 'harvest', at: () => { const k = Object.keys(S.crops).find((k) => S.crops[k].s === 3) || (S.lastPlant && S.lastPlant.join(',')); if (!k) return [33.5, 1, 38.5]; const [x, y] = k.split(',').map(Number); return [x + 0.5, 1.2, y + 0.5]; } },
   { txt: 'Venda o que colheu na <b>Barraca de Venda</b>', keys: ['E'], ev: 'sell', at: () => [BOX.x + 1, 2.6, BOX.y + 1] },
-  { txt: 'Vá ao <b>píer do lago</b> e pesque um peixe', keys: ['3', 'Espaço'], ev: 'fish', at: () => [dockStart + 3, 1.2, 45] },
+  { txt: 'Vá ao <b>píer do lago</b> e pesque um peixe', keys: ['3', 'C'], ev: 'fish', at: () => [dockStart + 3, 1.2, 45] },
   { txt: 'Visite a <b>Lojinha do Tico</b> e compre algo', keys: ['E'], ev: 'shop', at: () => [SHOP.x + 1.5, 3.4, SHOP.y + 3.2] },
   { txt: 'Entre em <b>casa</b> e decore com o novo móvel', keys: ['E', 'V'], ev: 'decor', at: () => (mode === 'in' ? [RX + IW / 2, 1.5, RZ + IH / 2] : [H1.x + 2, 2.2, H1.y + 3]) },
 ];
@@ -1194,7 +1194,7 @@ function openHelp() {
   const ic = (u) => `<img class="hi" src="${u}">`;
   openModal(`<h2>❓ Como jogar</h2>
   <div class="help">
-   <div class="hc"><h4>${ic(THUMB.t_espada)} Controles</h4><p><span class="key">WASD</span> andar · <span class="key">Shift</span> correr · <span class="key">Espaço</span>/<span class="key">clique</span> usar item no <b>quadrado branco</b> · <span class="key">E</span> falar, colher, entrar · <span class="key">Q</span> esquiva · segure <span class="key">Espaço</span> golpe giratório · <span class="key">1</span>–<span class="key">8</span> trocar item · <span class="key">R</span> <span class="key">F</span> <span class="key">T</span> habilidades · <span class="key">U</span> comer · <span class="key">Z</span> bicicleta · <span class="key">G</span> poço · <span class="key">L</span> álbum · <span class="key">C</span> pular · <span class="key">I</span> mochila · <span class="key">K</span> habilidades · <span class="key">J</span> diário (missões, histórias, amigos) · <span class="key">M</span> mapa · <span class="key">B</span> fazenda · <span class="key">Esc</span> menu · <span class="key">+</span>/<span class="key">−</span> zoom</p></div>
+   <div class="hc"><h4>${ic(THUMB.t_espada)} Controles</h4><p><span class="key">WASD</span> andar · <span class="key">Shift</span> correr · <span class="key">C</span>/<span class="key">clique</span> usar item no <b>quadrado branco</b> · <span class="key">E</span> falar, colher, entrar · <span class="key">Q</span> esquiva · segure <span class="key">C</span> golpe giratório · <span class="key">1</span>–<span class="key">8</span> trocar item · <span class="key">R</span> <span class="key">F</span> <span class="key">T</span> habilidades · <span class="key">U</span> comer · <span class="key">Z</span> bicicleta · <span class="key">G</span> poço · <span class="key">L</span> álbum · <span class="key">Espaço</span> pular · <span class="key">I</span> mochila · <span class="key">K</span> habilidades · <span class="key">J</span> diário (missões, histórias, amigos) · <span class="key">M</span> mapa · <span class="key">B</span> fazenda · <span class="key">Esc</span> menu · <span class="key">+</span>/<span class="key">−</span> zoom</p></div>
    <div class="hc"><h4>${ic(THUMB.i_ametista)} Caverna e mineração</h4><p>A <b>Caverna Cintilante</b> fica ao norte da floresta. Compre a picareta (4) na <b>Forja da Duda</b> e minere pedra, cobre, ferro, cristais, ametista e ouro. A porta de cristal no fundo guarda o <b>Rei Slime</b>: fale com a Mestra Íris na torre para conseguir a chave.</p></div>
    <div class="hc"><h4>${ic(THUMB.i_ferro)} Forja e Ateliê</h4><p>A <b>Forja da Duda</b> troca 🪙 Moedas e minérios por espadas, picaretas, bicicleta, botas e amuleto. No <b>Ateliê da Fifi</b> você compra roupas, acessórios, penteados, tintas de cabelo e rastros.</p></div>
    <div class="hc"><h4>${ic(THUMB.i_leite)} Fôlego, animais e histórias</h4><p>Correr e minerar gastam <b>fôlego</b> (anel verde em volta da personagem); ele volta quando você anda devagar. Faça carinho nos animais do pasto para ganhar lã, leite e trufas. Procure <b>pergaminhos</b> brilhando pelo vale: eles contam a história do Vale Estrelinha (diário, <span class="key">J</span>).</p></div>
@@ -1203,10 +1203,11 @@ function openHelp() {
    <div class="hc"><h4>${ic(THUMB.shop)} Lojinha do Tico</h4><p>Compre móveis, pisos, papéis de parede, melhorias de ferramentas e lanches. Fica a leste da praça.</p></div>
    <div class="hc"><h4>${ic(THUMB.f_couch)} Sua casa</h4><p>Entre pela porta (<span class="key">E</span>). Aperte <span class="key">V</span> para decorar: escolha um móvel, clique no chão, <span class="key">R</span> gira, clique num móvel para pegar e <span class="key">X</span> guarda. Durma na cama depois das 18h.</p></div>
    <div class="hc"><h4>${ic(THUMB.t_vara)} Pesca</h4><p>Com a vara (3), fique de frente para a água e aperte Espaço. Espere o <b>!</b>, aperte de novo e acerte a zona colorida.</p></div>
-   <div class="hc"><h4>${ic(THUMB.slime)} Combate e habilidades</h4><p>Golpes seguidos fazem um <b>combo de 3</b>. Segure <span class="key">Espaço</span> para o <b>giro</b>. <span class="key">Q</span> esquiva (fica invulnerável por um instante). Habilidades com recarga, na barra acima dos itens: <span class="key">R</span> Estocada Estelar, <span class="key">F</span> Chuva de Estrelas (nível 3) e <span class="key">T</span> Abraço da Flor, que cura (nível 5). Inimigos: slimes de várias cores, abelhas, cogumelos bravos, morcegos na caverna e fantasminhas que só aparecem à noite.</p></div>
+   <div class="hc"><h4>${ic(THUMB.slime)} Combate e habilidades</h4><p>Golpes seguidos fazem um <b>combo de 3</b>. Segure <span class="key">C</span> para o <b>giro</b>. <span class="key">Q</span> esquiva (fica invulnerável por um instante). Habilidades com recarga, na barra acima dos itens: <span class="key">R</span> Estocada Estelar, <span class="key">F</span> Chuva de Estrelas (nível 3) e <span class="key">T</span> Abraço da Flor, que cura (nível 5). Inimigos: slimes de várias cores, abelhas, cogumelos bravos, morcegos na caverna e fantasminhas que só aparecem à noite.</p></div>
    <div class="hc"><h4>${ic(THUMB.well)} Explorar o vale</h4><p>O vale ficou muito maior! A leste ficam o <b>Bosque das Fadas</b>, as <b>Ruínas Estelares</b>, o <b>Observatório</b> e o <b>Farol das Estrelas</b>; ao sul, os <b>Campos de Lavanda</b> e o <b>Pomar</b>. Toque nas <b>Pedras do Vento</b> 🪨 para despertá-las e depois viajar entre elas. As histórias do vale são contadas pelos moradores e pelos lugares que você visita.</p></div>
    <div class="hc"><h4>${ic(THUMB.slime)} Slimes e bichinhos</h4><p>Golpeie slimes com a espada (1). Seu bichinho luta junto: cada um tem um ataque, como bola de fogo, esporos, estrelas, arranhão, espinhos e latido.</p></div>
-   <div class="hc"><h4>${ic(THUMB.well)} Desejos</h4><p>No Poço da praça (ou <span class="key">G</span>), troque ⭐ Desejos por bichinhos, amigas e peças do Ateliê. Há pity como no Genshin (★5 garantido no 80º desejo), banners de evento e o banner padrão; repetidos viram Pó Estelar para a Troca. Equipe no Álbum (<span class="key">C</span>).</p></div>
+   <div class="hc"><h4>🍳 Cozinha</h4><p>Coloque o Fogãozinho Rosa em casa (modo decorar) ou use a cozinha das casas dos moradores. Escolha a receita e jogue os minigames: cortar, mexer, fogo e tempero. Com capricho, sai porção dupla! Farinha, ovo, manteiga, arroz e açúcar ficam na Despensa.</p></div>
+   <div class="hc"><h4>${ic(THUMB.well)} Desejos</h4><p>No Poço da praça (ou <span class="key">G</span>), troque ⭐ Desejos por bichinhos, amigas e peças do Ateliê. Há pity como no Genshin (★5 garantido no 80º desejo), banners de evento e o banner padrão; repetidos viram Pó Estelar para a Troca. Equipe no Álbum (<span class="key">L</span>).</p></div>
    <div class="hc"><h4>👑 Rei Slime</h4><p>No fim da trilha ao norte, na floresta, mora o Rei Slime. Ele pula em círculos vermelhos, chama ajudantes e, com raiva, cospe bolhas em roda. Vença para ganhar 180🪙, 100⭐, XP e uma estátua para a fazenda. Ele volta todo dia!</p></div>
    <div class="hc"><h4>🌾 Minha fazenda</h4><p>Dentro da cerca, aperte <span class="key">B</span>: are a grama para criar canteiros novos, desfaça canteiros e coloque enfeites (espantalho, postes, flores, cercas...). Compre enfeites na aba Fazenda da Lojinha.</p></div>
    <div class="hc"><h4>🧑‍🤝‍🧑 Moradores</h4><p>Seu Bento (píer), Pipo (praça), Mestra Íris (lagoinha), Duda e Prefeito Otto (Vila Girassol, a leste) e Lia (Praia do Sol, ao sul). Cada um faz um pedido por dia: entregue com <span class="key">E</span> e ganhe ⭐ e amizade. Com 3 ♥ eles te dão um presente!</p></div>
@@ -1246,7 +1247,7 @@ function hintUI() {
   if (P.fishing) { const ph = P.fishing.phase; html = ph === 'bite' ? '<span class="key">Espaço</span> <b>Agora! Puxe!</b>' : ph === 'reel' ? '<span class="key">Segure Espaço</span> para subir a barra e manter o peixe nela' : ph === 'mini' ? '<span class="key">Espaço</span> quando o ponteiro estiver na cor' : '<span class="key">Espaço</span> cancelar · espere o ❗'; cursorOK = false; }
   else if (farmEd) html = farmEd.tool === 'arar' ? '<span class="hrow"><span class="key">Clique</span> arar a grama (20🪙)</span>' : farmEd.tool === 'grama' ? '<span class="hrow"><span class="key">Clique</span> desfazer canteiro</span>' : farmEd.sel ? `<span class="hrow"><span class="key">Clique</span> colocar ${FD[farmEd.sel].n}</span><span class="hrow"><span class="key">R</span> girar</span>` : '<span class="hrow"><span class="key">Clique</span> num enfeite para pegar</span><span class="hrow"><span class="key">X</span> guardar</span>';
   else if (decor) html = decor.sel ? `<span class="hrow"><span class="key">Clique</span> colocar ${FURN[decor.sel].n}</span><span class="hrow"><span class="key">R</span> girar</span>` : '<span class="hrow"><span class="key">Clique</span> num móvel para pegar</span><span class="hrow"><span class="key">X</span> guardar</span>';
-  else { const sp = nearestSpecial(), sh = spaceHint(); cursorOK = sh.ok; if (sp) html += `<span class="hrow"><span class="key">E</span> ${sp.label}</span>`; if (mode === 'out' || !sp) html += `<span class="hrow ${sh.ok ? '' : 'dim'}"><span class="key">${mode === 'in' ? 'V' : 'Espaço'}</span> ${sh.t}</span>`; if (mode === 'out' && inFarm(Math.floor(P.x), Math.floor(P.z))) html += '<span class="hrow"><span class="key">B</span> Personalizar fazenda</span>'; }
+  else { const sp = nearestSpecial(), sh = spaceHint(); cursorOK = sh.ok; if (sp) html += `<span class="hrow"><span class="key">E</span> ${sp.label}</span>`; if (mode === 'out' || !sp) html += `<span class="hrow ${sh.ok ? '' : 'dim'}"><span class="key">${mode === 'in' ? 'V' : P.boat || P.fishing ? 'Espaço' : 'C'}</span> ${sh.t}</span>`; if (mode === 'out' && inFarm(Math.floor(P.x), Math.floor(P.z))) html += '<span class="hrow"><span class="key">B</span> Personalizar fazenda</span>'; }
   box.innerHTML = html; box.classList.add('on');
 }
 
@@ -1265,7 +1266,7 @@ addEventListener('keydown', (e) => {
   if (k === 'KeyK' && !e.repeat) return tog(openSkills);
   if (k === 'Tab') { e.preventDefault(); $('hudBR').classList.toggle('open'); sfx('switch'); return; }
   if (!e.repeat && (k === 'KeyR' || k === 'KeyF' || k === 'KeyT') && !modalOpen() && !(k === 'KeyR' && (decor || farmEd))) { useSkill(k === 'KeyR' ? 0 : k === 'KeyF' ? 1 : 2); return; }
-  if (k === 'KeyG') return tog(openWish); if (k === 'KeyC') return tog(openAlbum); if (k === 'KeyI' || k === 'Tab') return tog(openBag); if (k === 'KeyH') return tog(openHelp); if (k === 'KeyM') return tog(openMap);
+  if (k === 'KeyG') return tog(openWish); if (k === 'KeyI' || k === 'Tab') return tog(openBag); if (k === 'KeyH') return tog(openHelp); if (k === 'KeyM') return tog(openMap);
   if (k === 'Equal' || k === 'NumpadAdd') camDist = clamp(camDist - 0.15, 0.55, 1.6); if (k === 'Minus' || k === 'NumpadSubtract') camDist = clamp(camDist + 0.15, 0.55, 1.6);
   if (modalOpen()) return;
   if (k === 'KeyV' && mode === 'in') { decor ? closeDecor() : openDecor(); return; }
@@ -1337,7 +1338,7 @@ function update(dt) {
     if (P.buf > 0) { P.buf -= dt; if (P.useT <= 0) { P.buf = 0; useTool(); } }
     if (P.charging) { P.chargeT += dt; if (P.chargeT > 0.2 && rand() < 0.7) { const a = rand() * 6.28; emit(PG, { x: P.x + Math.cos(a) * 0.7, y: 0.3 + rand() * 0.6, z: P.z + Math.sin(a) * 0.7, vx: -Math.cos(a) * 1.2, vz: -Math.sin(a) * 1.2, vy: 0.3, g: 0, life: 0.45, max: 0.45, c: P.chargeT > 0.55 ? '#ffe18d' : '#ffffff' }); } if (P.chargeT > 0.55 && !P.chargeOk) { P.chargeOk = true; sfx('powerup2'); fxRing(P.x, 0.06, P.z, '#ffe18d', 1.1, 0.3); } }
     if (P.fishing) updateFishing(dt);
-    else if (P.roll) { P.roll.t += dt; const k = P.roll.t / 0.4, sp = 9.5 * (1 - k * 0.7); moveC(P, P.roll.dx * sp * dt, P.roll.dz * sp * dt); if (rand() < 0.6) emit(PN, { x: P.x, y: 0.08, z: P.z, vx: (rand() - 0.5), vz: (rand() - 0.5), vy: 0.6, g: 2, life: 0.4, max: 0.4, c: '#e8d6b8' }); if (P.roll.t >= 0.4) P.roll = null; }
+    else if (P.roll) { P.roll.t += dt; const DUR = DASH131.dur, k = Math.min(1, P.roll.t / DUR), sp = DASH131.v * Math.pow(1 - k, 1.6) + 1.2; moveC(P, P.roll.dx * sp * dt, P.roll.dz * sp * dt); dashTrail131(dt, k); if (P.roll.t >= DUR) P.roll = null; } /* v1.31: dash mais longo e macio */
     else if (!dlg && !P.dead && len > 0.15 && P.useT <= 0.05) {
       const sp = (mode === 'in' ? 2.6 : 3.4) * PERK.speed() * (P.boat ? 1.7 : P.bike ? 1.95 : P.run && !P.tired ? 1.45 : 1) * (P.tired && !P.bike ? 0.8 : 1) * (P.charging && P.chargeT > 0.2 ? 0.5 : 1); moveC(P, ix * sp * dt, iz * sp * dt); if (P.bike && bikeObj) for (const w of bikeObj.userData.wheels) w.rotation.x += sp * dt * 3.5;
       if (P.run && !P.bike && !P.tired && mode !== 'in') { P.st -= dt * 16; P.stT = 0.5; if (P.st <= 0) { P.st = 0; P.tired = true; floatText(P.x, 1.9, P.z, 'Ufa, cansei! 💦', '#9fe8ff'); sfx('cancel'); } } P.moving = true; P.fx = ix; P.fz = iz; P.ang = Math.atan2(ix, iz);
@@ -2435,7 +2436,7 @@ const dot0 = (x, sx, sy, c) => { x.fillStyle = c; x.beginPath(); x.arc(sx, sy, 2
 // junta as peças opacas de um bichinho num só mesh (menos chamadas de desenho)
 function bakeGroup(g, keep = []) {
   g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(); const lam = [], bas = [], rm = [];
-  g.traverse((n) => { if (!n.isMesh || keep.includes(n) || n.material.transparent || n.parent !== g) return; const geo = n.geometry.clone().toNonIndexed(); geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, n.matrixWorld)); for (const k of Object.keys(geo.attributes)) if (k !== 'position' && k !== 'normal') geo.deleteAttribute(k); if (!geo.attributes.normal) geo.computeVertexNormals(); const c = n.material.color, cnt = geo.attributes.position.count, col = new Float32Array(cnt * 3); for (let i = 0; i < cnt; i++) { col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; } geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); (n.material.isMeshBasicMaterial ? bas : lam).push(geo); rm.push(n); });
+  g.traverse((n) => { if (!n.isMesh || keep.includes(n) || n.material.transparent || n.parent !== g) return; const g0 = n.geometry.clone(), geo = g0.index ? g0.toNonIndexed() : g0; geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, n.matrixWorld)); for (const k of Object.keys(geo.attributes)) if (k !== 'position' && k !== 'normal') geo.deleteAttribute(k); if (!geo.attributes.normal) geo.computeVertexNormals(); const c = n.material.color, cnt = geo.attributes.position.count, col = new Float32Array(cnt * 3); for (let i = 0; i < cnt; i++) { col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; } geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); (n.material.isMeshBasicMaterial ? bas : lam).push(geo); rm.push(n); });
   for (const n of rm) n.parent.remove(n);
   const out = {}; if (lam.length) { const m = new THREE.Mesh(mergeGeometries(lam), new THREE.MeshLambertMaterial({ vertexColors: true, emissive: new THREE.Color(0, 0, 0) })); m.castShadow = true; g.add(m); out.lam = m.material; }
   if (bas.length) { const m = new THREE.Mesh(mergeGeometries(bas), new THREE.MeshBasicMaterial({ vertexColors: true })); g.add(m); }
@@ -2870,10 +2871,10 @@ function decorateVillages() {
   const bench = (x, z, rot = 0) => { const g = new THREE.Group(), w = lam('#b07a50'), d = lam('#6a4a3a'); for (let k = 0; k < 3; k++) { const s = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.12), w); s.position.set(0, 0.42, -0.14 + k * 0.14); g.add(s); } const back = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.28, 0.05), w); back.position.set(0, 0.68, -0.22); g.add(back); for (const sx of [-0.5, 0.5]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, 0.4), d); l.position.set(sx, 0.21, -0.02); g.add(l); } g.position.set(x, 0, z); g.rotation.y = rot; solidDecor(x, z); bakeVC(g); g.traverse((n) => { if (n.isMesh) n.castShadow = true; }); world.add(g); };
   const barrelFlowers = (x, z) => { const b = cloneM('k_barrel'); b.position.set(x, 0, z); solidDecor(x, z); b.scale.multiplyScalar(0.8); world.add(b); for (let k = 0; k < 3; k++) { const f = cloneM('q_flower_r'); f.position.set(x + (k - 1) * 0.12, 0.62, z); f.scale.multiplyScalar(0.6); world.add(f); } };
   // praça do Poço
-  bunting(37.6, 29.4, 48.4, 29.4); bunting(37.6, 35.6, 48.4, 35.6); bunting(37.6, 29.4, 37.6, 35.6, 2.4);
-  for (const [x, z, r] of [[38.6, 31.2, Math.PI / 2], [38.6, 33.8, Math.PI / 2], [47.4, 32.5, -Math.PI / 2]]) bench(x, z, r);
-  for (const [x, z] of [[39.2, 29.8], [45.8, 29.8], [41, 35.4], [44.6, 35.4]]) planter(x, z);
-  barrelFlowers(36.6, 30.6); barrelFlowers(49.6, 34.4);
+  bunting(36.4, 28.3, 49.6, 28.3, 2.8); bunting(41.6, 36.8, 49.6, 36.8); bunting(35.4, 29.2, 35.4, 35.4, 2.4); /* v1.31: praça maior, varais nas bordas */
+  for (const [x, z, r] of [[36.3, 30.3, Math.PI / 2], [36.3, 34.6, Math.PI / 2], [49.7, 30.3, -Math.PI / 2], [49.7, 34.6, -Math.PI / 2]]) bench(x, z, r);
+  for (const [x, z] of [[38.6, 28.6], [47.4, 28.6], [47.6, 36.4]]) planter(x, z);
+  barrelFlowers(35.6, 35.4); barrelFlowers(50.4, 32.0);
   // Vila Girassol
   bunting(91.6, 26.4, 106.4, 26.4, 2.8); bunting(91.6, 36.4, 106.4, 36.4, 2.8); bunting(99, 26.4, 99, 36.4, 3);
   for (const [x, z, r] of [[95, 30.6, 0], [102, 34.6, Math.PI]]) bench(x, z, r);
@@ -4813,7 +4814,7 @@ function openArms() {
     const can = next && S.coins >= next.coins && Object.entries(next.ore).every(([o, n]) => (S.inv[o] || 0) >= n);
     return `<div class="fcard ${pwSel() === k ? 'own' : ''}"><img src="${icon(w.ic, 64)}"><div class="grow"><b>${w.n} ${lv ? '· nível ' + lv : '· não tem'}</b><span>${w.desc} Dano ${st.dmg}${st.kb ? ' · empurrão forte' : ''}${st.triple ? ' · 3 flechas' : ''}</span><span>${req}</span></div>
       <div style="display:flex;flex-direction:column;gap:6px">${lv ? `<button class="btn sm ${pwSel() === k ? 'gold' : ''}" data-pwsel="${k}">${pwSel() === k ? 'Equipada' : 'Usar'}</button>` : ''}${next ? `<button class="btn sm ${can ? 'candy mint' : ''}" data-pwup="${k}" ${can ? '' : 'disabled'}>${lv ? 'Melhorar' : 'Comprar'}</button>` : ''}</div></div>`; });
-  openModal(`<h2>⚔️ Armas de duelo</h2><p class="lead">Escolha a arma que você usa na Arena Estelar e nos duelos. Melhorias custam 🪙 Moedas e minérios.</p><div class="forge">${rows.join('')}</div><p class="note">Nos duelos, clique numa amiga para desafiar. Ataque com <span class="key">Espaço</span> ou clique, esquive com <span class="key">Q</span>.</p>`, 'wide');
+  openModal(`<h2>⚔️ Armas de duelo</h2><p class="lead">Escolha a arma que você usa na Arena Estelar e nos duelos. Melhorias custam 🪙 Moedas e minérios.</p><div class="forge">${rows.join('')}</div><p class="note">Nos duelos, clique numa amiga para desafiar. Ataque com <span class="key">C</span> ou clique, esquive com <span class="key">Q</span>.</p>`, 'wide');
   document.querySelectorAll('[data-pwsel]').forEach((el) => (el.onclick = () => { S.pwSel = el.dataset.pwsel; sfx('switch'); openArms(); }));
   document.querySelectorAll('[data-pwup]').forEach((el) => (el.onclick = () => { const k = el.dataset.pwup, nx = PVPW[k].cost[pwLv(k)]; if (!nx || S.coins < nx.coins || !Object.entries(nx.ore).every(([o, n]) => (S.inv[o] || 0) >= n)) return sfx('cancel');
     S.coins -= nx.coins; for (const [o, n] of Object.entries(nx.ore)) { S.inv[o] -= n; if (S.inv[o] <= 0) delete S.inv[o]; } S.pw[k] = pwLv(k) + 1; if (S.pw[k] === 1) S.pwSel = k; sfx('powerup'); setTimeout(() => sfx('jingle_a'), 200); toast(`⚔️ <b>${PVPW[k].n}</b> agora no nível ${S.pw[k]}!`); lastHud = ''; hud(); openArms(); }));
@@ -6276,7 +6277,7 @@ function fofaParts(lk) {
   A('head', 'ball', dark(sk, 0.93), 0, 0.775, 0.3, 0.035, 0.028, 0.025); // narizinho
   // cabelo
   const capB = (tilt = 0.32, s = 1.07) => A('head', 'cap', hc, HC[0], HC[1] + 0.005, HC[2] - 0.01, 0.335 * s, 0.31 * s, 0.31 * s, -tilt, 0, 0);
-  const hl = '#' + new THREE.Color(hc).lerp(new THREE.Color('#ffffff'), 0.32).getHexString(); // mecha mais clara (brilho do cabelo)
+  const hl = hairHi(hc, 1); // mecha mais clara (brilho do cabelo) — v1.31: tom mais claro da mesma cor, não cinza
   const bang = (w = 0.26, y = 1.03) => { for (let i = -2; i <= 2; i++) { const t = i / 2; A('head', 'ball', hc, t * w * 0.92, y - Math.abs(t) * 0.06, 0.205 - Math.abs(t) * 0.05, w * 0.34, 0.095, 0.12, 0.45, 0, -t * 0.55); } A('head', 'ball', hl, -0.09, y + 0.07, 0.17, 0.085, 0.03, 0.06, 0.55, 0, 0.35); };
   const chain = (x0, y0, z0, dx, dy, dz, n, r0, r1, col = hc, band = null) => { for (let i = 0; i < n; i++) { const k = i / Math.max(1, n - 1), r = r0 + (r1 - r0) * k; A('head', 'ball', col, x0 + dx * i, y0 + dy * i, z0 + dz * i, r, r * 1.08, r); if (band && i < n - 1) A('head', 'ring', band, x0 + dx * (i + 0.5), y0 + dy * (i + 0.5), z0 + dz * (i + 0.5), r * 0.62, r * 0.62, r * 0.62, Math.PI / 2, 0, 0); } };
   const bow = (x, y, z, col, s2 = 1) => { for (const m of [-1, 1]) A('head', 'ball', col, x + m * 0.07 * s2, y, z, 0.075 * s2, 0.05 * s2, 0.035 * s2, 0, 0, m * 0.5); A('head', 'ball', dark(col, 0.85), x, y, z + 0.01, 0.03 * s2, 0.03 * s2, 0.03 * s2); };
@@ -6298,7 +6299,7 @@ function fofaParts(lk) {
   const SH = (el, az, k = 1.06) => [HC[0] + Math.sin(el) * Math.sin(az) * 0.335 * k, HC[1] + Math.cos(el) * 0.31 * k, HC[2] + Math.sin(el) * Math.cos(az) * 0.31 * k];
   const NR = (el, az) => [Math.sin(el) * Math.sin(az), Math.cos(el), Math.sin(el) * Math.cos(az)];
   const mixd = (a, b, k) => [a[0] * (1 - k) + b[0] * k, a[1] * (1 - k) + b[1] * k, a[2] * (1 - k) + b[2] * k];
-  const tipc = '#' + new THREE.Color(hc).lerp(new THREE.Color('#ffffff'), 0.5).getHexString();
+  const tipc = hairHi(hc, 2);
   // franja em mechas pontudas, estilo anime
   const bangLocks = (n = 5, len = 0.2, spread = 0.75, el = 0.62) => { for (let i = 0; i < n; i++) { const t = n > 1 ? i / (n - 1) - 0.5 : 0, az = t * spread * 2; L('tip', i % 2 ? hc : hl, SH(el, az, 1.05), mixd([0, -1, 0], NR(el, az), 0.28), len * (1 - Math.abs(t) * 0.35), 0.15, az + Math.PI, 0.6); } };
   // mechas penduradas em volta (cortina, bob, longo)
@@ -6519,12 +6520,12 @@ function uiSettingsRows() { const sg = document.querySelector('.setg'); if (!sg)
 const INPUT = { pad: false, prev: {}, t: 0 };
 const PADMAP = { 0: 'Space', 1: 'KeyQ', 2: 'KeyE', 3: 'KeyI', 4: 'BracketLeft', 5: 'BracketRight', 9: 'Escape', 8: 'KeyM', 12: 'ArrowUp', 13: 'ArrowDown', 14: 'ArrowLeft', 15: 'ArrowRight' };
 function padUpdate() { const gps = navigator.getGamepads ? navigator.getGamepads() : []; const gp = gps && [...gps].find((g) => g && g.connected); if (!gp) { if (INPUT.pad) { INPUT.pad = false; uiApply(); } return; }
-  if (!INPUT.pad) { INPUT.pad = true; uiApply(); toast('🎮 Controle conectado! <b>A</b> usar · <b>X</b> falar · <b>B</b> esquivar · <b>Y</b> mochila · <b>LB/RB</b> trocar item · <b>Start</b> menu'); }
+  if (!INPUT.pad) { INPUT.pad = true; uiApply(); toast('🎮 Controle conectado! <b>A</b> usar · <b>LT</b> pular · <b>X</b> falar · <b>B</b> esquivar · <b>Y</b> mochila · <b>LB/RB</b> trocar item · <b>Start</b> menu'); }
   const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0, dz = 0.35, sd = ax > dz, sa = ax < -dz, ss = ay > dz, sw = ay < -dz, run = !!(gp.buttons[7] && gp.buttons[7].pressed) || Math.hypot(ax, ay) > 0.95;
   /* só escreve nas teclas quando o analógico está em uso (ou acabou de soltar): assim o teclado continua andando com um controle parado conectado */
   if (sd || sa || ss || sw || INPUT.stick) { keys.KeyD = sd; keys.KeyA = sa; keys.KeyS = ss; keys.KeyW = sw; INPUT.stick = sd || sa || ss || sw; } if (run || INPUT.run) { keys.ShiftLeft = run; INPUT.run = run; }
   for (const [i, code] of Object.entries(PADMAP)) { const on = !!(gp.buttons[i] && gp.buttons[i].pressed), was = !!INPUT.prev[i]; INPUT.prev[i] = on;
-    if (on && !was) { if (code === 'BracketLeft' || code === 'BracketRight') { setSlot(S.slot + (code === 'BracketLeft' ? -1 : 1)); continue; } const c2 = padBack(i) ? 'Escape' : code; dispatchEvent(new KeyboardEvent('keydown', { code: c2, key: c2 === 'Space' ? ' ' : c2, bubbles: true })); }
+    if (on && !was) { if (code === 'BracketLeft' || code === 'BracketRight') { setSlot(S.slot + (code === 'BracketLeft' ? -1 : 1)); continue; } const c2 = padBack(i) ? 'Escape' : padMap131(+i, code); if (!c2) continue; dispatchEvent(new KeyboardEvent('keydown', { code: c2, key: c2 === 'Space' ? ' ' : c2, bubbles: true })); }
     if (!on && was) dispatchEvent(new KeyboardEvent('keyup', { code, key: code === 'Space' ? ' ' : code, bubbles: true })); } }
 addEventListener('gamepadconnected', () => padUpdate());
 
@@ -6814,7 +6815,8 @@ PRE_GH.push(() => { arenaBuild(); parkourBuild(); });
 // pulo no desenho: a personagem sobe P.jy (a câmera sobe um pouco junto)
 { const base = renderer.render.bind(renderer); renderer.render = function (sc, cam) { const j = sc === scene && mode === 'out' && player ? P.jy || 0 : 0; if (!j) return base(sc, cam); player.obj.position.y += j; const cj = cam === camera ? j * 0.45 : 0; cam.position.y += cj; try { return base(sc, cam); } finally { player.obj.position.y -= j; cam.position.y -= cj; } }; }
 // teclas: C pula, L abre o Álbum; no celular, um botão de pulo
-addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (e.code === 'KeyC' && ready && !titleOn) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) doJump(); } else if (e.code === 'KeyL' && ready && !titleOn && !e.repeat && !dlg && !CUT && !P.dead) { e.preventDefault(); if ($('modal').classList.contains('on')) { closeModal(); sfx('cancel'); } else if (!modalOpen()) openAlbum(); } }, true);
+addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (e.code === 'KeyC' && ready && !titleOn) { e.preventDefault(); e.stopImmediatePropagation(); if (e.repeat || modalOpen() || dlg || CUT) return; /* v1.31: C usa a ferramenta (vira um Espaço marcado, que não pula) */ const ev = new KeyboardEvent('keydown', { code: 'Space', key: ' ', bubbles: true }); ev.__tool131 = 1; dispatchEvent(ev); }
+  else if (e.code === 'Space' && !e.__tool131 && jumpCtx131()) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) doJump(); } /* v1.31: Espaço pula andando ao ar livre (no barco, pescando, em casa e nos menus continua como antes) */ else if (e.code === 'KeyL' && ready && !titleOn && !e.repeat && !dlg && !CUT && !P.dead) { e.preventDefault(); if ($('modal').classList.contains('on')) { closeModal(); sfx('cancel'); } else if (!modalOpen()) openAlbum(); } }, true);
 PADMAP[6] = 'KeyC';
 { const a = APPS.find((q) => q.k === 'album'); if (a) a.key = 'L'; }
 setTimeout(() => { try { const ta = $('tA'); if (ta && !$('tJ')) { ta.insertAdjacentHTML('afterend', '<button class="btn tbtn" id="tJ" style="right:100px;bottom:176px">⤒</button>'); $('tJ').addEventListener('touchstart', (e) => { e.preventDefault(); doJump(); }, { passive: false }); }
@@ -7154,6 +7156,334 @@ fofaBuild = function (lk) { // v31: como a da v24, mais estampa por triângulo e
 // moradores com roupas novas
 for (const [id, lk] of Object.entries({ lia: { kb: 'g3', kp: 'bolinhas', kpc: 'branco' }, bento: { kb: 'g2', ct: 'bege' }, otto: { kb: 'g12' }, tome: { kb: 'g8', kp: 'listras', kpc: 'creme' }, fifi: { kb: 'g4', kp: 'xadrez', kpc: 'branco' }, marina: { kb: 'g6', ksh: 'sapatilha' } })) if (NPCLOOK[id]) Object.assign(NPCLOOK[id], lk);
 
+/* =================== v1.31: cabelo sem cinza, óculos no rosto da Fofinha, espada e regador na mão =================== */
+// teclas: Espaço pula (andando ao ar livre), C usa a ferramenta e ataca; no controle, A usa e LT pula
+function jumpCtx131() { return ready && !titleOn && mode === 'out' && !modalOpen() && !dlg && !CUT && !P.fishing && !P.boat && !decor && !farmEd && !P.dead && !$('wish').classList.contains('on'); }
+function padMap131(i, code) { if (i === 0 && jumpCtx131()) return 'KeyC'; if (i === 6) return jumpCtx131() ? 'Space' : null; return code; }
+addEventListener('keyup', (e) => { if (e.code === 'KeyC') { const ev = new KeyboardEvent('keyup', { code: 'Space', key: ' ', bubbles: true }); ev.__tool131 = 1; dispatchEvent(ev); } });
+// ---------- combate mais fluido para a Fofinha ----------
+// mira suave (vira para o inimigo mais próximo à frente), golpe guardado durante o dash, movimento procedural por cima das animações
+// (giro do tronco alternado, inclinação, squash e stretch, pulinho no 3º golpe, giro completo no golpe carregado, susto ao levar dano) e dash longo e suave.
+const CB131 = { t: -1, step: 0, hurt: -1 }, DASH131 = { dur: 0.55, v: 13 };
+function softAim131() { const ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + stick.dx, iz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0) + stick.dy;
+  let fx = P.fx, fz = P.fz; if (Math.hypot(ix, iz) > 0.3) { fx = ix; fz = iz; } const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
+  let best = null, bd = 2.8; for (const s of slimes) { if (s.dead) continue; const dx = s.x - P.x, dz = s.z - P.z, d = Math.hypot(dx, dz); if (d > bd || d < 0.05) continue; if ((dx * fx + dz * fz) / d < 0.26) continue; /* ~75° */ best = s; bd = d; }
+  if (best) { fx = best.x - P.x; fz = best.z - P.z; const l = Math.hypot(fx, fz) || 1; fx /= l; fz /= l; }
+  P.fx = fx; P.fz = fz; P.ang = Math.atan2(fx, fz); if (player) player.obj.rotation.y = P.ang; }
+{ const base = swordAttack; swordAttack = function (spin) { if (mode === 'out') try { softAim131(); } catch (e) {} const step = spin ? 4 : gtime - P.lastAtk < 0.85 && P.combo < 3 ? P.combo + 1 : 1; base(spin); CB131.t = 0; CB131.step = step; }; }
+{ const base = useTool; useTool = function () { if (P.roll && mode === 'out' && TOOLS[S.slot].id === 'espada') { P.buf = 0.4; return; } /* golpe apertado no meio do dash sai assim que ele acaba */
+  /* com inimigo por perto, a espada ataca em vez de colher a florzinha ou a concha que está na frente */
+  if (TOOLS[S.slot].id === 'espada' && (mode === 'out' || mode === 'cave') && !farmEd && !P.fishing && !P.bike && !P.boat && !P.dead && !CUT && !modalOpen() && P.useT <= 0 && slimes.some((q) => !q.dead && Math.hypot(q.x - P.x, q.z - P.z) < 3.2)) { P.useT = 0.4; swordAttack(false); return; }
+  return base(); }; }
+function dashTrail131(dt, k) { DASH131.acc = (DASH131.acc || 0) + dt; if (DASH131.acc < 0.03) return; DASH131.acc = 0; const bx = P.x - P.roll.dx * 0.25, bz = P.z - P.roll.dz * 0.25;
+  emit(PN, { x: bx + (rand() - 0.5) * 0.2, y: 0.06, z: bz + (rand() - 0.5) * 0.2, vx: -P.roll.dx * 0.6, vz: -P.roll.dz * 0.6, vy: 0.25, g: 0.6, life: 0.45, max: 0.45, c: '#efe3cc' });
+  if (k < 0.75) emit(PN, { x: bx + (rand() - 0.5) * 0.35, y: 0.45 + rand() * 0.35, z: bz + (rand() - 0.5) * 0.35, vx: -P.roll.dx * 1.4, vz: -P.roll.dz * 1.4, vy: 0, g: 0, life: 0.3, max: 0.3, c: '#ffffff' }); }
+dodge = function () {
+  if (P.bike) return; if (P.dead || mode === 'in' || P.roll || P.fishing || modalOpen() || dlg || farmEd) return;
+  if (P.st < 22) { floatText(P.x, 1.7, P.z, 'Sem fôlego!', C.pink); sfx('cancel'); return; }
+  if (P.cds && P.cds.dodge > 0) return; if (P.cds) P.cds.dodge = 0.75;
+  let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + stick.dx, iz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0) + stick.dy; let l = Math.hypot(ix, iz);
+  if (l < 0.2) { ix = P.fx; iz = P.fz; l = Math.hypot(ix, iz) || 1; } ix /= l; iz /= l;
+  P.fx = ix; P.fz = iz; P.ang = Math.atan2(ix, iz); if (player) player.obj.rotation.y = P.ang; P.st -= 22; P.stT = 0.6; P.roll = { t: 0, dx: ix, dz: iz }; P.inv = 0.5; P.useT = 0; P.combo = 0; P.charging = false; CB131.t = -1;
+  anim('Running_A', 1.8); sfx('cloth2'); sfxP('swing', 0.35, 0.8); /* sem a "explosão" de poeira: só o rastro suave */ };
+{ const base = v14Update; v14Update = function (dt) { base(dt); if (CB131.t >= 0) { CB131.t += dt; if (CB131.t > 0.7) CB131.t = -1; } if (CB131.hurt >= 0) { CB131.hurt += dt; if (CB131.hurt > 0.35) CB131.hurt = -1; } }; }
+{ const base = hurtPlayer; hurtPlayer = function (...a) { const h0 = P.hp, r = base(...a); if (P.hp < h0) CB131.hurt = 0; return r; }; }
+// só durante o desenho: soma o movimento procedural e tira depois (a lógica e as animações continuam iguais)
+{ const base = renderer.render.bind(renderer); renderer.render = function (sc, cam) { if (sc !== scene || !player || mode === 'in') return base(sc, cam); const o = player.obj; let ry = 0, rx = 0, sy = 1, py = 0;
+    if (CB131.t >= 0) { const st = CB131.step, T = st === 3 ? 0.42 : st === 4 ? 0.62 : 0.3, k = Math.min(1, CB131.t / T), w = Math.sin(Math.PI * k);
+      if (st === 4) ry = k * k * (3 - 2 * k) * Math.PI * 2; else ry = (st === 1 ? 0.55 : st === 2 ? -0.55 : 0) * w * (1 - k * 0.3);
+      rx = 0.2 * Math.sin(Math.PI * Math.min(1, k * 1.4)); sy = k < 0.22 ? 1 - 0.09 * (k / 0.22) : 0.91 + 0.15 * Math.sin(Math.PI * (k - 0.22) / 0.78) * (1 - k); if (st === 3) py = 0.18 * w; }
+    if (P.roll) { const k = Math.min(1, P.roll.t / DASH131.dur); rx += 0.32 * Math.sin(Math.PI * Math.min(1, k * 1.3)); sy *= 1 - 0.08 * Math.sin(Math.PI * k); }
+    if (CB131.hurt >= 0) { const k = CB131.hurt / 0.35; rx -= 0.28 * Math.sin(Math.PI * k); sy *= 1 - 0.1 * Math.sin(Math.PI * k); }
+    if (mode === 'out') py += STEPH131.h;
+    if (!ry && !rx && sy === 1 && !py) return base(sc, cam);
+    const r0y = o.rotation.y, r0x = o.rotation.x, s0 = o.scale.clone(), p0 = o.position.y, sxz = 1 / Math.sqrt(sy);
+    o.rotation.y = r0y + ry; o.rotation.x = r0x + rx; o.scale.set(s0.x * sxz, s0.y * sy, s0.z * sxz); o.position.y = p0 + py;
+    try { return base(sc, cam); } finally { o.rotation.y = r0y; o.rotation.x = r0x; o.scale.copy(s0); o.position.y = p0; } }; }
+// ---------- escadas das casas: a personagem sobe os degraus (antes ficava "dentro" deles) ----------
+// No carregamento, raios de cima para baixo medem, em volta de cada porta, a altura dos degraus do modelo da construção (grade de 0,25).
+const STEP131 = new Map(), STEPH131 = { h: 0 };
+function stepBuild131() { world.updateMatrixWorld(true); const rc = new THREE.Raycaster(), dn = new THREE.Vector3(0, -1, 0), o3 = new THREE.Vector3(), bb = new THREE.Box3(), sz = new THREE.Vector3();
+  const cand = world.children.filter((c) => !c.isInstancedMesh && !c.isLight && !c.isSprite && c !== GCV.mesh && c.children && c.children.length);
+  for (const D of doorList()) { if (D.ex == null || D.ez == null) continue; let best = null, bv = 0;
+    for (const c of cand) { if (Math.hypot(c.position.x - D.ex, c.position.z - D.ez) > 5) continue; bb.setFromObject(c); if (bb.isEmpty()) continue; bb.getSize(sz); const v = sz.x * sz.y * sz.z; if (sz.y > 1.5 && v > bv) { bv = v; best = c; } }
+    if (!best) continue; const meshes = []; best.traverse((n) => { if (n.isMesh) meshes.push(n); });
+    const top = { h: 0, xs: [], z: 1e9 }; for (let zz = D.ez - 1.5; zz <= D.ez + 1.01; zz += 0.25) for (let xx = D.ex - 1.5; xx <= D.ex + 1.51; xx += 0.25) { rc.set(o3.set(xx, 4, zz), dn); let h = 0; for (const it of rc.intersectObjects(meshes, false)) { const y = it.point.y; if (y > 0.06 && y <= 0.9 && y > h) h = y; } if (h > 0) { STEP131.set(Math.round(xx * 4) + ',' + Math.round(zz * 4), h); if (h > top.h + 0.05) { top.h = h; top.xs = [xx]; top.z = zz; } else if (Math.abs(h - top.h) <= 0.05) { top.xs.push(xx); top.z = Math.min(top.z, zz); } } }
+    if (top.xs.length) D.step131 = { x: top.xs.reduce((a, b) => a + b, 0) / top.xs.length, h: top.h, z: top.z }; } }
+function stepAt131(x, z) { return STEP131.get(Math.round(x * 4) + ',' + Math.round(z * 4)) || 0; }
+{ const base = precompileAll; precompileAll = function (...a) { try { stepBuild131(); } catch (e) { console.error(e); } return base(...a); }; }
+{ const base = v14Update; v14Update = function (dt) { base(dt); const want = mode === 'out' && !P.boat ? stepAt131(P.x, P.z) : 0; STEPH131.h += (want - STEPH131.h) * Math.min(1, dt * 16); if (Math.abs(STEPH131.h) < 0.002) STEPH131.h = 0; }; }
+// ---------- brilho das portas alinhado à porta de verdade (no alto da escada das casas novas) ----------
+function doorGlowAlign131() { for (const e of DOORGLOW.list) { const D = e.ref; if (e.kind !== 'room' || !D || !D.step131) continue; const st = D.step131; e.g.position.set(st.x, st.h - 0.02, st.z - 0.14); e.x = st.x; e.z = st.z - 0.14; } }
+{ const base = precompileAll; precompileAll = function (...a) { const r = base(...a); try { doorGlowAlign131(); } catch (e) { console.error(e); } return r; }; }
+// ---------- casas dos moradores divididas em cômodos: quarto separado por parede com passagem e uma cozinha com fogão ----------
+{ const base = buildRoomFor; buildRoomFor = function (D) { const R = base(D); try { if (D.type !== 'casa' && D.type !== 'rosa') return R; const g = R.g, x = R.x, z = R.z, w = R.w, pal = new THREE.Color(); 
+    const wallM = lam('#f3e6d4'), trimM = lam('#c98a5a'), add = (geo, mat, px, py, pz, solid, ry = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x + px, py, z + pz); m.rotation.y = ry; m.castShadow = true; m.receiveShadow = true; g.add(m); if (solid) { const bb = new THREE.Box3().setFromObject(m); R.rects.push([bb.min.x, bb.min.z, bb.max.x, bb.max.z]); } return m; };
+    // parede do quarto (com passagem na frente)
+    add(new THREE.BoxGeometry(0.16, 2.6, 3.9), wallM, 3.15, 1.3, 1.95, true); add(new THREE.BoxGeometry(0.2, 0.3, 3.9), trimM, 3.15, 0.15, 1.95, false); add(new THREE.BoxGeometry(0.24, 2.7, 0.24), trimM, 3.15, 1.35, 3.95, true);
+    // cozinha: balcão com tampo, fogão com bocas e pia
+    add(new THREE.BoxGeometry(2.6, 0.82, 0.62), lam('#b98258'), 4.9, 0.41, 0.42, true); add(new THREE.BoxGeometry(2.7, 0.06, 0.7), lam('#f4ead8'), 4.9, 0.85, 0.42, false);
+    for (const [bx, bz] of [[4.2, 0.32], [4.62, 0.32], [4.2, 0.56], [4.62, 0.56]]) add(new THREE.CylinderGeometry(0.11, 0.11, 0.03, 14), lam('#3a2d3a'), bx, 0.89, bz, false);
+    add(new THREE.CylinderGeometry(0.18, 0.15, 0.16, 14), lam('#e8505b'), 4.2, 0.98, 0.32, false); /* panelinha */
+    add(new THREE.BoxGeometry(0.62, 0.05, 0.44), lam('#9fd8ff'), 5.6, 0.885, 0.42, false); add(new THREE.CylinderGeometry(0.025, 0.025, 0.26, 8), lam('#c9ccd6'), 5.6, 1.0, 0.2, false);
+    R.cozinha131 = { x: x + 4.9, z: z + 0.9 }; } catch (e) { console.error(e); } return R; }; }
+// ---------- divisórias para montar cômodos na sua casa (modo decorar) ----------
+function mkDiv131(kind) { const g = new THREE.Group(), wall = lam('#f3e6d4'), wood = lam('#c98a5a'), dark = lam('#8a5a3b');
+  if (kind === 'div') { const m = new THREE.Mesh(new THREE.BoxGeometry(1, 2.3, 0.16), wall); m.position.y = 1.15; g.add(m); const b = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.26, 0.2), wood); b.position.y = 0.13; g.add(b); const t = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.08, 0.2), wood); t.position.y = 2.3; g.add(t); }
+  else if (kind === 'divh') { const m = new THREE.Mesh(new THREE.BoxGeometry(1, 1.0, 0.18), wall); m.position.y = 0.5; g.add(m); const t = new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.08, 0.26), wood); t.position.y = 1.02; g.add(t); for (const px of [-0.25, 0.22]) { const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 0.12, 10), lam('#e8a070')); pot.position.set(px, 1.12, 0); g.add(pot); const lf = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), lam('#6fc46a')); lf.position.set(px, 1.24, 0); g.add(lf); } }
+  else if (kind === 'arch') { for (const px of [-0.85, 0.85]) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.3, 0.2), wall); m.position.set(px, 1.15, 0); g.add(m); } const top = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.13, 8, 20, Math.PI), wood); top.position.set(0, 2.0, 0); g.add(top); const lt = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.22, 0.22), wall); lt.position.set(0, 2.35, 0); g.add(lt); for (const px of [-0.85, 0.85]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.24, 0.24), dark); b.position.set(px, 0.12, 0); g.add(b); } }
+  g.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); const v = bakeVC(g); const root = new THREE.Group(); root.add(v); return root; }
+for (const k of ['div', 'divh', 'arch']) MODELS['p31_' + k] = { root: mkDiv131(k) };
+Object.assign(FURN, { div131: { n: 'Divisória', m: 'p31_div', w: 1, h: 1, price: 30, solid: 1 }, divh131: { n: 'Meia parede com plantinhas', m: 'p31_divh', w: 1, h: 1, price: 45, solid: 1 }, arch131: { n: 'Arco de passagem', m: 'p31_arch', w: 2, h: 1, price: 80 } });
+// ---------- Poço dos Desejos novo: pedras lilás, água que brilha, telhadinho rosa com estrela e flores em volta ----------
+const WELL131 = { water: null, glow: null };
+function wellKM131(thumbOnly) { const g = new THREE.Group(), M = {}, mt = (c) => M[c] || (M[c] = lam(c)), add = (geo, c, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mt(c)); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); g.add(m); return m; };
+  add(new THREE.CylinderGeometry(0.9, 0.98, 0.52, 22), '#c9bfe6', 0, 0.26, 0); // base
+  const ST = ['#e3dbf5', '#b9addb', '#d4c8f0', '#f0eafa'];
+  for (let r = 0; r < 2; r++) for (let i = 0; i < 14; i++) { const a = (i + r * 0.5) / 14 * Math.PI * 2, rr = 0.95 - r * 0.02; add(new THREE.BoxGeometry(0.36, 0.2, 0.12), ST[(i + r) % 4], Math.sin(a) * rr, 0.13 + r * 0.24, Math.cos(a) * rr, 0, a, 0); }
+  add(new THREE.TorusGeometry(0.88, 0.1, 8, 30), '#f6f1ff', 0, 0.55, 0, Math.PI / 2); // borda
+  for (const sx of [-1, 1]) { add(new THREE.BoxGeometry(0.15, 1.95, 0.15), '#b0703f', sx * 0.82, 1.45, 0); add(new THREE.BoxGeometry(0.22, 0.16, 0.22), '#7f4b2c', sx * 0.82, 0.58, 0); }
+  add(new THREE.CylinderGeometry(0.05, 0.05, 1.78, 10), '#7f4b2c', 0, 1.72, 0, 0, 0, Math.PI / 2); // eixo da manivela
+  add(new THREE.BoxGeometry(0.05, 0.28, 0.05), '#7f4b2c', 0.98, 1.6, 0.08); add(new THREE.CylinderGeometry(0.035, 0.035, 0.16, 8), '#ffd45a', 0.98, 1.48, 0.15, Math.PI / 2);
+  add(new THREE.CylinderGeometry(0.075, 0.075, 0.5, 12), '#f1dfb8', 0, 1.72, 0, 0, 0, Math.PI / 2); // corda enrolada
+  // telhado rosa com telhinhas e cumeeira dourada
+  for (const sz of [-1, 1]) { const tilt = sz * 0.62; add(new THREE.BoxGeometry(2.3, 0.08, 0.92), '#ff7fb0', 0, 2.42, sz * 0.36, tilt);
+    for (let k = 0; k < 3; k++) add(new THREE.BoxGeometry(2.34, 0.05, 0.1), '#e85d95', 0, 2.42 - (0.12 + k * 0.26) * Math.sin(0.62) + 0.06, sz * (0.07 + (0.12 + k * 0.26) * Math.cos(0.62)), tilt); }
+  add(new THREE.BoxGeometry(2.4, 0.1, 0.12), '#ffd45a', 0, 2.72, 0);
+  for (const sx of [-1, 1]) { const tri = new THREE.Shape(); tri.moveTo(-0.62, 0); tri.lineTo(0.62, 0); tri.lineTo(0, 0.5); tri.closePath(); add(new THREE.ExtrudeGeometry(tri, { depth: 0.05, bevelEnabled: false }), '#fff0f6', sx * 0.9 - 0.025, 2.2, 0, 0, Math.PI / 2); }
+  // balde na borda e florzinhas em volta
+  add(new THREE.CylinderGeometry(0.15, 0.12, 0.22, 12), '#d39a62', 0.55, 0.72, 0.52); add(new THREE.TorusGeometry(0.15, 0.015, 6, 16), '#7f4b2c', 0.55, 0.78, 0.52, Math.PI / 2);
+  const FC = ['#ff8fbd', '#ffe18d', '#ffffff', '#c79bff', '#7fd8ff'];
+  for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2 + 0.2, r = 1.12 + (i % 2) * 0.08; if (Math.abs(Math.sin(a)) < 0.25 && Math.cos(a) > 0) continue; /* passagem na frente */ add(new THREE.SphereGeometry(0.07, 8, 6), FC[i % 5], Math.sin(a) * r, 0.08, Math.cos(a) * r); add(new THREE.ConeGeometry(0.06, 0.12, 5), '#6fbf4a', Math.sin(a) * r, 0.03, Math.cos(a) * r); }
+  g.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); bakeVC(g);
+  // água brilhante (fora do bake, para piscar de leve)
+  const w = new THREE.Mesh(new THREE.CircleGeometry(0.8, 28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#8fe6ff' })); w.position.y = 0.47; g.add(w); if (thumbOnly) { g.userData.keep = 1; return g; } WELL131.water = w;
+  const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0x9fdcff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.55 })); gl.scale.set(2.2, 2.2, 1); gl.position.y = 0.6; g.add(gl); WELL131.glow = gl;
+  g.userData.keep = 1; return g; }
+{ const base = precompileAll; precompileAll = function (...a) { const r = base(...a); try { MODELS.p31_well = { root: wellKM131(true) }; THUMB.well = thumb('p31_well', { ry: -0.4 }); } catch (e) { console.error(e); } return r; }; }
+{ const base = shrineUpdate; shrineUpdate = function (dt) { base(dt); const w = WELL131.water; if (!w || mode !== 'out') return; const k = 0.5 + 0.5 * Math.sin(gtime * 1.6); w.material.color.setRGB(0.5 + 0.12 * k, 0.86 + 0.06 * k, 1); if (WELL131.glow) WELL131.glow.material.opacity = 0.35 + 0.25 * k; }; }
+// ---------- cores dos modelos padronizadas: mais vivas (vibrance) ----------
+// No carregamento, cada cor de material e cada textura de paleta dos cenários passa pela mesma curva: tons apagados ganham bem mais saturação,
+// tons já vivos ganham pouco, cinzas e brancos ficam como estão, e os escuros clareiam de leve. Texturas iguais (vários GLB trazem a mesma paleta)
+// são processadas uma vez só e passam a dividir a mesma fonte na GPU.
+const VIB131 = { src: new Map(), n: 0, hit: 0, ms: 0 };
+function vib131(r, g, b) { const mx = Math.max(r, g, b), mn = Math.min(r, g, b), s = mx > 0 ? (mx - mn) / mx : 0; if (s < 0.06) return [r + (1 - r) * 0.03, g + (1 - g) * 0.03, b + (1 - b) * 0.03];
+  const w = Math.min(1, (s - 0.06) / 0.14), k = 1 + (0.1 + 0.7 * (1 - s)) * w, L = 0.299 * r + 0.587 * g + 0.114 * b, f = (c) => { c = L + (c - L) * k; c += (1 - c) * 0.05; return c < 0 ? 0 : c > 1 ? 1 : c; }; return [f(r), f(g), f(b)]; }
+function vibTex131(t) { const im = t.image; if (!im || !im.width || im.width > 2048 || t.userData.v131) return; const t0 = performance.now(); t.userData.v131 = 1;
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, c.width, c.height), a = d.data;
+  let h = (c.width * 73856093) ^ (c.height * 19349663); for (let i = 0; i < a.length; i += 1009) h = (Math.imul(h, 31) + a[i]) | 0; const key = c.width + 'x' + c.height + ':' + h;
+  const hit = VIB131.src.get(key); if (hit) { t.source = hit; t.needsUpdate = true; VIB131.hit++; return; }
+  const LUT = new Map(); for (let i = 0; i < a.length; i += 4) { const kk = (a[i] << 16) | (a[i + 1] << 8) | a[i + 2]; let o = LUT.get(kk); if (o === undefined) { const v = vib131(a[i] / 255, a[i + 1] / 255, a[i + 2] / 255); o = (Math.round(v[0] * 255) << 16) | (Math.round(v[1] * 255) << 8) | Math.round(v[2] * 255); LUT.set(kk, o); } a[i] = o >> 16; a[i + 1] = (o >> 8) & 255; a[i + 2] = o & 255; }
+  x.putImageData(d, 0, 0); t.image = c; VIB131.src.set(key, t.source); t.needsUpdate = true; VIB131.n++; VIB131.ms += performance.now() - t0; }
+function vibMat131(m) { if (!m || m.userData.v131) return; m.userData.v131 = 1; if (m.color) { const o = {}; m.color.getRGB(o, THREE.SRGBColorSpace); const v = vib131(o.r, o.g, o.b); m.color.setRGB(v[0], v[1], v[2], THREE.SRGBColorSpace); } if (m.map) try { vibTex131(m.map); } catch (e) { console.error(e); } }
+{ const base = prepare; prepare = function (k, gltf) { base(k, gltf); const M = MODELS[k]; if (!M || M.isChar || /^(km_|hr_|ch_)/.test(k) || /[?&]novib/.test(location.search)) return; /* ?novib=1 compara com as cores antigas */ M.root.traverse((o) => { if (o.isMesh) for (const m of [].concat(o.material)) vibMat131(m); }); }; }
+// ---------- desejo mais épico: coreografia em 5 tempos (moedinha, carga, promoção da cor, voo das estrelas, explosão) ----------
+// Referências: "Choreographed Emotion" (preparar, antecipar, provocar, revelar, celebrar) e os princípios de animação (antecipação, squash e stretch,
+// continuidade e easing). A cor sobe de azul para lilás e depois para dourado só quando o resultado merece (a "promoção"), sem enganar no fim.
+const WISH131 = { raf: 0, spr: {} };
+function wSpr131(c) { if (WISH131.spr[c]) return WISH131.spr[c]; const v = document.createElement('canvas'); v.width = v.height = 64; const x = v.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(0.25, c); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return (WISH131.spr[c] = v); }
+function wStop131() { if (WISH131.raf) cancelAnimationFrame(WISH131.raf); WISH131.raf = 0; }
+playWishG = function (res) { wStop131(); const RC = { 3: '#7fd0ff', 4: '#d69cff', 5: '#ffd36b' }, top = Math.max(...res.map((o) => o.r)), n = res.length, w = $('wish'), calm = document.body.classList.contains('calm');
+  const T = top === 5 ? 3.6 : top === 4 ? 3.0 : 2.5, TL = 1.75, TB = T - 0.55;
+  w.innerHTML = `<div class="sky"></div>${floaters(18)}<div class="rays131" id="wr131"></div><canvas id="wcv131"></canvas><div class="stage"><div class="w131" id="w131"><div class="wglow on131" id="wg" style="--c:${RC[3]}"></div><img class="bigwell" id="bw" src="${THUMB.well}"></div></div><div class="wflash" id="wfl" style="--c:${RC[top]}"></div><div class="wtip" id="wtip">${n > 1 ? `${n} moedinhas caem no Poço...` : 'Uma moedinha cai no Poço...'}</div><button class="btn skip" id="wskip">Pular ▶▶</button>`;
+  w.classList.add('on'); wishQ = { g: 1, res, i: 0, stage: 'anim' }; sfx('magic');
+  const cv = $('wcv131'), dpr = Math.min(2, devicePixelRatio || 1), W = w.clientWidth, H = w.clientHeight; cv.width = W * dpr; cv.height = H * dpr; const x = cv.getContext('2d'); x.scale(dpr, dpr);
+  const bw = $('bw').getBoundingClientRect(), wr = w.getBoundingClientRect(), cx = bw.left - wr.left + bw.width / 2, cy = bw.top - wr.top + bw.height * 0.45, tx = W / 2, ty = H * 0.22;
+  const ps = [], coins = [], stars = [], ord = res.map((o) => o.r).sort((a, b) => a - b); let tier = 3, t = 0, last = performance.now(), fired = {};
+  for (let i = 0; i < Math.min(n, 10); i++) coins.push({ t0: i * 0.05, x0: W / 2 + (i - (Math.min(n, 10) - 1) / 2) * 26, y0: H + 20 });
+  const once = (k, f) => { if (!fired[k] && (fired[k] = 1)) f(); }, ring = (r, c, life = 0.7, wd = 4) => ps.push({ ring: 1, x: cx, y: cy, r, c, life, max: life, wd });
+  const spark = (px, py, vx, vy, c, life, sz, g = 0) => ps.push({ x: px, y: py, vx, vy, c, life, max: life, sz, g });
+  const setTier = (k, msg, snd) => { tier = k; const g = $('wg'); if (g) g.style.setProperty('--c', RC[k]); ring(40, RC[k], 0.9, 7); ring(10, '#ffffff', 0.6, 3); for (let i = 0; i < 26; i++) { const a = Math.random() * 6.283, v = 160 + Math.random() * 260; spark(cx, cy, Math.cos(a) * v, Math.sin(a) * v * 0.6, RC[k], 0.7, 6 + Math.random() * 8); } const tp = $('wtip'); if (tp) { tp.textContent = msg; tp.classList.remove('bump131'); void tp.offsetWidth; tp.classList.add('bump131'); } sfx(snd); };
+  const step = (now) => { const dt = WISH131.pause ? 0 : Math.max(0, Math.min(0.1, (now - last) / 1000)); last = Math.max(last, now); t += dt; WISH131.t = t; if (!wishQ || wishQ.stage !== 'anim' || !$('wcv131')) return wStop131();
+    // 1) moedinhas em arco caindo no poço
+    for (const c of coins) { const k = (t - c.t0) / 0.5; if (k < 0 || c.done) continue; if (k >= 1) { c.done = 1; ring(14, '#bff0ff', 0.5, 3); for (let i = 0; i < 6; i++) spark(cx + (Math.random() - 0.5) * 30, cy, (Math.random() - 0.5) * 80, -80 - Math.random() * 90, '#bff0ff', 0.5, 6, 300); continue; }
+      const px = c.x0 + (cx - c.x0) * k, py = c.y0 + (cy - c.y0) * k - Math.sin(Math.PI * k) * H * 0.35; spark(px, py, 0, 0, '#ffe18d', 0.25, 12); }
+    if (t > 0.5) once('drop', () => { sfx('coin'); $('w131') && $('w131').classList.add('charge131'); });
+    // 2) carga: luzinhas em espiral sendo puxadas para o poço, cada vez mais rápidas
+    if (t > 0.55 && t < TL) { const k = (t - 0.55) / (TL - 0.55), m = calm ? 1 : 2 + Math.floor(k * 3); for (let i = 0; i < m; i++) { const a = Math.random() * 6.283, r = 180 + Math.random() * 160; ps.push({ sw: 1, a, r, c: RC[tier], life: 0.9, max: 0.9, sz: 8 + Math.random() * 8, sp: 1.6 + k * 2.4 }); } if (Math.random() < dt * (3 + k * 8)) ring(20 + Math.random() * 20, RC[tier], 0.6, 3); }
+    // 3) promoção da cor (só se o resultado for desse nível)
+    if (top >= 4 && t > 1.05) once('t4', () => setTier(4, top === 5 ? 'A luz fica lilás...' : '✨ Uma estrela lilás!', 'powerup'));
+    if (top === 5 && t > 1.5) once('t5', () => setTier(5, '✨✨ Uma luz DOURADA! ✨✨', 'secret'));
+    // 4) lançamento: o poço "respira" (squash) e as estrelas sobem com rastro até se juntarem no céu
+    if (t > TL) once('launch', () => { const el = $('w131'); if (el) { el.classList.remove('charge131'); el.classList.add('pop131'); } sfx('powerup2'); ring(30, '#ffffff', 0.6, 8);
+      ord.forEach((r, i) => { const sp = (i - (ord.length - 1) / 2) / Math.max(1, ord.length - 1); stars.push({ r, x: cx, y: cy, hx: [], t0: i * 0.03, ox: sp * W * 0.42 + (Math.random() - 0.5) * 40, big: r === top && i === ord.length - 1 }); }); });
+    for (const st of stars) { const k = Math.min(1, Math.max(0, (t - TL - st.t0) / (TB - TL - 0.05))); if (k <= 0) continue; const e = 1 - Math.pow(1 - k, 3), mid = Math.sin(Math.PI * e);
+      st.x = cx + (tx - cx) * e + st.ox * mid; st.y = cy + (ty - cy) * e - mid * 60; st.hx.push([st.x, st.y]); if (st.hx.length > 14) st.hx.shift(); if (Math.random() < 0.7) spark(st.x, st.y, (Math.random() - 0.5) * 40, 30 + Math.random() * 40, RC[st.r], 0.6, 6, 60); }
+    // 5) explosão: flash, tremida, raios girando e chuva de faíscas na cor da maior raridade
+    if (t > TB) once('boom', () => { const f = $('wfl'); if (f) f.classList.add('on'); if (!calm) { w.classList.remove('quake131'); void w.offsetWidth; w.classList.add('quake131'); } const r = $('wr131'); if (r) { r.style.setProperty('--c', RC[top]); r.classList.add('on'); }
+      sfx(top === 5 ? 'jingle_5' : top === 4 ? 'jingle_4' : 'chime'); stars.length = 0; const N = calm ? 50 : top === 5 ? 180 : top === 4 ? 120 : 70;
+      for (let i = 0; i < N; i++) { const a = Math.random() * 6.283, v = 80 + Math.random() * (top === 5 ? 520 : 380); spark(tx, ty, Math.cos(a) * v, Math.sin(a) * v - 60, Math.random() < 0.25 ? '#ffffff' : RC[top], 1 + Math.random() * 0.8, 8 + Math.random() * 14, 220); }
+      ps.push({ ring: 1, x: tx, y: ty, r: 20, c: RC[top], life: 0.8, max: 0.8, wd: 10 }); if (top === 5) setTimeout(() => confetti(innerWidth / 2, innerHeight * 0.25, 50, true), 120); });
+    if (t > T) { wStop131(); gNext(); return; }
+    // desenho
+    x.clearRect(0, 0, W, H); x.globalCompositeOperation = 'lighter';
+    for (let i = ps.length - 1; i >= 0; i--) { const q = ps[i]; q.life -= dt; if (q.life <= 0) { ps.splice(i, 1); continue; } const a = q.life / q.max;
+      if (q.ring) { q.r += dt * 380; x.globalAlpha = a; x.strokeStyle = q.c; x.lineWidth = q.wd * a; x.beginPath(); x.ellipse(q.x, q.y, q.r, q.r * 0.42, 0, 0, 6.283); x.stroke(); continue; }
+      if (q.sw) { q.a += dt * q.sp; q.r *= 1 - dt * q.sp * 0.9; const px = cx + Math.cos(q.a) * q.r, py = cy + Math.sin(q.a) * q.r * 0.55; x.globalAlpha = 0.55 * Math.min(1, a * 2) * Math.min(1, (q.r - 12) / 50); x.drawImage(wSpr131(q.c), px - q.sz, py - q.sz, q.sz * 2, q.sz * 2); continue; }
+      q.vy += (q.g || 0) * dt; q.vx *= 1 - dt * 1.2; q.vy *= 1 - dt * 0.6; q.x += q.vx * dt; q.y += q.vy * dt; const z = q.sz * (0.4 + a * 0.6); x.globalAlpha = a; x.drawImage(wSpr131(q.c), q.x - z, q.y - z, z * 2, z * 2); }
+    for (const st of stars) { if (!st.hx.length) continue; x.globalAlpha = 1; x.strokeStyle = RC[st.r]; for (let j = 1; j < st.hx.length; j++) { x.globalAlpha = j / st.hx.length; x.lineWidth = (st.big ? 10 : 5) * (j / st.hx.length); x.beginPath(); x.moveTo(st.hx[j - 1][0], st.hx[j - 1][1]); x.lineTo(st.hx[j][0], st.hx[j][1]); x.stroke(); }
+      const z = st.big ? 34 : 18; x.globalAlpha = 1; x.drawImage(wSpr131(RC[st.r]), st.x - z, st.y - z, z * 2, z * 2); }
+    x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; WISH131.raf = requestAnimationFrame(step); };
+  WISH131.raf = requestAnimationFrame(step);
+  $('wskip').onclick = () => { wStop131(); clearTimeout(wishQ.tm); gSummary(res); }; };
+{ const base = gNext; gNext = function () { wStop131(); return base(); }; }
+{ const base = gSummary; gSummary = function (res) { wStop131(); return base(res); }; }
+// ---------- cozinha: fogão, despensa, 8 pratos e minigames (cortar, mexer, fogo e tempero) ----------
+// Cozinhe no Fogãozinho Rosa da sua casa (você ganha um) ou na cozinha das casas dos moradores. Os ingredientes só saem da mochila no fim,
+// e nunca dá errado: o capricho no minigame decide se sai 1 porção ou 2 (Perfeito!).
+Object.assign(ITEMS, { farinha: { n: 'Farinha', price: 7, pantry: 15 }, ovo: { n: 'Ovo', price: 6, pantry: 12 }, manteiga: { n: 'Manteiga', price: 9, pantry: 18 }, arroz: { n: 'Arroz', price: 5, pantry: 10 }, acucar: { n: 'Açúcar', price: 5, pantry: 10 } });
+const DISH131 = {
+  sopa131: { n: 'Sopa de Cenoura', need: { cenoura: 2, manteiga: 1 }, food: 40, hp: 30, steps: ['cortar', 'mexer'], kind: 'bowl', c: '#ff9a3c', c2: '#ffd07a', price: 150 },
+  salada131: { n: 'Salada do Vale', need: { tomate: 1, cenoura: 1, trevo: 1 }, food: 30, st: 1, steps: ['cortar', 'tempero'], kind: 'plate', c: '#7fd36a', c2: '#ff6b6b', price: 160 },
+  espeto131: { n: 'Espetinho de Peixe', need: { peixe: 2 }, food: 38, boost: 45, steps: ['tempero', 'fogo'], kind: 'skewer', c: '#ffb36b', c2: '#fff1d0', price: 120 },
+  onigiri131: { n: 'Bolinho de Arroz', need: { arroz: 2, peixe: 1 }, food: 34, hp: 20, boost: 30, steps: ['mexer', 'tempero'], kind: 'rice', c: '#ffffff', c2: '#3a4a5a', price: 110 },
+  geleia131: { n: 'Geleia de Frutinhas', need: { frutinha: 4, acucar: 1 }, food: 22, steps: ['mexer', 'fogo'], kind: 'jar', c: '#c43b7a', c2: '#ff8fbd', price: 190 },
+  torta131: { n: 'Torta de Maçã', need: { maca: 3, farinha: 1, acucar: 1 }, food: 50, hp: 'max', steps: ['cortar', 'mexer', 'fogo'], kind: 'pie', c: '#e8a65a', c2: '#c0482c', price: 260 },
+  panqueca131: { n: 'Panquecas com Mel', need: { farinha: 1, ovo: 2, mel: 1 }, food: 45, hp: 40, st: 1, steps: ['mexer', 'fogo', 'tempero'], kind: 'stack', c: '#f2c27a', c2: '#ffb000', price: 230 },
+  ensopado131: { n: 'Ensopado de Abóbora', need: { abobora: 1, cogumelo: 2, leite: 1 }, food: 70, hp: 'max', boost: 60, steps: ['cortar', 'mexer', 'fogo'], kind: 'bowl', c: '#ff7a1a', c2: '#a0522d', price: 420 },
+};
+for (const [k, d] of Object.entries(DISH131)) { ITEMS[k] = { n: d.n, price: d.price, dish: 1 }; FOOD[k] = d.food; }
+const COOK131 = { cur: null, raf: 0 };
+function dishIcon131(kind, c, c2, sz = 64) { const v = document.createElement('canvas'); v.width = v.height = sz; const x = v.getContext('2d'), s = sz / 64; x.scale(s, s); x.lineWidth = 3; x.strokeStyle = '#3a2840'; x.lineJoin = 'round';
+  const blob = (px, py, r, col) => { x.fillStyle = col; x.beginPath(); x.arc(px, py, r, 0, 7); x.fill(); };
+  if (kind === 'bowl') { x.fillStyle = '#fff6fb'; x.beginPath(); x.ellipse(32, 34, 26, 9, 0, 0, 7); x.fill(); x.stroke(); x.fillStyle = c; x.beginPath(); x.ellipse(32, 34, 21, 6.5, 0, 0, 7); x.fill(); x.fillStyle = '#ffb3d1'; x.beginPath(); x.moveTo(6, 35); x.quadraticCurveTo(10, 58, 32, 58); x.quadraticCurveTo(54, 58, 58, 35); x.closePath(); x.fill(); x.stroke(); blob(26, 33, 3, c2); blob(36, 35, 2.5, c2); blob(40, 31, 2, '#7fd36a'); x.strokeStyle = 'rgba(255,255,255,.8)'; x.beginPath(); x.moveTo(24, 22); x.quadraticCurveTo(28, 14, 24, 8); x.moveTo(38, 22); x.quadraticCurveTo(42, 14, 38, 8); x.stroke(); }
+  else if (kind === 'plate' || kind === 'pie' || kind === 'stack') { x.fillStyle = '#ffffff'; x.beginPath(); x.ellipse(32, 44, 28, 11, 0, 0, 7); x.fill(); x.stroke(); x.fillStyle = '#ffe1ee'; x.beginPath(); x.ellipse(32, 44, 20, 7, 0, 0, 7); x.fill();
+    if (kind === 'plate') { for (const [px, py, r, cc] of [[24, 38, 7, c], [36, 36, 8, c], [30, 32, 6, c], [40, 41, 4, c2], [22, 42, 4, c2], [32, 40, 3.5, '#ff9a3c']]) { blob(px, py, r, cc); } }
+    else if (kind === 'pie') { x.fillStyle = c; x.beginPath(); x.moveTo(10, 40); x.quadraticCurveTo(32, 14, 54, 40); x.quadraticCurveTo(32, 50, 10, 40); x.fill(); x.stroke(); x.strokeStyle = '#b5743a'; for (let i = 0; i < 4; i++) { x.beginPath(); x.moveTo(16 + i * 9, 38); x.lineTo(22 + i * 9, 26); x.stroke(); } blob(32, 22, 3, c2); }
+    else { for (let i = 0; i < 4; i++) { x.fillStyle = c; x.beginPath(); x.ellipse(32, 40 - i * 6, 18, 5.5, 0, 0, 7); x.fill(); x.stroke(); } x.fillStyle = c2; x.beginPath(); x.moveTo(20, 22); x.quadraticCurveTo(32, 16, 44, 22); x.lineTo(42, 34); x.quadraticCurveTo(40, 26, 36, 30); x.lineTo(30, 24); x.closePath(); x.fill(); x.fillStyle = '#fff6d0'; x.fillRect(28, 15, 9, 6); } }
+  else if (kind === 'skewer') { x.strokeStyle = '#8a5a3b'; x.lineWidth = 4; x.beginPath(); x.moveTo(8, 56); x.lineTo(56, 8); x.stroke(); x.lineWidth = 3; x.strokeStyle = '#3a2840'; for (let i = 0; i < 3; i++) { const px = 20 + i * 12, py = 44 - i * 12; x.fillStyle = i === 1 ? c2 : c; x.beginPath(); x.ellipse(px, py, 9, 6, -0.78, 0, 7); x.fill(); x.stroke(); } }
+  else if (kind === 'rice') { for (const [px, py] of [[20, 40], [44, 40]]) { x.fillStyle = c; x.beginPath(); x.moveTo(px - 13, py + 12); x.quadraticCurveTo(px, py - 22, px + 13, py + 12); x.closePath(); x.fill(); x.stroke(); x.fillStyle = c2; x.fillRect(px - 7, py + 2, 14, 10); } }
+  else if (kind === 'jar') { x.fillStyle = 'rgba(255,255,255,.7)'; x.beginPath(); x.roundRect(16, 18, 32, 38, 8); x.fill(); x.stroke(); x.fillStyle = c; x.beginPath(); x.roundRect(19, 28, 26, 25, 6); x.fill(); x.fillStyle = c2; x.fillRect(14, 12, 36, 8); x.strokeRect(14, 12, 36, 8); x.fillStyle = 'rgba(255,255,255,.6)'; x.fillRect(23, 31, 4, 14); }
+  else { const pc = { farinha: ['#f5ecd8', '#d8c3a0'], ovo: ['#fff8ec', '#ffcf6b'], manteiga: ['#ffe58a', '#f0c040'], arroz: ['#ffffff', '#ffb3d1'], acucar: ['#ffffff', '#c9b8ff'] }[kind] || ['#fff', '#ccc'];
+    if (kind === 'ovo') { x.fillStyle = pc[0]; x.beginPath(); x.ellipse(32, 36, 15, 19, 0, 0, 7); x.fill(); x.stroke(); }
+    else if (kind === 'manteiga') { x.fillStyle = pc[0]; x.beginPath(); x.roundRect(12, 26, 40, 22, 5); x.fill(); x.stroke(); x.fillStyle = '#fff6c8'; x.fillRect(16, 30, 32, 5); }
+    else if (kind === 'arroz') { x.fillStyle = pc[1]; x.beginPath(); x.moveTo(8, 32); x.quadraticCurveTo(10, 56, 32, 56); x.quadraticCurveTo(54, 56, 56, 32); x.closePath(); x.fill(); x.stroke(); for (let i = 0; i < 9; i++) blob(16 + i * 4, 30 - Math.sin(i / 8 * Math.PI) * 8, 4, '#ffffff'); }
+    else if (kind === 'acucar') { for (const [px, py] of [[18, 34], [34, 34], [26, 20]]) { x.fillStyle = pc[0]; x.fillRect(px, py, 14, 14); x.strokeRect(px, py, 14, 14); } }
+    else { x.fillStyle = pc[0]; x.beginPath(); x.moveTo(16, 18); x.lineTo(48, 18); x.lineTo(54, 56); x.lineTo(10, 56); x.closePath(); x.fill(); x.stroke(); x.fillStyle = pc[1]; x.fillRect(20, 32, 24, 10); x.fillStyle = '#c98a5a'; x.fillRect(18, 12, 28, 7); } }
+  return v.toDataURL(); }
+function cookIcons131() { for (const [k, d] of Object.entries(DISH131)) THUMB['i_' + k] = dishIcon131(d.kind, d.c, d.c2); for (const k of ['farinha', 'ovo', 'manteiga', 'arroz', 'acucar']) THUMB['i_' + k] = dishIcon131(k); THUMB.f_fogao131 = THUMB.f_fogao131 || ''; }
+// Fogãozinho Rosa (móvel)
+function mkStove131() { const g = new THREE.Group(), M = {}, mt = (c) => M[c] || (M[c] = lam(c)), add = (geo, c, px, py, pz, rx = 0) => { const m = new THREE.Mesh(geo, mt(c)); m.position.set(px, py, pz); m.rotation.x = rx; g.add(m); return m; };
+  add(new THREE.BoxGeometry(0.92, 0.82, 0.78), '#ffd6e6', 0, 0.41, 0); add(new THREE.BoxGeometry(0.96, 0.06, 0.82), '#3a2d3a', 0, 0.85, 0);
+  for (const [bx, bz] of [[-0.22, -0.17], [0.22, -0.17], [-0.22, 0.17], [0.22, 0.17]]) { add(new THREE.TorusGeometry(0.11, 0.022, 6, 18), '#8a7a8a', bx, 0.89, bz, Math.PI / 2); add(new THREE.CylinderGeometry(0.05, 0.05, 0.02, 10), '#ff8f6b', bx, 0.885, bz); }
+  add(new THREE.BoxGeometry(0.7, 0.42, 0.04), '#ff8fbd', 0, 0.36, 0.4); add(new THREE.BoxGeometry(0.5, 0.24, 0.03), '#5a3a5a', 0, 0.38, 0.42); add(new THREE.BoxGeometry(0.56, 0.04, 0.05), '#ffd45a', 0, 0.62, 0.42);
+  for (let i = 0; i < 4; i++) add(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 10), '#ffd45a', -0.3 + i * 0.2, 0.74, 0.41, Math.PI / 2);
+  add(new THREE.BoxGeometry(0.92, 0.36, 0.06), '#ffd6e6', 0, 1.06, -0.36); add(new THREE.BoxGeometry(0.96, 0.05, 0.1), '#ff8fbd', 0, 1.25, -0.36);
+  add(new THREE.CylinderGeometry(0.17, 0.14, 0.18, 16), '#e8505b', -0.22, 0.99, 0.17); add(new THREE.CylinderGeometry(0.17, 0.17, 0.03, 16), '#ff8f8f', -0.22, 1.09, 0.17); add(new THREE.SphereGeometry(0.03, 8, 6), '#ffd45a', -0.22, 1.12, 0.17);
+  g.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); bakeVC(g); const root = new THREE.Group(); root.add(g); return root; }
+MODELS.p31_stove = { root: mkStove131() };
+FURN.fogao131 = { n: 'Fogãozinho Rosa', m: 'p31_stove', w: 1, h: 1, price: 220, solid: 1 };
+// onde dá para cozinhar
+function cookSpot131() { if (mode === 'in' && !decor) { for (const it of S.home.items) if (it.id === 'fogao131') { const d = distRect(P.x, P.z, RX + it.x, RZ + it.y, 1, 1); if (d < 0.75) return { d, label: '🍳 Cozinhar no fogão', act: () => openCook131() }; } }
+  if (mode === 'shop' && curShop) { const R = SHOPS[curShop]; if (R && R.cozinha131) { const d = distRect(P.x, P.z, R.x + 3.6, R.z + 0.1, 2.6, 0.75); if (d < 0.75) return { d, label: '🍳 Cozinhar aqui', act: () => openCook131() }; } } return null; }
+{ const base = nearestSpecial; nearestSpecial = function () { const b = base(); let c = null; try { c = cookSpot131(); } catch (e) {} return c && (!b || c.d < b.d) ? c : b; }; }
+// pratos ao comer
+{ const base = eatItem; eatItem = function (k) { const d = DISH131[k], ok = base(k); if (!ok || !d) return ok; let msg = [];
+    if (d.hp) { P.hp = d.hp === 'max' ? maxHp() : Math.min(maxHp(), P.hp + d.hp); msg.push(d.hp === 'max' ? 'vida cheia' : `+${d.hp} ❤`); }
+    if (d.st) { P.st = maxSt(); msg.push('fôlego cheio'); } if (d.boost) { P.boost = Math.max(P.boost || 0, d.boost); msg.push(`corrida turbo ${d.boost}s`); }
+    if (msg.length) floatText(P.x, 2.2, P.z, msg.join(' · '), '#ffe18d', true); burst(P.x, 1.2, P.z, [d.c, d.c2, '#ffffff'], 16, 1.8, true, true); lastHud = ''; hud(); return ok; }; }
+const efx131 = (d) => [`+${d.food} saciedade`, d.hp ? (d.hp === 'max' ? 'vida cheia' : `+${d.hp} ❤`) : '', d.st ? 'fôlego cheio' : '', d.boost ? `corrida ${d.boost}s` : ''].filter(Boolean).join(' · ');
+const canCook131 = (d) => Object.entries(d.need).every(([k, n]) => (S.inv[k] || 0) >= n);
+let cookTab131 = 'rec';
+function openCook131() { cookStop131(); const tabs = `<div class="tabs"><button class="btn tab ${cookTab131 === 'rec' ? 'on' : ''}" data-ck="rec">🍳 Receitas</button><button class="btn tab ${cookTab131 === 'desp' ? 'on' : ''}" data-ck="desp">🧺 Despensa</button></div>`;
+  let body = '';
+  if (cookTab131 === 'rec') body = Object.entries(DISH131).map(([k, d]) => { const ok = canCook131(d), made = (S.cook131 && S.cook131[k]) || 0;
+    const req = Object.entries(d.need).map(([i, n]) => `<span class="oreq ${(S.inv[i] || 0) >= n ? 'ok' : ''}"><img src="${THUMB['i_' + i] || ''}">${S.inv[i] || 0}/${n} ${ITEMS[i].n}</span>`).join('');
+    return `<div class="fcard ck131c"><img src="${THUMB['i_' + k]}"><div class="grow"><b>${d.n}</b>${made ? ` <small class="note">feito ${made}×</small>` : ''}<span>${efx131(d)} · vende por ${d.price}🪙</span><span>${req}</span><span class="note">${d.steps.map((s) => CKN131[s]).join(' → ')}</span></div><button class="btn ${ok ? 'candy pink' : ''} sm" data-cook="${k}" ${ok ? '' : 'disabled'}>Cozinhar</button></div>`; }).join('');
+  else body = `<p class="note">Ingredientes básicos para as receitas. O resto vem da horta, da pesca, das árvores e da fazenda.</p>` + ['farinha', 'ovo', 'manteiga', 'arroz', 'acucar'].map((k) => `<div class="fcard"><img src="${THUMB['i_' + k]}"><div class="grow"><b>${ITEMS[k].n}</b><span>Você tem ${S.inv[k] || 0}</span></div><button class="btn sm ${S.coins >= ITEMS[k].pantry ? 'candy gold' : ''}" data-buy="${k}">${ITEMS[k].pantry}🪙</button><button class="btn sm ${S.coins >= ITEMS[k].pantry * 5 ? 'candy gold' : ''}" data-buy5="${k}">5× ${ITEMS[k].pantry * 5}🪙</button></div>`).join('')
+    + `<div class="fcard"><img src="${dishIcon131('bowl', '#c9783a', '#ffd45a')}"><div class="grow"><b>Panela de Cobre</b><span>${S.pan131 ? 'Já é sua! As faixas certas dos minigames ficam maiores.' : 'Deixa as faixas certas dos minigames 30% maiores.'}</span></div>${S.pan131 ? '' : `<button class="btn sm ${S.coins >= 450 ? 'candy gold' : ''}" id="ckpan">450🪙</button>`}</div>`;
+  openModal(`<div class="shophead"><img src="${THUMB.i_sopa131}"><div><h2 style="margin:0">🍳 Cozinha</h2><p class="lead" style="margin:2px 0 0">🪙 ${S.coins} · capriche nos minigames para ganhar porção dupla!</p></div></div>${tabs}<div class="ck131l">${body}</div>`, 'ck131m');
+  document.querySelectorAll('[data-ck]').forEach((b) => (b.onclick = () => { cookTab131 = b.dataset.ck; sfx('switch'); openCook131(); }));
+  document.querySelectorAll('[data-cook]').forEach((b) => (b.onclick = () => startCook131(b.dataset.cook)));
+  const buy = (k, n) => { const c = ITEMS[k].pantry * n; if (S.coins < c) { sfx('cancel'); toast('Moedas insuficientes.'); return; } S.coins -= c; S.inv[k] = (S.inv[k] || 0) + n; sfx('coin'); lastHud = ''; hud(); openCook131(); };
+  document.querySelectorAll('[data-buy]').forEach((b) => (b.onclick = () => buy(b.dataset.buy, 1))); document.querySelectorAll('[data-buy5]').forEach((b) => (b.onclick = () => buy(b.dataset.buy5, 5)));
+  if ($('ckpan')) $('ckpan').onclick = () => { if (S.coins < 450) return sfx('cancel'); S.coins -= 450; S.pan131 = 1; sfx('success'); toast('🍲 Panela de Cobre! Os minigames ficaram mais tranquilos.'); openCook131(); }; }
+const CKN131 = { cortar: '🔪 Cortar', mexer: '🥄 Mexer', fogo: '🔥 Fogo', tempero: '🧂 Tempero' };
+const CKH131 = { cortar: 'Aperte <span class="key">Espaço</span>, <span class="key">C</span> ou toque quando a faca passar numa marquinha rosa.', mexer: 'Alterne <span class="key">←</span> e <span class="key">→</span> (ou os dois botões) para mexer a panela até encher.', fogo: 'Segure <span class="key">Espaço</span> ou o botão para esquentar. Mantenha o ponteiro na faixa verde.', tempero: 'Aperte quando o círculo que encolhe encostar no anel dourado.' };
+function cookStop131() { if (COOK131.raf) cancelAnimationFrame(COOK131.raf); COOK131.raf = 0; if (COOK131.key) { removeEventListener('keydown', COOK131.key, true); removeEventListener('keyup', COOK131.keyU, true); COOK131.key = null; } COOK131.cur = null; }
+function mkStep131(kind, wide) { const W = wide ? 1.3 : 1;
+  if (kind === 'cortar') { const marks = [0.16, 0.33, 0.5, 0.67, 0.84].map((x) => ({ x, cut: 0 })); return { kind, t: 0, pos: 0, dir: 1, sp: 0.55, n: 0, hits: 0, marks, limit: 7,
+    upd(dt) { this.t += dt; this.pos += this.dir * this.sp * dt; if (this.pos > 1) { this.pos = 1; this.dir = -1; } if (this.pos < 0) { this.pos = 0; this.dir = 1; } this.done = this.n >= 5 || this.t > this.limit; this.score = this.hits / 5; },
+    press() { const m = this.marks.filter((q) => !q.cut).sort((a, b) => Math.abs(a.x - this.pos) - Math.abs(b.x - this.pos))[0]; this.n++; if (m && Math.abs(m.x - this.pos) < 0.045 * W) { m.cut = 1; this.hits++; this.sp += 0.12; sfx('chop'); return 1; } sfx('cancel'); return 0; } }; }
+  if (kind === 'mexer') return { kind, t: 0, g: 0, last: 0, ang: 0, limit: 5.5, upd(dt) { this.t += dt; this.g = Math.max(0, this.g - dt * 0.07); this.ang += dt * (1 + this.g * 5); this.done = this.g >= 1 || this.t > this.limit; this.score = Math.min(1, this.g + (this.g >= 1 ? 0.1 : 0)); },
+    side(s) { if (s === this.last) return 0; this.last = s; this.g = Math.min(1, this.g + 0.075 * (wide ? 1.2 : 1)); this.ang += 0.6; if (Math.random() < 0.5) sfx('pop'); return 1; } };
+  if (kind === 'fogo') return { kind, t: 0, T: 0.15, hold: 0, inZ: 0, limit: 6, z: 0.5, upd(dt) { this.t += dt; this.T += (this.hold ? 0.62 : -0.5) * dt + Math.sin(this.t * 7) * 0.004; this.T = Math.max(0, Math.min(1, this.T)); this.z = 0.55 + Math.sin(this.t * 0.9) * 0.18; const zw = 0.11 * W; if (Math.abs(this.T - this.z) < zw) this.inZ += dt; this.done = this.t > this.limit; this.score = Math.min(1, this.inZ / 3.6); } };
+  return { kind: 'tempero', t: 0, r: 1, round: 0, sum: 0, res: [], limit: 99, upd(dt) { this.t += dt; this.r -= dt / 1.25; if (this.r <= 0) { this.res.push(0); this.next(); } this.done = this.round >= 3; this.score = this.sum / 3; },
+    next() { this.round++; this.r = 1 + Math.random() * 0.15; }, press() { const e = Math.abs(this.r - 0.35), v = Math.max(0, 1 - e / (0.22 * W)); this.sum += v; this.res.push(v); sfx(v > 0.7 ? 'chime' : v > 0.3 ? 'pop' : 'cancel'); this.next(); return v; } }; }
+function startCook131(k) { const d = DISH131[k]; if (!d || !canCook131(d)) return sfx('cancel'); cookStop131(); const C = (COOK131.cur = { k, d, i: 0, scores: [], step: null, fl: [] });
+  openModal(`<div class="ck131"><h2>${d.n}</h2><div class="ckst" id="ckst"></div><p class="ckhow" id="ckhow"></p><canvas id="ckcv" width="520" height="220"></canvas><div class="ckbtns" id="ckbtns"></div></div>`, 'ck131m');
+  const go = () => { if (C.i >= d.steps.length) return finishCook131(); C.step = mkStep131(d.steps[C.i], S.pan131); const kd = C.step.kind;
+    $('ckst').innerHTML = d.steps.map((s, i) => `<span class="${i < C.i ? 'ok' : i === C.i ? 'on' : ''}">${CKN131[s]}</span>`).join('<i>→</i>'); $('ckhow').innerHTML = CKH131[kd];
+    $('ckbtns').innerHTML = kd === 'mexer' ? `<button class="btn candy" id="ckL">⟲ ←</button><button class="btn candy" id="ckR">→ ⟳</button>` : `<button class="btn candy pink" id="ckA">${kd === 'fogo' ? '🔥 Segurar' : kd === 'cortar' ? '🔪 Cortar' : '🧂 Agora!'}</button>`;
+    if ($('ckL')) { $('ckL').onpointerdown = () => C.step.side && C.step.side(-1); $('ckR').onpointerdown = () => C.step.side && C.step.side(1); }
+    if ($('ckA')) { $('ckA').onpointerdown = (e) => { e.preventDefault(); act(true); }; $('ckA').onpointerup = $('ckA').onpointerleave = () => act(false); } sfx('switch'); };
+  const act = (down) => { const s = C.step; if (!s) return; if (s.kind === 'fogo') { s.hold = down; return; } if (!down) return; if (s.press) { const v = s.press(); C.fl.push({ t: 0, v, x: s.kind === 'cortar' ? s.pos : 0.5 }); } };
+  COOK131.key = (e) => { if (!COOK131.cur) return; const c = e.code; if (c === 'Escape') return; if (['Space', 'KeyC', 'Enter', 'ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD', 'KeyE'].includes(c)) { e.preventDefault(); e.stopImmediatePropagation(); } if (e.repeat) return; const s = C.step; if (!s) return;
+    if (s.kind === 'mexer') { if (c === 'ArrowLeft' || c === 'KeyA') s.side(-1); if (c === 'ArrowRight' || c === 'KeyD') s.side(1); if (c === 'Space' || c === 'KeyC') s.side(s.last === 1 ? -1 : 1); } else if (c === 'Space' || c === 'KeyC' || c === 'Enter' || c === 'KeyE') act(true); };
+  COOK131.keyU = (e) => { if (COOK131.cur && (e.code === 'Space' || e.code === 'KeyC' || e.code === 'Enter' || e.code === 'KeyE')) { e.preventDefault(); e.stopImmediatePropagation(); act(false); } };
+  addEventListener('keydown', COOK131.key, true); addEventListener('keyup', COOK131.keyU, true);
+  let last = performance.now(), pause = 0; go();
+  const loop = (now) => { const cv = $('ckcv'); if (!cv || COOK131.cur !== C) return cookStop131(); const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = Math.max(last, now); const s = C.step;
+    if (pause > 0) { pause -= dt; if (pause <= 0) { C.i++; go(); } } else if (s) { s.upd(dt); if (s.done) { C.scores.push(s.score); C.fl.push({ t: 0, v: s.score, big: 1 }); sfx(s.score > 0.8 ? 'success' : 'pop'); pause = 0.7; } }
+    drawCook131(cv, C, dt); COOK131.raf = requestAnimationFrame(loop); };
+  COOK131.raf = requestAnimationFrame(loop); }
+function drawCook131(cv, C, dt) { const x = cv.getContext('2d'), W = cv.width, H = cv.height, s = C.step, d = C.d; x.clearRect(0, 0, W, H);
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#fff3f8'); g.addColorStop(1, '#ffe1ee'); x.fillStyle = g; x.beginPath(); x.roundRect(0, 0, W, H, 18); x.fill();
+  x.lineWidth = 4; x.strokeStyle = '#3a2840'; x.lineJoin = 'round'; x.lineCap = 'round';
+  if (s && s.kind === 'cortar') { x.fillStyle = '#e8c39a'; x.beginPath(); x.roundRect(30, 120, W - 60, 60, 12); x.fill(); x.stroke(); // tábua
+    const ing = Object.keys(d.need)[0], col = { cenoura: '#ff9a3c', tomate: '#ff5a5a', maca: '#ff6b6b', abobora: '#ff7a1a' }[ing] || d.c; x.fillStyle = col; x.beginPath(); x.roundRect(60, 128, W - 120, 36, 18); x.fill(); x.stroke();
+    for (const m of s.marks) { const px = 60 + m.x * (W - 120); x.strokeStyle = m.cut ? '#ffffff' : '#ff6fa8'; x.lineWidth = m.cut ? 5 : 3; x.setLineDash(m.cut ? [] : [5, 5]); x.beginPath(); x.moveTo(px, 118); x.lineTo(px, 174); x.stroke(); } x.setLineDash([]); x.lineWidth = 4; x.strokeStyle = '#3a2840';
+    const kx = 60 + s.pos * (W - 120); x.fillStyle = '#d8dbe8'; x.beginPath(); x.moveTo(kx - 6, 40); x.lineTo(kx + 10, 40); x.lineTo(kx + 4, 112); x.lineTo(kx - 6, 112); x.closePath(); x.fill(); x.stroke(); x.fillStyle = '#c98a5a'; x.beginPath(); x.roundRect(kx - 9, 14, 20, 28, 5); x.fill(); x.stroke();
+    x.fillStyle = '#3a2840'; x.font = 'bold 18px "Pixelify Sans", sans-serif'; x.fillText(`${s.hits}/5 cortes · ${Math.max(0, s.limit - s.t).toFixed(1)}s`, 30, 210); }
+  else if (s && s.kind === 'mexer') { const cx = W / 2, cy = 120; x.fillStyle = '#6a5a6a'; x.beginPath(); x.ellipse(cx, cy + 40, 120, 26, 0, 0, 7); x.fill(); x.fillStyle = '#e8505b'; x.beginPath(); x.moveTo(cx - 110, cy - 10); x.lineTo(cx - 100, cy + 50); x.quadraticCurveTo(cx, cy + 75, cx + 100, cy + 50); x.lineTo(cx + 110, cy - 10); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = d.c; x.beginPath(); x.ellipse(cx, cy - 10, 108, 24, 0, 0, 7); x.fill(); x.stroke(); for (let i = 0; i < 6; i++) { const a = s.ang * 1.3 + i; x.fillStyle = 'rgba(255,255,255,.6)'; x.beginPath(); x.arc(cx + Math.cos(a) * 70, cy - 10 + Math.sin(a) * 14, 4 + (i % 3), 0, 7); x.fill(); }
+    const sx = cx + Math.cos(s.ang * 2) * 60, sy = cy - 12 + Math.sin(s.ang * 2) * 12; x.strokeStyle = '#c98a5a'; x.lineWidth = 10; x.beginPath(); x.moveTo(sx, sy); x.lineTo(sx + 30, sy - 90); x.stroke(); x.lineWidth = 4; x.strokeStyle = '#3a2840';
+    x.fillStyle = '#fff'; x.beginPath(); x.roundRect(30, 196, W - 60, 14, 7); x.fill(); x.stroke(); x.fillStyle = '#7fd36a'; x.beginPath(); x.roundRect(32, 198, (W - 64) * s.g, 10, 5); x.fill(); }
+  else if (s && s.kind === 'fogo') { const bx = 60, bw = W - 120, by = 150; x.fillStyle = '#fff'; x.beginPath(); x.roundRect(bx, by, bw, 26, 13); x.fill(); x.stroke(); const zw = 0.11 * (S.pan131 ? 1.3 : 1);
+    x.fillStyle = '#9fe08a'; x.beginPath(); x.roundRect(bx + (s.z - zw) * bw, by + 3, zw * 2 * bw, 20, 10); x.fill(); const px = bx + s.T * bw; x.fillStyle = '#3a2840'; x.beginPath(); x.moveTo(px, by - 4); x.lineTo(px - 9, by - 20); x.lineTo(px + 9, by - 20); x.closePath(); x.fill();
+    for (let i = 0; i < 7; i++) { const fx = W / 2 - 90 + i * 30, fh = 20 + s.T * 60 * (0.7 + 0.3 * Math.sin(s.t * 12 + i * 2)); x.fillStyle = i % 2 ? '#ffb000' : '#ff6b3c'; x.beginPath(); x.moveTo(fx - 12, 120); x.quadraticCurveTo(fx, 120 - fh * 1.4, fx + 12, 120); x.closePath(); x.fill(); }
+    x.fillStyle = '#3a2840'; x.font = 'bold 18px "Pixelify Sans", sans-serif'; x.fillText(`no ponto: ${Math.min(3.6, s.inZ).toFixed(1)}/3,6s · ${Math.max(0, s.limit - s.t).toFixed(1)}s`, 30, 210); }
+  else if (s && s.kind === 'tempero') { const cx = W / 2, cy = 105, R = 90; x.strokeStyle = '#ffc93c'; x.lineWidth = 10; x.beginPath(); x.arc(cx, cy, R * 0.35, 0, 7); x.stroke(); x.lineWidth = 4; x.strokeStyle = '#ff6fa8'; x.beginPath(); x.arc(cx, cy, Math.max(1, R * s.r), 0, 7); x.stroke();
+    x.fillStyle = '#fff'; x.beginPath(); x.arc(cx, cy, 16, 0, 7); x.fill(); x.strokeStyle = '#3a2840'; x.stroke(); x.fillStyle = '#3a2840'; x.font = 'bold 18px "Pixelify Sans", sans-serif'; x.fillText(`pitada ${Math.min(3, s.round + 1)}/3`, 30, 210); }
+  for (let i = C.fl.length - 1; i >= 0; i--) { const f = C.fl[i]; f.t += dt; if (f.t > 0.9) { C.fl.splice(i, 1); continue; } const a = 1 - f.t / 0.9, txt = f.big ? (f.v > 0.85 ? 'Perfeito!' : f.v > 0.5 ? 'Muito bem!' : 'Tá ótimo!') : f.v > 0.7 ? 'Isso!' : f.v > 0.3 ? 'Quase' : 'Ops';
+    x.globalAlpha = a; x.fillStyle = f.v > 0.7 ? '#ff4f9a' : '#7a6a7a'; x.font = `bold ${f.big ? 40 : 24}px "Pixelify Sans", sans-serif`; x.textAlign = 'center'; x.fillText(txt, f.big ? W / 2 : 60 + (f.x || 0.5) * (W - 120), (f.big ? 80 : 100) - f.t * 40); x.textAlign = 'left'; x.globalAlpha = 1; } }
+function finishCook131() { const C = COOK131.cur; if (!C) return; const d = C.d, sc = C.scores.reduce((a, b) => a + b, 0) / Math.max(1, C.scores.length), q = sc >= 0.85 ? 3 : sc >= 0.5 ? 2 : 1, n = q === 3 ? 2 : 1; cookStop131();
+  if (!canCook131(d)) { closeModal(); return; } for (const [k, c] of Object.entries(d.need)) { S.inv[k] -= c; if (S.inv[k] <= 0) delete S.inv[k]; } S.inv[C.k] = (S.inv[C.k] || 0) + n;
+  S.cook131 = S.cook131 || {}; S.cook131[C.k] = (S.cook131[C.k] || 0) + 1; try { gainXp(8 + q * 4); } catch (e) {} lastHud = ''; hud();
+  openModal(`<div class="ck131 done"><div class="ckstars">${'★'.repeat(q)}${'☆'.repeat(3 - q)}</div><img class="ckimg" src="${THUMB['i_' + C.k]}"><h2>${q === 3 ? 'Perfeito!' : q === 2 ? 'Delicioso!' : 'Um pouquinho tostado, mas gostoso!'}</h2><p class="lead">${n}× <b>${d.n}</b> na mochila. ${efx131(d)}.</p><div class="ckbtns"><button class="btn candy pink" id="ckagain">Cozinhar mais</button><button class="btn" id="ckok">Pronto</button></div></div>`, 'ck131m');
+  sfx(q === 3 ? 'jingle_4' : 'success'); if (q === 3) setTimeout(() => confetti(innerWidth / 2, innerHeight * 0.35, 30, true), 150); $('ckagain').onclick = () => openCook131(); $('ckok').onclick = () => closeModal(); }
+{ const base = closeModal; closeModal = function (...a) { if (COOK131.cur) cookStop131(); return base(...a); }; }
+// ícones dos pratos e um fogão de presente (uma vez por save)
+{ const base = precompileAll; precompileAll = function (...a) { const r = base(...a); try { cookIcons131(); THUMB.f_fogao131 = thumb('p31_stove', { ry: -0.6 }); } catch (e) { console.error(e); } return r; }; }
+{ const base = v14Update; v14Update = function (dt) { base(dt); if (ready && !titleOn && S && !S.stove131 && S.furn && !CUT && !dlg) { S.stove131 = 1; const has = (S.home.items || []).some((i) => i.id === 'fogao131'); if (!has) S.furn.fogao131 = (S.furn.fogao131 || 0) + 1; setTimeout(() => toast('🍳 Você ganhou um <b>Fogãozinho Rosa</b>! Coloque em casa (modo decorar, <span class="key">V</span>) e cozinhe pratos com minigames. Nas casas dos moradores também dá para cozinhar.'), 4000); } }; }
+// ---------- a casa cresce mais: dois níveis novos de reforma ----------
+HOME_LV.push({ n: 'Casarão do Vale', size: [17, 11], coins: 6000, need: { madeira: 120, pedra: 90, ferro: 25, cristal: 8 }, perk: 'Espaço de sobra (17×11) para montar vários cômodos com divisórias. +20⭐ por noite.' },
+  { n: 'Mansão Estrelada', size: [19, 12], coins: 9500, need: { madeira: 160, pedra: 120, ferro: 40, cristal: 14 }, perk: 'A maior casa do vale (19×12). +25⭐ por noite.' });
+// brilho do cabelo: antes misturava com branco (no cabelo preto ou escuro virava cinza). Agora clareia na mesma cor e dá um pouco de saturação.
+function hairHi(hex, k = 1) { const c = new THREE.Color(hex), h = {}; c.getHSL(h); if (h.l > 0.82) return '#' + c.getHexString();
+  const dark = h.l < 0.35, l = Math.min(0.88, h.l + (dark ? 0.13 : 0.1) * k), sat = dark ? Math.max(h.s, 0.32) : Math.min(1, h.s * 1.06); return '#' + new THREE.Color().setHSL(h.h, sat, l).getHexString(); }
+// óculos: a âncora vinha da cabeça do Kenney (escondida), então ficavam enormes e na altura do nariz e da boca.
+// Na Fofinha eles vão na frente da cabeça redonda, na altura dos olhos e do tamanho deles.
+{ const base = accAnchors; accAnchors = function (obj, ck) { const A = base(obj, ck); if (ck !== 'km' || !A || A._fofa || !A.rosto) return A;
+  try { const R = fofaRef().head, s = 1 / (R.s || 1); A.rosto = { bone: 'head', pos: new THREE.Vector3((0 - R.p.x) * s, (0.845 - R.p.y) * s, (0.318 - R.p.z) * s), quat: new THREE.Quaternion(), scl: new THREE.Vector3(0.4 * s, 0.4 * s, 0.4 * s) }; A._fofa = 1; } catch (e) { console.error(e); } return A; }; }
+// regador novo: corpo arredondado (torneado), bico fino com chuveirinho, alça em arco e uma florzinha de cada lado; feito em tamanho de mundo
+function canKM131() { const g = new THREE.Group(), body = lam('#8fd3ff'), dk = lam('#4f9fd0'), lt = lam('#d8f2ff');
+  const prof = [[0.0, 0], [0.085, 0], [0.095, 0.02], [0.1, 0.07], [0.092, 0.12], [0.07, 0.15], [0.045, 0.165], [0.0, 0.17]].map(([x, y]) => new THREE.Vector2(x, y));
+  const b = new THREE.Mesh(new THREE.LatheGeometry(prof, 20), body); b.position.set(0, -0.21, 0.05); g.add(b);
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.098, 0.008, 6, 24), dk); band.rotation.x = Math.PI / 2; band.position.set(0, -0.15, 0.05); g.add(band);
+  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.052, 0.012, 16), lt); lid.position.set(0, -0.04, 0.05); g.add(lid);
+  const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.02, 0.2, 10), body); sp.position.set(0, -0.13, 0.19); sp.rotation.x = 0.95; g.add(sp);
+  const rose = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.016, 0.03, 14), dk); rose.position.set(0, -0.065, 0.27); rose.rotation.x = 0.95; g.add(rose);
+  const face = new THREE.Mesh(new THREE.CircleGeometry(0.034, 14), lt); face.position.set(0, -0.055, 0.282); face.rotation.x = 0.95 - Math.PI / 2; g.add(face);
+  const h = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.012, 8, 18, Math.PI), dk); h.position.set(0, -0.04, 0.04); h.rotation.y = Math.PI / 2; g.add(h);
+  for (const sx of [-1, 1]) { for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2, pe = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), lam('#ff9fc8')); pe.position.set(sx * 0.098, -0.13 + Math.sin(a) * 0.018, 0.05 + Math.cos(a) * 0.018); g.add(pe); } const c = new THREE.Mesh(new THREE.SphereGeometry(0.01, 8, 6), lam('#ffd45a')); c.position.set(sx * 0.103, -0.13, 0.05); g.add(c); }
+  g.traverse((m) => { if (m.isMesh) m.castShadow = true; }); const v = bakeVC(g); v.scale.multiplyScalar(1.35); v.userData.kmS = 1; return v; }
+{ const base = heldObj; heldObj = function (k) { if (k === '#can' && player && player.key === 'km') { try { return canKM131(); } catch (e) { console.error(e); } } return base(k); }; }
+// espada: 60% maior e reta saía enorme, apontando para baixo e para fora. Agora fica para a frente e um pouco para cima, num tamanho de mão.
+const SWORD131 = { rx: -0.9, k: 1.3 / 1.6 };
+{ const base = updateHand; updateHand = function () { base(); try { if (!player || player.key !== 'km' || !handProp || !handKey || !handKey.startsWith('w:') || TOOLS[S.slot].id !== 'espada' || handProp.userData.s131) return; handProp.userData.s131 = 1; handProp.rotation.set(SWORD131.rx, 0, 0); if (handProp.userData.kmS) handProp.scale.multiplyScalar(SWORD131.k); } catch (e) {} }; }
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -7197,4 +7527,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { KM_PAT, KM_SHOE, get KM_BODIESo() { return KM_BODIES; }, EMOTEX30, NPCLOOK, EMO30, EXPR30, npcExpress, CR30, get crLook() { return crLook; }, get GCVo() { return GCV; }, kmFaceTex, SKINS, HAIRC, KCOL, KM_ECOL, KM_DEF, get KM_HEADSo() { return KM_HEADS; }, LPo: LP, composerX: composer, bloomX: bloom, gradeX: grade, PERF29, get CULLo() { return CULL; }, get sfx() { return sfx; }, get tone() { return tone; }, get moveC() { return moveC; }, LOW26, resetTransient, PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { DISH131, COOK131, openCook131, startCook131, cookSpot131, get nearestSpecial() { return nearestSpecial; }, get eatItem() { return eatItem; }, WISH131, VIB131, get rebuildFurniture() { return rebuildFurniture; }, HOME_LV, get IW() { return IW; }, get IH() { return IH; }, RX, RZ, STEP131, stepAt131, STEPH131, get heldObj() { return heldObj; }, get fofaRef() { return fofaRef; }, KM_PAT, KM_SHOE, get KM_BODIESo() { return KM_BODIES; }, EMOTEX30, NPCLOOK, EMO30, EXPR30, npcExpress, CR30, get crLook() { return crLook; }, get GCVo() { return GCV; }, kmFaceTex, SKINS, HAIRC, KCOL, KM_ECOL, KM_DEF, get KM_HEADSo() { return KM_HEADS; }, LPo: LP, composerX: composer, bloomX: bloom, gradeX: grade, PERF29, get CULLo() { return CULL; }, get sfx() { return sfx; }, get tone() { return tone; }, get moveC() { return moveC; }, LOW26, resetTransient, PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };

@@ -167,3 +167,21 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Roupas da Fofinha: entrada na tabela `B` de `fofaParts` (`sl`: `s`, `l`, `puff`, `wide`; `bt`: `p`, `h`, `k`, `d`, `bal`, `midi`, `robe`, `coatL`; `ex`: o detalhe) e o código em `KM_VAR` (lista de roupas válidas: sem isso o `kmLook` troca pela padrão). Nome em `KM_BODIES`, preço em `WARD_PRICE.kb` ou grátis em `WARD_FREE.kb`.
 - Estampas: chave `kp` (de `KM_PAT`) com cor `kpc`. A peça recebe a estampa pelo 13º item de `A(...)`; o `fofaBuild` da v31 troca a geometria por uma mais fina (`ballP`, `skirtP`) e pinta cada triângulo com `patColor` (u = volta em torno da peça, v = altura). Estampa nova: um `case` em `patColor` e o nome em `KM_PAT`.
 - Sapatos: chave `ksh` (`KM_SHOE`: `redondo`, `bota`, `sapatilha`; `pata` só no kigurumi). Chaves novas do visual entram no `KM_DEF` e no cache do `fofaBuild`.
+
+## Combate, escadas, cômodos, cozinha e desejo épico (v1.31)
+
+- A numeração agora é 1.31 (seção `v1.31` no código; rótulo `Estrelume · v1.31` no `template.html`).
+- Teclas: **Espaço pula** quando `jumpCtx131()` é verdadeiro (ao ar livre, andando, sem janela, barco, pesca nem decorar). **C usa a ferramenta**: o handler de captura troca o C por um Espaço sintético marcado com `__tool131`, que não pula. No controle, `padMap131` faz o A virar C e o LT virar Espaço. O Álbum é só o L. Nos testes, use `key('Space')` para pular.
+- Combate (`CB131`): `softAim131` vira para o inimigo mais perto num cone de ~75°. Durante o dash, o golpe fica guardado em `P.buf`. Com inimigo a menos de 3,2, a espada tem prioridade sobre colher. O movimento procedural (giro, inclinação, squash, pulinho, giro carregado, susto) e a altura da escada (`STEPH131.h`) entram só no desenho, no embrulho do `renderer.render`. Dash: `DASH131` (`dur`, `v`) e `dashTrail131`.
+- Escadas: `stepBuild131` lança raios nos modelos das casas em volta de cada porta no carregamento e guarda a altura dos degraus em `STEP131` (grade de 0,25). `stepAt131(x, z)` lê essa altura, e `D.step131` guarda o topo da escada, usado por `doorGlowAlign131` para pôr o brilho da porta lá em cima.
+- Cômodos: o embrulho de `buildRoomFor` põe parede do quarto e cozinha nas casas `casa`/`rosa` (`R.cozinha131`). Na casa da jogadora: os móveis `div131`, `divh131` e `arch131` (modelos `p31_*`, feitos por `mkDiv131`) e mais dois níveis em `HOME_LV`.
+- Cozinha:
+  - Pratos em `DISH131` (`need`, `food`, `hp` número ou `'max'`, `st`, `boost`, `steps`). Cada prato também vira `ITEMS`/`FOOD`, e o embrulho de `eatItem` aplica os efeitos.
+  - Ingredientes da despensa: `ITEMS[k].pantry` (preço de compra).
+  - Minigames: `mkStep131` (`cortar`, `mexer`, `fogo`, `tempero`), com `upd`, `press`/`side` e `score` entre 0 e 1. O desenho fica em `drawCook131`.
+  - Onde cozinhar: `cookSpot131` (o móvel `fogao131` em casa ou `R.cozinha131` nas casas dos moradores), ligado ao `nearestSpecial`.
+  - Os ingredientes só saem no `finishCook131`. Fechar a janela no meio não gasta nada.
+  - Prato novo: entrada em `DISH131` com `kind` desenhado em `dishIcon131`.
+- Desejo: `playWishG` foi substituído por uma coreografia em canvas 2D (`#wcv131`, `WISH131`: moedinhas, carga em espiral, promoção da cor por raridade, voo das estrelas, explosão). Não usa WebGL nem shader novo. `WISH131.pause` congela o tempo nos testes. O modo calmo (`body.calm`) reduz partículas e tremida.
+- Poço: `wellKM131()` substitui o `k_well` da praça (a água `WELL131.water` pisca no `shrineUpdate`), e o ícone `THUMB.well` vem de `p31_well`. A praça do Poço agora é `rect(35, 28, 50, 35)` mais a faixa `41–50 × 36`.
+- Cores: `vibMat131`/`vibTex131` passam cores e texturas dos modelos de cenário pela curva `vib131` no `prepare` (não mexe em `ch_`, `km_`, `hr_` nem em personagens). Texturas iguais são processadas uma vez e dividem a mesma `source` (`VIB131.src`). Use `?novib=1` para comparar.

@@ -27,14 +27,14 @@ const SHOT = process.env.SHOT === '1';
   await step('andou W 1.5s', 'return 1;', 300);
   await p.keyboard.down('KeyD'); await p.keyboard.down('ShiftLeft'); await p.waitForTimeout(1200); await p.keyboard.up('KeyD'); await p.keyboard.up('ShiftLeft');
   await step('correu D', 'return 1;', 300);
-  await key('KeyC'); await step('pulo', 'return P.jy;', 1500);
+  await key('Space'); await step('pulo', 'return P.jy;', 1500);
   await key('KeyQ'); await step('esquiva', 'return 1;', 1200);
   await key('KeyZ'); await step('bike on', 'return P.bike;', 1200);
-  await key('KeyC'); await step('pulo de bike', 'return P.jy;', 1200);
+  await key('Space'); await step('pulo de bike', 'return P.jy;', 1200);
   await key('KeyZ'); await step('bike off', 'return P.bike;', 1200);
   // casa
   await step('entrar casa', 'g.enterHouse(); return 1;', 2500);
-  await key('KeyC'); await step('pulo em casa', 'return P.jy;', 1200);
+  await key('Space'); await step('pulo em casa', 'return P.jy;', 1200);
   await step('decorar', 'g.openDecor(); return !!g.decor;', 1500);
   await key('Escape'); await step('esc decorar', 'return !!g.decor;', 1200);
   await step('casa: piso', "g.homeCycle && g.homeCycle('floor'); return 1;", 800);
@@ -51,7 +51,7 @@ const SHOT = process.env.SHOT === '1';
   // caverna
   await step('caverna', 'g.enterCave(); return 1;', 3000);
   await step('minerar', 'let k = 0; for (let y = 0; y < 60 && k < 3; y++) for (let x = 0; x < 60 && k < 3; x++) { try { if (g.mineAt(x, y)) k++; } catch (e) { return "ERR " + e.message; } } return k;', 800);
-  await key('KeyC'); await step('pulo caverna', 'return P.jy;', 1200);
+  await key('Space'); await step('pulo caverna', 'return P.jy;', 1200);
   await step('sair caverna', 'g.exitCave(); return 1;', 3000);
   // pesca
   await step('pescar', "const d = g.seaDockSpot(); P.x = d.lx; P.z = d.lz; let wx = -1, wy = -1; for (let r = 1; r < 6 && wx < 0; r++) for (let dy = -r; dy <= r && wx < 0; dy++) for (let dx = -r; dx <= r; dx++) { const x = Math.floor(P.x) + dx, y = Math.floor(P.z) + dy; if (g.tAt(x, y) === 4) { wx = x; wy = y; break; } } if (wx < 0) return 'semagua'; g.startFishing(wx, wy); return [wx, wy];", 4000);
@@ -59,7 +59,7 @@ const SHOT = process.env.SHOT === '1';
   await key('Escape'); await step('esc pesca', 'return !!P.fishing;', 1500);
   // barco
   await step('barco', "const d = g.seaDockSpot(); P.x = d.lx; P.z = d.lz; g.boardBoat(); return 1;", 3500);
-  await key('KeyC'); await step('pulo no barco', 'return P.jy;', 1000);
+  await key('Space'); await step('pulo no barco', 'return P.jy;', 1000);
   await step('kraken', "g.krakenStart(); return g.KR.on;", 2500);
   await step('tiro', "g.boatFire && g.boatFire(); return 1;", 1000);
   await step('desembarca', 'g.leaveBoat(); return 1;', 3500);
@@ -72,7 +72,7 @@ const SHOT = process.env.SHOT === '1';
   await step('pvp', "g.pvpEnter(); return g.PVP.on;", 2000);
   await step('pvp sai', "g.pvpLeave(); return g.PVP.on;", 1500);
   await step('parkour', "const pl = g.PK26.plats[0]; if (!pl) return 'sem'; P.x = pl.x; P.z = pl.z + 2; return [pl.x, pl.z];", 1500);
-  await key('KeyC'); await step('pulo parkour', 'return P.jy;', 1500);
+  await key('Space'); await step('pulo parkour', 'return P.jy;', 1500);
   // poço
   await step('desejo x10', "g.closeModal(); try { g.doWish(10); } catch (e) { return 'ERR ' + e.message; } return 1;", 4000);
   await step('passa desejo', "for (let i = 0; i < 40; i++) { if (!document.getElementById('wish').classList.contains('on')) break; g.wishAdvance(); } return document.getElementById('wish').classList.contains('on');", 2500);
