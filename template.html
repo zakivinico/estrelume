@@ -992,6 +992,11 @@ body.calm #lvup.on{animation-duration:3s!important}body.calm #itemget img{animat
 /* v27: o ✕ fica sempre por cima e à vista. A animação de entrada dos filhos do painel ("both") criava camadas que cobriam o botão, e ele sumia ao rolar. */
 #modal .mp>.xb{position:sticky!important;top:6px;right:auto;float:right;z-index:30;margin:-12px -14px -40px 8px;animation:none!important}
 #modal .mp.wishp{overflow:clip!important}
+/* v30: girar a personagem no criador */
+.sccv{touch-action:none;cursor:grab}.sccv.grab{cursor:grabbing}
+.cr3d{position:relative}.cr3d::after{display:none!important} /* a dica antiga prometia girar, mas não girava */
+.scrot30{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;z-index:3;pointer-events:auto;background:rgba(255,250,242,.85);border:2px solid var(--c-line,#5a3d68);border-radius:999px;padding:3px 6px;font:600 12px var(--font);color:var(--c-line,#5a3d68);white-space:nowrap}
+.scrot30 .btn{min-width:30px;height:28px;padding:0 6px;font-size:16px;line-height:1}
 #fps27{position:fixed;left:50%;top:4px;transform:translateX(-50%);z-index:70;background:rgba(20,20,27,.7);color:#fff;font:600 12px var(--font);padding:2px 8px;border-radius:8px;pointer-events:none}
 </style>
 </head>
@@ -1072,7 +1077,7 @@ body.calm #lvup.on{animation-duration:3s!important}body.calm #itemget img{animat
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v28</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v30</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script>/*GAME*/</script>

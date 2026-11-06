@@ -2,6 +2,65 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v30: cabelos em mechas, moradores com expressões, sons do criador e girar a personagem
+**Cabelos**
+- 12 penteados novos feitos de **mechas estilizadas**, que afinam na ponta e têm curva, onda ou ponta de anime:
+  - espetado de anime;
+  - chanel em mechas;
+  - ondas compridas;
+  - rabo alto em mechas;
+  - topete de lado;
+  - tranças longas;
+  - cachos soltos;
+  - pixie em camadas;
+  - fada das estrelas (pontas mais claras e estrelinhas);
+  - coque samurai;
+  - corte lobo;
+  - princesa.
+- São inspirados nos tipos de um pacote de penteados estilizados (curto, médio, longo, em camadas, trançado, cacheado, espetado, fantasia e anime), mas foram todos feitos para o jogo.
+- Quatro são de graça e os outros ficam no Ateliê. A Iris, a Duda, a Marina e o Pipo estreiam penteados novos.
+
+**Cores**
+- Todas as cores foram conferidas uma a uma: pele, cabelo, blusa, calça, sapato, olhos e a cor livre, em todos os penteados (148 testes, todos certos).
+- A pele "Original" era igual à "Pêssego" e saiu da lista.
+
+**Moradores com expressões (como no Animal Crossing)**
+- Quem passeia pelo vale agora muda de rosto, mostra um balãozinho e faz um gesto:
+  - alegria ♪;
+  - amor ♥;
+  - surpresa !;
+  - pensando …;
+  - sono z;
+  - risada ✦;
+  - piscadinha ✿.
+- Eles te cumprimentam quando você chega perto, se assustam quando você passa correndo, cochilam de noite e ficam pensativos na chuva.
+- Cada expressão tem um sonzinho baixinho e posicionado.
+
+**Criador de personagem**
+- Cada escolha toca **um som só, que combina com o que você escolheu**:
+  - uma gotinha nas cores (mais aguda nas cores claras);
+  - uma escovinha nos penteados;
+  - um tecido nas roupas;
+  - um brilhinho no rosto;
+  - uma bolhinha no tamanho.
+- Antes, cada clique tocava cinco sons ao mesmo tempo (clique, confirmar, página, menu e brilho).
+- **Gire a personagem**:
+  - arraste o modelo com o mouse ou com o dedo (com inércia);
+  - use os botões ⟲ ⟳;
+  - ou as teclas <kbd>Q</kbd> e <kbd>E</kbd>.
+- Dois cliques voltam a personagem para a frente. A dica "arraste para girar" já aparecia antes, mas girar não funcionava.
+
+## v29: metade do custo por quadro
+Medido com `tools/teste/bench.js` (o mesmo quadro desenhado várias vezes, esperando a placa terminar, em 9 áreas, qualidade Alta, 1280×720): **de 1.165 ms para 563 ms por quadro, −52%** no renderizador de software dos testes. Nada mudou no jogo; o que saiu era trabalho desperdiçado.
+- **Antisserrilhado:** o MSAA da qualidade Alta era o maior custo do quadro. Saiu, e no lugar entrou um FXAA dentro do pass de cor que já existia, praticamente de graça. Agora a Média também fica com as bordas suaves.
+- **Borda da floresta:** 3.600 árvores eram desenhadas sempre, mesmo atrás da névoa e fora da tela, e todas faziam sombra (cerca de 850 mil triângulos duas vezes por quadro). Agora entram no recorte por distância em blocos, e lá no fundo da névoa viram pinheiros simples.
+- **Enfeites miúdos:** grama, flores, frutinhas, samambaias, cogumelos e o campo de lavanda aparecem até a distância 34, onde a névoa já os apagava.
+- **Materiais:** os modelos usavam o material PBR só pela parte difusa (rugosidade 1, metal 0) e agora usam Lambert, que dá o mesmo visual com menos conta.
+- **Pós-processamento:** dois passes de tela cheia (a limpeza de pixels inválidos e a saída final) foram para dentro do pass de cor. O brilho (bloom) é calculado em 1/8 da resolução, e o desfoque de maquete lê menos vezes a imagem.
+- **Chão:** o ruído das manchas de grama e terra virou uma textura pré-calculada.
+- **Sombra:** o mapa de sombra da Alta passou de 2048 para 1024, que já sobra para a área de 32×32 em volta da personagem.
+- Triângulos por quadro no mundo aberto: de cerca de 2,6 milhões para cerca de 0,6 a 1,3 milhão.
+
 ## v28: efeitos sonoros cozy, no lugar dos sons de 8 bits
 - Os 32 efeitos que vinham de um pacote retrô de 8 bits foram refeitos com instrumentos macios: confirmar, cancelar, menus, cliques, bolhas, moedas, missões, segredos, alertas, magia, golpes, acertos, dano, "boom", pulo, voz dos diálogos e as vinhetas de nível, vitória e fanfarra.
   - Interface: **kalimba** e toquinhos de **madeira**.

@@ -37,4 +37,6 @@ Gerados por `tools/sons_cozy.py` (síntese em Python: kalimba, marimba, sininhos
 
 accept, alert, bonus, boom, cancel, coin, fanfare, fireball, fx, gold, hit, hit2, hover, hurt, impact, jingle_4, jingle_5, jingle_a, jump, kill, magic, magic2, magic3, menu, menu2, newthing, pick, pop, pop_c_1..3, powerup, powerup2, quest, secret, spirit, success, swing, switch, sword, voice, voice2.
 
+Na v30 entraram, também gerados: sel_color, sel_hair, sel_cloth, sel_face, sel_pop (escolhas no criador) e emo_feliz, emo_amor, emo_surpresa, emo_hmm, emo_sono, emo_risada (expressões dos moradores).
+
 Para refazer depois de mexer numa receita: `python3 tools/sons_cozy.py` (precisa de numpy, scipy e ffmpeg).
