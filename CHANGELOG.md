@@ -2,6 +2,19 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v28: efeitos sonoros cozy, no lugar dos sons de 8 bits
+- Os 32 efeitos que vinham de um pacote retrô de 8 bits foram refeitos com instrumentos macios: confirmar, cancelar, menus, cliques, bolhas, moedas, missões, segredos, alertas, magia, golpes, acertos, dano, "boom", pulo, voz dos diálogos e as vinhetas de nível, vitória e fanfarra.
+  - Interface: **kalimba** e toquinhos de **madeira**.
+  - Moedas, alertas e magia: **sininhos de vidro**.
+  - Segredos e itens novos: **caixinha de música**.
+  - Bolhas: **gotinhas de água**, com três variações.
+  - Golpes e acertos: **sopros de ar** e batidas de **almofada**, em vez de bipes.
+- Tudo tem um pouco de reverb de quarto, ataque suave e volume mais baixo, para ficar aconchegante (estilo ASMR).
+- O bipe sintetizado que acompanha regar e plantar virou um seno macio.
+- O golpe no ar não usa mais o som metálico de faca.
+- Os sons gravados de verdade (passos, portas, páginas, tecido, água, enxada, machado e bichos) continuam.
+- Os sons novos são gerados por `tools/sons_cozy.py` (Python), feitos para o jogo e livres (CC0).
+
 ## v27: mais leve (resolução dinâmica e qualidade automática), personagem do título, cabelos diferentes e introdução com diálogos
 **Desempenho**
 - **Resolução dinâmica**: o jogo mede o tempo de cada quadro e baixa a resolução interna quando fica lento (até 60%), subindo de volta quando sobra folga.
