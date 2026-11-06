@@ -172,9 +172,25 @@ S['jingle_4'] = verb(mix([(t, kalimba(midi(n), 0.9), 0.8) for t, n in [(0, 79), 
 S['jingle_5'] = verb(mix([(t, kalimba(midi(n), 1.1), g) for t, n, g in [(0, 72, .7), (0.1, 76, .7), (0.2, 79, .75), (0.3, 84, .8), (0.46, 88, .9), (0.62, 91, .7)]] + [(0.62, glass(midi(96), 1.8), 0.3), (0, marimba(midi(36), 0.8), 0.45), (0.3, marimba(midi(43), 0.8), 0.4), (0.62, marimba(midi(48), 1.0), 0.45)], 2.4), 0.35, 'l')
 S['fanfare'] = verb(mix([(i * 0.03, marimba(midi(n), 0.6), 0.55) for i, n in enumerate([55, 60, 64])] + [(0.32 + i * 0.03, marimba(midi(n), 0.9), 0.6) for i, n in enumerate([60, 64, 67, 72])] + [(0.32, kalimba(midi(84), 1.4), 0.6), (0.45, glass(midi(91), 1.6), 0.3)], 2.2), 0.35, 'l')
 
+# ---------- v30: escolher no criador e expressões dos moradores ----------
+S['sel_color'] = verb(mix([(0, bubble(700, 0.14, 1, 0.6), 0.9), (0.015, glass(midi(91), 0.35), 0.18)], 0.5), 0.2, 's')        # gotinha (o jogo muda a altura pela cor)
+S['sel_hair'] = verb(mix([(0, whoosh(0.16, 900, 2600, 1200, 0.5, 0.3), 0.7), (0.07, bubble(820, 0.1, 1, 0.5), 0.55)], 0.45), 0.18, 's')  # escovinha + plim
+def rustle(d=0.22, v=1.0):
+    n = int(SR * d); x = bp(pink(n), 900, 4200); t = t_(d); am = 0.55 + 0.45 * np.sin(2 * np.pi * 23 * t + 3 * np.sin(2 * np.pi * 7 * t)); return x * am * np.sin(np.pi * np.clip(t / d, 0, 1)) ** 1.5 * v
+S['sel_cloth'] = verb(mix([(0, rustle(0.24), 0.7), (0.09, marimba(midi(72), 0.3, 0.35), 1)], 0.5), 0.18, 's')                      # tecido + toquinho
+S['sel_face'] = verb(mix([(0, glass(midi(93), 0.5), 0.35), (0.06, glass(midi(98), 0.6), 0.3)], 0.8), 0.3)                          # brilhinho
+S['sel_pop'] = verb(mix([(0, bubble(520, 0.13, 1, 0.8), 0.9), (0.02, wood(1300, 0.04, 0.25), 1)], 0.4), 0.15, 's')
+S['emo_feliz'] = verb(mix([(0, hum(330, 0.09, (520, 1100), 0.8, 1.12), 1), (0.11, hum(390, 0.11, (560, 1200), 0.8, 1.15), 1), (0.12, kalimba(midi(84), 0.5, 0.4), 0.5)], 0.7), 0.2, 's')
+S['emo_amor'] = verb(mix([(i * 0.09, glass(midi(n), 0.7), 0.35) for i, n in enumerate([84, 88, 91])] + [(0, hum(300, 0.16, (480, 950), 0.6, 1.05), 0.7)], 1.1), 0.3)
+S['emo_surpresa'] = verb(mix([(0, bubble(500, 0.12, 1, 1.4), 0.8), (0.02, hum(360, 0.1, (700, 1250), 0.8, 1.35), 1)], 0.45), 0.15, 's')
+S['emo_hmm'] = verb(hum(230, 0.34, (430, 850), 0.8, 0.93), 0.18, 's')
+S['emo_sono'] = verb(mix([(0, whoosh(0.7, 250, 600, 300, 0.4, 0.4), 0.6), (0.1, hum(170, 0.5, (380, 750), 0.4, 0.96), 0.7)], 1.0), 0.2, 's')
+S['emo_risada'] = verb(mix([(i * 0.1, hum(330 + i * 25, 0.07, (600, 1200), 0.8, 1.1), 1) for i in range(4)], 0.6), 0.15, 's')
+QUIET_V30 = {'sel_color': 0.7, 'sel_hair': 0.7, 'sel_cloth': 0.7, 'sel_face': 0.6, 'sel_pop': 0.65, 'emo_hmm': 0.55, 'emo_sono': 0.5}
+
 # ---------- saída ----------
 # alvo de volume: ticks de interface mais baixinhos; vinhetas e efeitos com um pouco mais de presença
-QUIET = {'switch': 0.32, 'hover': 0.22, 'voice': 0.4, 'voice2': 0.4, 'pop': 0.5, 'pop_c_1': 0.5, 'pop_c_2': 0.5, 'pop_c_3': 0.5}
+QUIET = {**QUIET_V30, 'switch': 0.32, 'hover': 0.22, 'voice': 0.4, 'voice2': 0.4, 'pop': 0.5, 'pop_c_1': 0.5, 'pop_c_2': 0.5, 'pop_c_3': 0.5}
 os.makedirs(OUT, exist_ok=True)
 for k, x in S.items():
     x = hp(x, 35); x = fade_end(x.copy(), 0.06); pk = np.max(np.abs(x)) + 1e-9

@@ -145,3 +145,19 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Tamanho da interface: o `layoutUI` final calcula `--hs` = escala crua × 0,88 × `UIS[SET.uis]`. O `layoutUI.s` é um getter que devolve a medida atual, para o `layoutUI` original (preso no resize e no setInterval) não escrever por cima.
 - Colisão no pulo (`moveC` da v26/v27): no ar testa os 4 cantos e só deixa passar por `LOW26`; se a personagem já está encostada num sólido, aceita o passo que mantém o centro livre e não afunda mais.
 - Passeio por todos os sistemas: `node tools/teste/sistemas.js "http://localhost:8765/?noauto=1"` (inclui um controle simulado via `navigator.getGamepads`).
+
+## Metade do custo por quadro (v29)
+
+- Meça com `node tools/teste/bench.js "http://localhost:8765/?noauto=1" alta rótulo`: desenha o mesmo quadro várias vezes esperando a GPU (`readPixels`) em 9 áreas e imprime `gpu` (ms), draw calls e triângulos. O `gl.finish` e o intervalo do rAF **não** servem para medir no SwiftShader (o primeiro não espera, o segundo varia demais). Referência: v28 = 1.165 ms em média, v29 = cerca de 560 ms.
+- Sem MSAA em nenhuma qualidade (`samples = 0`, canvas sem `antialias`): o FXAA fica dentro do `grade`, que também faz o mapeamento de tom e o sRGB (`#include <tonemapping_fragment>` e `<colorspace_fragment>`). O `OutputPass` e o `SANE` estão desligados; a proteção contra NaN e valores absurdos fica no `tx()` do grade e no filtro de brilho do bloom. Pass novo de pós-processamento: pense duas vezes, porque cada tela cheia custa caro.
+- Toda `InstancedMesh` do mundo deve estar no `CULL.list` (o `precompileAll` da v29 inclui as que sobraram). Malha instanciada com instâncias espalhadas pelo mapa inteiro deve ser dividida em blocos (`rechunkIM`), senão nunca é recortada. Enfeites miúdos (`SMALL29`) somem em `FAR29` (34); o resto em `CULL.far` (46).
+- Materiais dos modelos: o `prepare` troca `MeshStandardMaterial` por `MeshLambertMaterial` (`toLambert29`). Material novo de cenário: use Lambert.
+- Chão: o `gv()` do shader lê `NOISE29` (textura de ruído) em vez de calcular hashes.
+
+## Cabelos em mechas, expressões e criador (v30)
+
+- Mechas: `fofaG` ganhou `lock` (curva), `tip` (ponta de anime) e `wave` (onda), feitas por `lockGeo`. Em `fofaParts`, `L(geo, cor, raiz, direção, comprimento, largura, giro, espessura)` alinha a mecha (que cresce para −y) na direção pedida; `SH(el, az)` dá um ponto na casca da cabeça (el = 0 no topo, az = 0 na frente) e `NR` a normal. Ajudantes `bangLocks` (franja em mechas) e `ringLocks` (mechas em volta). Penteados `h11`..`h22`.
+- Penteado alto (espetado, coque) atravessa chapéu e boina: para moradores com `acc` de chapéu, escolha um penteado baixo.
+- Expressões dos moradores: `EXPR30` (olhos, boca, sobrancelha, balão, gesto e som), `npcExpress(n, k)` troca o rosto com `fofaFace` (mesmo material, sem shader novo) e mostra o balão `n.e30b`; `emoUpdate30` decide quando acontece (cumprimento a menos de 3,2, surpresa com você correndo, sono à noite, pensando na chuva, aleatório). Expressão nova: entrada em `EXPR30` e som `emo_*` em `tools/sons_cozy.py`.
+- Criador: `crSel30(k, v)` toca o som da escolha (`sel_color` com a altura pela cor, `sel_hair`, `sel_cloth`, `sel_face`, `sel_pop`). Ao reabrir o criador, `CR30.quiet` cala os sons de abrir janela e `CR30.mute` cala o brilho do `scPower`. Girar: `CR30.yaw`/`vel` (arrastar no `SC.cv`, botões `data-rot30`, Q/E); o balanço automático (`CR30.sway`) some enquanto você gira.
+- Peles da Fofinha no criador: `SKINS_KM` (sem a "Original", que era igual à Pêssego).

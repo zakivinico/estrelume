@@ -227,7 +227,7 @@ const solidW = (x, z) => (mode === 'shop' ? solidShop(x, z) : mode === 'in' ? so
 
 /* =================== três: cena e qualidade =================== */
 const canvas = $('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: SET.quality === 'alta', powerPreference: 'high-performance' });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' }); // v29: sem MSAA no canvas (o FXAA fica no pass de cor)
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NeutralToneMapping || THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 const scene = new THREE.Scene(); const FOG = new THREE.Fog(0xa7dcff, 24, 52); scene.fog = FOG;
@@ -244,25 +244,41 @@ const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerW
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.32, 0.55, 0.86); composer.addPass(bloom);
 const grade = new ShaderPass({
-  uniforms: { tDiffuse: { value: null }, uSat: { value: 1.06 }, uVig: { value: 0.32 }, uWarm: { value: 0.03 }, uTime: { value: 0 }, uTilt: { value: 1 }, uRes: { value: new THREE.Vector2(1280, 720) }, uNight: { value: 0 } },
+  uniforms: { tDiffuse: { value: null }, uSat: { value: 1.06 }, uVig: { value: 0.32 }, uWarm: { value: 0.03 }, uTime: { value: 0 }, uTilt: { value: 1 }, uRes: { value: new THREE.Vector2(1280, 720) }, uPx: { value: new THREE.Vector2(1 / 1280, 1 / 720) }, uNight: { value: 0 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat, uVig, uWarm, uTime, uTilt, uNight; uniform vec2 uRes; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat, uVig, uWarm, uTime, uTilt, uNight; uniform vec2 uRes, uPx; varying vec2 vUv;
+    float lu(vec3 c){ return sqrt(max(dot(c, vec3(0.299, 0.587, 0.114)), 0.0)); }
+    vec4 tx(vec2 uv){ vec4 c = texture2D(tDiffuse, uv); if (c.r != c.r || c.g != c.g || c.b != c.b || c.a != c.a || max(c.r, max(c.g, c.b)) > 6.0e4) return vec4(0.5, 0.45, 0.55, 1.0); return vec4(min(c.rgb, vec3(12.0)), c.a); }
+    // v29: FXAA (versão clássica de Timothy Lottes) no lugar do MSAA; sai cedo onde não há borda
+    vec4 fxaa(vec2 uv){ vec4 M = tx(uv); vec2 t = uPx;
+      vec3 nw = tx(uv + vec2(-1.0,-1.0) * t).rgb, ne = tx(uv + vec2(1.0,-1.0) * t).rgb, sw = tx(uv + vec2(-1.0,1.0) * t).rgb, se = tx(uv + vec2(1.0,1.0) * t).rgb;
+      float lNW = lu(nw), lNE = lu(ne), lSW = lu(sw), lSE = lu(se), lM = lu(M.rgb);
+      float lMin = min(lM, min(min(lNW, lNE), min(lSW, lSE))), lMax = max(lM, max(max(lNW, lNE), max(lSW, lSE)));
+      if (lMax - lMin < max(0.04, lMax * 0.12)) return M;
+      vec2 dir = vec2(-((lNW + lNE) - (lSW + lSE)), ((lNW + lSW) - (lNE + lSE)));
+      float red = max((lNW + lNE + lSW + lSE) * 0.03125, 0.0078125), rcp = 1.0 / (min(abs(dir.x), abs(dir.y)) + red);
+      dir = clamp(dir * rcp, -8.0, 8.0) * t;
+      vec3 A = 0.5 * (tx(uv + dir * (1.0 / 3.0 - 0.5)).rgb + tx(uv + dir * (2.0 / 3.0 - 0.5)).rgb);
+      vec3 B = A * 0.5 + 0.25 * (tx(uv - dir * 0.5).rgb + tx(uv + dir * 0.5).rgb);
+      float lB = lu(B); return vec4((lB < lMin || lB > lMax) ? A : B, M.a); }
     void main(){
       // tilt-shift: borda de cima e de baixo desfocadas (efeito maquete)
       float b = smoothstep(0.18, 0.5, abs(vUv.y - 0.55)) * uTilt * 3.2; vec2 px = b / uRes;
-      vec4 c = texture2D(tDiffuse, vUv) * 0.2;
-      c += texture2D(tDiffuse, vUv + vec2( 1.0, 0.0) * px) * 0.1; c += texture2D(tDiffuse, vUv + vec2(-1.0, 0.0) * px) * 0.1;
-      c += texture2D(tDiffuse, vUv + vec2( 0.0, 1.0) * px) * 0.1; c += texture2D(tDiffuse, vUv + vec2( 0.0,-1.0) * px) * 0.1;
-      c += texture2D(tDiffuse, vUv + vec2( 0.7, 0.7) * px * 2.0) * 0.1; c += texture2D(tDiffuse, vUv + vec2(-0.7, 0.7) * px * 2.0) * 0.1;
-      c += texture2D(tDiffuse, vUv + vec2( 0.7,-0.7) * px * 2.0) * 0.1; c += texture2D(tDiffuse, vUv + vec2(-0.7,-0.7) * px * 2.0) * 0.1;
-      // aberração cromática sutil nas bordas
-      vec2 d = vUv - 0.5; float e = dot(d, d); vec2 ca = d * e * 0.012 * uTilt; c.r = mix(c.r, texture2D(tDiffuse, vUv + ca).r, 0.6); c.b = mix(c.b, texture2D(tDiffuse, vUv - ca).b, 0.6);
+      /* v29: onde o tilt-shift já borra tudo, o FXAA não faz diferença; e o borrão usa 5 leituras (era 9) */
+      vec4 base = b > 0.6 ? tx(vUv) : fxaa(vUv), c = base;
+      if (b > 0.02) { vec2 q = px * 1.6; c = base * 0.2 + (tx(vUv + vec2(q.x, q.y)) + tx(vUv + vec2(-q.x, q.y)) + tx(vUv + vec2(q.x, -q.y)) + tx(vUv + vec2(-q.x, -q.y))) * 0.2; c = mix(base, c, clamp(b * 2.0, 0.0, 1.0)); }
+      // aberração cromática sutil nas bordas (só longe do centro, para não trazer de volta o serrilhado; e só lê a textura onde aparece)
+      vec2 d = vUv - 0.5; float e = dot(d, d); vec2 ca = d * e * 0.012 * uTilt; float cm = 0.6 * smoothstep(0.04, 0.2, e); if (cm > 0.001) { c.r = mix(c.r, tx(vUv + ca).r, cm); c.b = mix(c.b, tx(vUv - ca).b, cm); }
       float l = dot(c.rgb, vec3(0.299,0.587,0.114)); c.rgb = mix(vec3(l), c.rgb, uSat);
       // split toning: sombras azuladas/lilás, luzes quentes
       vec3 sh = mix(vec3(0.012, 0.0, 0.035), vec3(0.0, 0.01, 0.05), uNight); c.rgb += sh * (1.0 - smoothstep(0.0, 0.5, l)) + vec3(uWarm, uWarm * 0.45, -uWarm * 0.5) * smoothstep(0.4, 1.0, l);
       vec3 cc = clamp(c.rgb, 0.0, 1.0); c.rgb = mix(c.rgb, cc * cc * (3.0 - 2.0 * cc), 0.18); // contraste suave em S
       float v = 1.0 - e * uVig * 2.2; c.rgb *= clamp(v, 0.0, 1.0);
-      float g = fract(sin(dot(vUv * (uTime + 1.0), vec2(12.9898, 78.233))) * 43758.5453); c.rgb += (g - 0.5) * 0.014; gl_FragColor = c; }`,
+      float g = fract(sin(dot(vUv * (uTime + 1.0), vec2(12.9898, 78.233))) * 43758.5453); c.rgb += (g - 0.5) * 0.014; gl_FragColor = c;
+      // v29: o grade é o último pass (o OutputPass saiu): tom e sRGB aqui, com as funções que o three.js injeta ao desenhar na tela
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`,
 }); composer.addPass(grade); composer.addPass(new OutputPass());
 function applyQuality() {
   const q = SET.quality, pr = q === 'alta' ? Math.min(devicePixelRatio, 1.5) : q === 'media' ? Math.min(devicePixelRatio, 1.25) : 1;
@@ -271,7 +287,7 @@ function applyQuality() {
   scene.traverse((o) => { if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => (m.needsUpdate = true)); } });
   resize();
 }
-function resize() { renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight); composer.setPixelRatio(renderer.getPixelRatio()); bloom.resolution.set(innerWidth / 2, innerHeight / 2); grade.uniforms.uRes.value.set(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); ov.width = innerWidth; ov.height = innerHeight; }
+function resize() { renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight); composer.setPixelRatio(renderer.getPixelRatio()); bloom.resolution.set(innerWidth / 2, innerHeight / 2); grade.uniforms.uRes.value.set(innerWidth, innerHeight); grade.uniforms.uPx.value.set(1 / Math.max(1, innerWidth * renderer.getPixelRatio()), 1 / Math.max(1, innerHeight * renderer.getPixelRatio())); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); ov.width = innerWidth; ov.height = innerHeight; }
 addEventListener('resize', resize);
 
 /* ---------- céu com degradê, sol, lua e estrelas ---------- */
@@ -384,10 +400,16 @@ function windify(mat, amp, maxY0, occl, grad, minY = 0) { const maxY = Math.max(
 }
 const OCCL = new Set(['st_tree1', 'st_tree5', 'st_tree7', 'st_tree9', 'st_tree10', 'un_palm1', 'un_palm3', 'k_tower', 'k_mine', 'k_market2', 'k_pine_a', 'k_pine_b', 'k_home_a', 'k_home_b', 'k_tavern_red', 'k_windmill', 'k_market', 'k_well', 'k_blacksmith_yellow']);
 const WINDY = { q_grass: 0.22, q_flower_r: 0.18, q_flower_y: 0.18, q_clover: 0.12, st_tree1: 0.06, st_tree5: 0.06, st_tree7: 0.06, st_tree9: 0.06, st_tree10: 0.06, un_palm1: 0.07, un_palm3: 0.07, q_bush: 0.05, q_bushb: 0.05, k_pine_a: 0.05, k_pine_b: 0.05 };
+/* v29: os modelos usavam MeshStandardMaterial com rugosidade 1 e metal 0 (o prepare força isso), ou seja, só a parte difusa.
+   O Lambert dá praticamente o mesmo visual com bem menos conta por pixel. Cópias do mesmo material continuam compartilhadas. */
+const LAMB29 = new Map();
+function toLambert29(m) { if (!m || !m.isMeshStandardMaterial || m.onBeforeCompile && m.userData.wind) return m; if (LAMB29.has(m)) return LAMB29.get(m);
+  const L = new THREE.MeshLambertMaterial({ name: m.name, color: m.color, map: m.map, emissive: m.emissive, emissiveMap: m.emissiveMap, emissiveIntensity: m.emissiveIntensity, vertexColors: m.vertexColors, transparent: m.transparent, opacity: m.opacity, alphaTest: m.alphaTest, side: m.side, alphaMap: m.alphaMap, depthWrite: m.depthWrite, depthTest: m.depthTest, flatShading: m.flatShading, normalMap: m.normalMap, aoMap: m.aoMap, lightMap: m.lightMap, fog: m.fog });
+  L.userData = Object.assign({}, m.userData); LAMB29.set(m, L); return L; }
 function prepare(k, gltf) {
   const root = gltf.scene, isChar = k.startsWith('ch_') || /^p_(estela|morgana|selva|lirio|mariana|tati|clara|leo|tomas)$/.test(k);
   root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = !isChar; const ms = Array.isArray(o.material) ? o.material : [o.material];
-    ms.forEach((m) => { if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
+    ms.forEach((m0, mi) => { const m = toLambert29(m0); if (m !== m0) { if (Array.isArray(o.material)) o.material[mi] = m; else o.material = m; } if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
       if (k === 'q_fence') { m.map = null; m.color.set('#9c6546'); m.needsUpdate = true; }
       else if (!m.map && m.color && /^(q_|p_|m_|st_|un_|gem|ore|w_|a_)/.test(k)) { const hsl = {}; m.color.getHSL(hsl); m.color.setHSL(hsl.h, Math.min(1, hsl.s * 1.18), Math.min(0.92, hsl.l * 1.2 + 0.03)); }
       m.roughness = 1; m.metalness = 0;
@@ -2676,7 +2698,7 @@ function buildLavender() {
   const geo = (() => { const parts = []; for (let k = 0; k < 7; k++) { const a = (k / 7) * Math.PI * 2, r = k ? 0.16 : 0; const s = new THREE.CylinderGeometry(0.012, 0.012, 0.45, 3).translate(Math.cos(a) * r, 0.22, Math.sin(a) * r); const f = new THREE.CylinderGeometry(0.035, 0.025, 0.2, 5).translate(Math.cos(a) * r, 0.52 + (k % 3) * 0.03, Math.sin(a) * r); for (const [gg, c] of [[s, [0.36, 0.6, 0.3]], [f, [0.62, 0.45, 0.9]]]) { const n = gg.toNonIndexed(); const cnt = n.attributes.position.count, col = new Float32Array(cnt * 3); for (let i = 0; i < cnt; i++) col.set(c, i * 3); n.setAttribute('color', new THREE.BufferAttribute(col, 3)); n.deleteAttribute('uv'); parts.push(n); } } return mergeGeometries(parts); })();
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true }); windify(mat, 0.08, 0.7);
   const list = []; for (let y = LM.lav.y + 1; y <= LM.lav.y1 - 1; y++) { if (Math.abs(y - 70.5) < 1.5 || y % 2) continue; for (let x = LM.lav.x + 1; x <= LM.lav.x1 - 1; x++) if (tile[I(x, y)] === GR && !obj[I(x, y)]) for (let k = 0; k < 2; k++) list.push(mat4(x + 0.25 + k * 0.5 + (hash2(x, y, k) - 0.5) * 0.15, 0, y + 0.5 + (hash2(x, y, k + 3) - 0.5) * 0.3, hash2(x, y, k + 5) * 6, 0.9 + hash2(x, y, k + 7) * 0.4)); }
-  const im = new THREE.InstancedMesh(geo, mat, list.length); list.forEach((m, i) => im.setMatrixAt(i, m)); im.computeBoundingSphere(); im.receiveShadow = true; world.add(im);
+  const im = new THREE.InstancedMesh(geo, mat, list.length); list.forEach((m, i) => im.setMatrixAt(i, m)); im.computeBoundingSphere(); im.receiveShadow = true; im.userData.k = 'lav'; world.add(im);
   for (let i = 0; i < 3; i++) buildHive(LM.hive.x + 1.5, LM.hive.y + i * 4 + 0.5);
 }
 // entrada da caverna: rochedo, trilhos, lanternas, cristais e névoa
@@ -3141,7 +3163,7 @@ function spawnSlimes() {
 /* ---------- borda do mapa: floresta densa, névoa verde e montanhas ---------- */
 function buildForestEdge() {
   const RP = rng(4242), list = { k_pine_a: [], k_pine_b: [], st_tree1: [], st_tree7: [] };
-  const push = (x, z, s) => { const k = RP() < 0.65 ? (RP() < 0.5 ? 'k_pine_a' : 'k_pine_b') : RP() < 0.5 ? 'st_tree1' : 'st_tree7'; if (!MODELS[k]) return; list[k].push(mat4(x, 0, z, RP() * 6, s)); };
+  const push = (x, z, s) => { const deep = Math.max(-x, x - W, -z) > 5; /* v29: lá no fundo, dentro da névoa, só pinheiros (50–134 triângulos em vez de até 900) */ const k = deep || RP() < 0.65 ? (RP() < 0.5 ? 'k_pine_a' : 'k_pine_b') : RP() < 0.5 ? 'st_tree1' : 'st_tree7'; if (!MODELS[k]) return; list[k].push(mat4(x, 0, z, RP() * 6, s)); };
   for (let z = -16; z < H - 14; z += 1.7) for (let x = -18; x < 0; x += 1.7) push(x + (RP() - 0.5), z + (RP() - 0.5), 0.9 + RP() * 0.9 + (-x) * 0.03);
   for (let z = -16; z < H - 14; z += 1.7) for (let x = W; x < W + 18; x += 1.7) push(x + (RP() - 0.5), z + (RP() - 0.5), 0.9 + RP() * 0.9 + (x - W) * 0.03);
   for (let x = 0; x < W; x += 1.7) for (let z = -18; z < 0; z += 1.7) push(x + (RP() - 0.5), z + (RP() - 0.5), 0.9 + RP() * 0.9 + (-z) * 0.03);
@@ -4953,7 +4975,7 @@ applyQuality = function () {
   const PXF = { forte: 1 / 3.2, medio: 1 / 2.5, suave: 1 / 1.8 }[SET.pixel || 'medio']; renderer.setPixelRatio(PXF ? PXF : pr); document.body.classList.toggle('pixf', !!PXF);
   const was = renderer.shadowMap.enabled, want = q !== 'baixa';
   const on = QSH.booted ? was || want : want; // em jogo, nunca desliga (desligar recompila tudo); ligar só quando a jogadora pede
-  const sz = q === 'alta' ? 2048 : q === 'media' ? 1024 : 512;
+  const sz = q === 'alta' ? 1024 : q === 'media' ? 1024 : 512; // v29: 2048 era demais para uma área de 32×32
   renderer.shadowMap.enabled = on; sun.castShadow = on; QSH.cheap = on && !want;
   if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   renderer.shadowMap.needsUpdate = true;
@@ -5416,7 +5438,7 @@ function kmChips(fromTitle, key, cat, T, cur, sw, label = (v) => (typeof v === '
   return Object.entries(T).map(([k, v]) => { const own = !cat || (fromTitle ? (WARD_FREE[cat] || []).includes(k) : owns(cat, k)); return `<button class="btn chip ${cur === k ? 'on' : ''} ${own ? '' : 'locked'}" data-kl="${key}:${k}" ${own ? '' : 'title="Compre no Ateliê da Fifi"'}>${sw ? `<i style="background:${sw(k, v)}"></i>` : ''}${label(v)}${own ? '' : ' 🔒'}</button>`; }).join(''); }
 function kmTabBody(tab, lk, fromTitle) { const C = (k, v) => v.c, row = (t, h) => `<div class="crl">${t}</div><div class="chips">${h}</div>`;
   if (tab === 'corpo') return `${modelChips('km')}${row('Jeito de falar', [['f', 'Ela'], ['m', 'Ele']].map(([k, n]) => `<button class="btn chip ${(crGender || 'f') === k ? 'on' : ''}" data-kgd="${k}">${n}</button>`).join(''))}`
-    + row('Tom de pele', kmChips(fromTitle, 'sk', null, SKINS, lk.sk, (k, v) => v.c || '#f4c29b') + cpick('sk', lk.sk)) + row('Altura', kmChips(fromTitle, 'sz', null, Object.fromEntries(Object.entries(SIZES).map(([k, v]) => [k, v[0]])), lk.sz || 'n')) + row('Cabeça', kmChips(fromTitle, 'hd', null, Object.fromEntries(Object.entries(HEADS).map(([k, v]) => [k, v[0]])), lk.hd || 'n'));
+    + row('Tom de pele', kmChips(fromTitle, 'sk', null, SKINS_KM, lk.sk, (k, v) => v.c || '#f4c29b') + cpick('sk', lk.sk)) + row('Altura', kmChips(fromTitle, 'sz', null, Object.fromEntries(Object.entries(SIZES).map(([k, v]) => [k, v[0]])), lk.sz || 'n')) + row('Cabeça', kmChips(fromTitle, 'hd', null, Object.fromEntries(Object.entries(HEADS).map(([k, v]) => [k, v[0]])), lk.hd || 'n'));
   if (tab === 'rosto') return row('Olhos', kmChips(fromTitle, 'ey', null, KM_EYES, lk.ey)) + row('Cor dos olhos', kmChips(fromTitle, 'ec', null, KM_ECOL, lk.ec, C)) + row('Sobrancelhas', kmChips(fromTitle, 'br', null, KM_BROWS, lk.br)) + row('Boca', kmChips(fromTitle, 'mo', null, KM_MOUTH, lk.mo)) + row('Bochechas e enfeites', kmChips(fromTitle, 'fc', null, KM_CHEEK, lk.fc || 'none'));
   if (tab === 'cabelo') return row('Penteado', kmChips(fromTitle, 'kh', 'kh', KM_HEADS, lk.kh)) + row('Cor do cabelo', kmChips(fromTitle, 'hc', 'hc', HAIRC, lk.hc, (k, v) => v.c || KM_HAIRC[k] || '#6b4428') + cpick('hc', lk.hc));
   if (tab === 'roupa') return row('Roupa', kmChips(fromTitle, 'kb', 'kb', KM_BODIES, lk.kb)) + row('Cor da blusa', kmChips(fromTitle, 'ct', 'kc', KCOL, lk.ct, C) + cpick('ct', lk.ct)) + row('Cor da calça ou saia', kmChips(fromTitle, 'cb', 'kc', KCOL, lk.cb, C) + cpick('cb', lk.cb)) + row('Cor dos sapatos', kmChips(fromTitle, 'cs', 'kc', KCOL, lk.cs, C) + cpick('cs', lk.cs));
@@ -5426,11 +5448,11 @@ function kmTabBody(tab, lk, fromTitle) { const C = (k, v) => v.c, row = (t, h) =
   if (fresh && fromTitle && crModel !== 'km') { crModel = 'km'; crLook = Object.assign({}, KM_DEF, { acc: 'none', trail: 'none' }); return openCreator(fromTitle); } // jogo novo começa na base fofinha
   if (!crIsKM(fromTitle)) return; for (const [k, v] of Object.entries(KM_DEF)) if (crLook[k] === undefined || (k === 'sk' && crLook.sk === 'orig')) crLook[k] = v;
   const h = kmTabBody(crTab, crLook, fromTitle), box = document.querySelector('.crbody'); if (!h || !box) return; box.innerHTML = h;
-  const redo = () => { sfx('accept'); openCreator(fromTitle); setTimeout(scPower, 60); };
-  box.querySelectorAll('[data-kl]').forEach((el) => (el.onclick = () => { if (el.classList.contains('locked')) { sfx('cancel'); toast('🔒 Isso fica à venda no <b>Ateliê da Fifi</b> (Vila Girassol).'); return; } const [k, v] = el.dataset.kl.split(':'); crLook[k] = v; redo(); }));
-  box.querySelectorAll('[data-kgd]').forEach((el) => (el.onclick = () => { crGender = el.dataset.kgd; if (!fromTitle) S.gender = crGender; redo(); }));
+  const redo = (k, v) => { crSel30(k, v); CR30.quiet = 1; try { openCreator(fromTitle); } finally { CR30.quiet = 0; } setTimeout(() => { CR30.mute = 'magic'; try { scPower(); } finally { CR30.mute = null; } }, 60); };
+  box.querySelectorAll('[data-kl]').forEach((el) => (el.onclick = () => { if (el.classList.contains('locked')) { sfx('cancel'); toast('🔒 Isso fica à venda no <b>Ateliê da Fifi</b> (Vila Girassol).'); return; } const [k, v] = el.dataset.kl.split(':'); crLook[k] = v; redo(k, v); }));
+  box.querySelectorAll('[data-kgd]').forEach((el) => (el.onclick = () => { crGender = el.dataset.kgd; if (!fromTitle) S.gender = crGender; redo('kgd', crGender); }));
   box.querySelectorAll('[data-md]').forEach((el) => (el.onclick = () => { const k = el.dataset.md; sfx('accept'); if (k === 'km') return; crGender = k === 'knight' ? 'm' : 'f'; crModel = k; if (!fromTitle) { S.gender = crGender; S.outfit = k; setOutfit(true); } openCreator(fromTitle); setTimeout(scPower, 60); }));
-  box.querySelectorAll('[data-cp]').forEach((el) => { el.onclick = (e) => e.stopPropagation(); el.onchange = () => { crLook[el.dataset.cp] = el.value; redo(); }; });
+  box.querySelectorAll('[data-cp]').forEach((el) => { el.onclick = (e) => e.stopPropagation(); el.onchange = () => { crLook[el.dataset.cp] = el.value; redo(el.dataset.cp, el.value); }; });
   box.querySelectorAll('[data-cplock]').forEach((el) => (el.onclick = (e) => { e.preventDefault(); sfx('cancel'); toast('🔒 A <b>Paleta mágica</b> (cor livre) fica à venda no <b>Ateliê da Fifi</b>, na Vila Girassol.'); }));
 }; }
 // Ateliê: penteados, roupas e tecidos da base nova
@@ -6269,6 +6291,18 @@ function fofaParts(lk) {
   const bangCurtain = () => { for (const m of [-1, 1]) A('head', 'ball', hc, m * 0.13, 0.99, 0.2, 0.15, 0.09, 0.12, 0.5, 0, m * 0.55); };
   const bangBlunt = () => { A('head', 'ball', hc, 0, 0.985, 0.2, 0.3, 0.075, 0.13, 0.35, 0, 0); A('head', 'box', dark(hc, 0.92), 0, 0.935, 0.255, 0.42, 0.03, 0.06); };
   const bangSpiky = () => { for (let i = -2; i <= 2; i++) A('head', 'cone', i % 2 ? hc : hl, i * 0.09, 1.0, 0.22, 0.06, 0.15, 0.05, 1.2 + Math.abs(i) * 0.1, 0, -i * 0.25); };
+  // v30: mechas estilizadas (afinam na ponta, com curva): L(geo, cor, raiz, direção, comprimento, largura, giro, espessura)
+  const QL = new THREE.Quaternion(), QT = new THREE.Quaternion(), DN = new THREE.Vector3(0, -1, 0), UPY = new THREE.Vector3(0, 1, 0), EL = new THREE.Euler();
+  const L = (gk, col, p, d, len, w, tw = 0, th = 1) => { const v = new THREE.Vector3(d[0], d[1], d[2]).normalize(); QL.setFromUnitVectors(DN, v); QT.setFromAxisAngle(UPY, tw); QL.multiply(QT); EL.setFromQuaternion(QL); A('head', gk, col, p[0], p[1], p[2], w, len, w * th, EL.x, EL.y, EL.z); };
+  // ponto na casca da cabeça: el = 0 no topo, az = 0 na frente (+z)
+  const SH = (el, az, k = 1.06) => [HC[0] + Math.sin(el) * Math.sin(az) * 0.335 * k, HC[1] + Math.cos(el) * 0.31 * k, HC[2] + Math.sin(el) * Math.cos(az) * 0.31 * k];
+  const NR = (el, az) => [Math.sin(el) * Math.sin(az), Math.cos(el), Math.sin(el) * Math.cos(az)];
+  const mixd = (a, b, k) => [a[0] * (1 - k) + b[0] * k, a[1] * (1 - k) + b[1] * k, a[2] * (1 - k) + b[2] * k];
+  const tipc = '#' + new THREE.Color(hc).lerp(new THREE.Color('#ffffff'), 0.5).getHexString();
+  // franja em mechas pontudas, estilo anime
+  const bangLocks = (n = 5, len = 0.2, spread = 0.75, el = 0.62) => { for (let i = 0; i < n; i++) { const t = n > 1 ? i / (n - 1) - 0.5 : 0, az = t * spread * 2; L('tip', i % 2 ? hc : hl, SH(el, az, 1.05), mixd([0, -1, 0], NR(el, az), 0.28), len * (1 - Math.abs(t) * 0.35), 0.15, az + Math.PI, 0.6); } };
+  // mechas penduradas em volta (cortina, bob, longo)
+  const ringLocks = (n, el, len, w, a0, a1, gk = 'lock', out = 0.25, colf = (i) => (i % 4 === 2 ? hl : hc)) => { for (let i = 0; i < n; i++) { const az = a0 + ((a1 - a0) * (i + 0.5)) / n; L(gk, colf(i), SH(el, az, 1.04), mixd([0, -1, 0], NR(el, az), out), len, w, az + Math.PI, 0.65); } };
   switch (lk.kh) {
     case 'fa': capB(); bangCurtain(); bun(0, 1.2, -0.06, 0.13); A('head', 'ring', hl, 0, 1.11, -0.06, 0.1, 0.1, 0.1, Math.PI / 2, 0, 0); break; // coque alto
     case 'fb': capB(); bangBlunt(); bun(-0.27, 1.06, -0.04, 0.1); bun(0.27, 1.06, -0.04, 0.1); break; // coquinhos
@@ -6292,6 +6326,19 @@ function fofaParts(lk) {
     case 'h8': capSide(1); for (let i = 0; i < 3; i++) A('head', 'ball', i === 1 ? hl : hc, 0.02, 1.08 + i * 0.05, 0.22 - i * 0.08, 0.2 - i * 0.03, 0.11, 0.15, -0.6 - i * 0.15, 0, 0); break; // topete de onda
     case 'h9': capPuff(0.85); bang(); for (const m of [-1, 1]) { A('head', 'cone', hc, m * 0.19, 1.15, -0.02, 0.09, 0.16, 0.06, 0, 0, -m * 0.35); A('head', 'cone', '#ffb3cf', m * 0.19, 1.14, 0.005, 0.05, 0.1, 0.03, 0, 0, -m * 0.35); } break; // orelhinhas de gato
     case 'h10': capB(0.42, 1.06); chain(0, 1.12, -0.24, 0, -0.08, -0.06, 4, 0.1, 0.07); A('head', 'ring', ct, 0, 1.1, -0.2, 0.08, 0.08, 0.08, 0.8, 0, 0); break; // rabo alto com xuxinha (testa livre)
+    // v30: penteados estilizados em mechas (inspirados nos tipos de um pacote de penteados estilizados: curto, médio, longo, em camadas, trançado, cacheado, espetado, fantasia e anime)
+    case 'h11': capB(0.3, 1.04); for (let i = 0; i < 9; i++) { const az = Math.PI + (i - 4) * 0.36, el = 0.6 + (i % 2) * 0.32; L('tip', hc, SH(el, az, 0.98), mixd(NR(el, az), [0, 0.5, -1], 0.55), 0.24 + (i % 3) * 0.03, 0.17, 0, 0.55); } for (let i = 0; i < 4; i++) { const az = -0.75 + i * 0.5; L('tip', i === 1 ? hl : hc, SH(0.3, az, 0.97), mixd(NR(0.3, az), [0, 1, -0.6], 0.5), 0.22, 0.17, 0, 0.55); } bangLocks(5, 0.24, 0.8); break; // anime espetado
+    case 'h12': capB(0.22, 1.08); ringLocks(12, 1.25, 0.3, 0.16, 0.95, Math.PI * 2 - 0.95, 'lock', 0.15); bangLocks(6, 0.2, 0.7, 0.6); break; // chanel em mechas
+    case 'h13': capLong(0.55); ringLocks(9, 1.35, 0.78, 0.19, Math.PI - 1.2, Math.PI + 1.2, 'wave', 0.2, (i) => (i % 3 === 1 ? hl : hc)); for (const m of [-1, 1]) L('wave', hc, SH(1.2, m * 1.25, 1.04), [m * 0.15, -1, 0.1], 0.6, 0.15, m * 1.25 + Math.PI, 0.6); bangCurtain(); break; // ondas compridas
+    case 'h14': capB(0.42, 1.05); A('head', 'ring', ct, 0, 1.11, -0.27, 0.07, 0.07, 0.07, 0.6, 0, 0); for (let i = 0; i < 5; i++) { const sp = (i - 2) * 0.09; L('lock', i === 2 ? hl : hc, [sp * 0.3, 1.11, -0.3], [sp, -1, -0.35], 0.62 - Math.abs(i - 2) * 0.07, 0.16, 0, 0.7); } bangLocks(3, 0.16, 0.5); break; // rabo alto em mechas
+    case 'h15': capShort(); for (let i = 0; i < 4; i++) L('lock', i === 1 ? hl : hc, [-0.2 + i * 0.05, 1.13 - i * 0.02, 0.0 + i * 0.05], [1, 0.25 - i * 0.12, 0.45], 0.36 - i * 0.03, 0.2, Math.PI / 2, 0.55); L('tip', hc, SH(0.9, 1.5, 1.0), [0.2, -1, 0.2], 0.16, 0.12, 0, 0.6); break; // topete de lado
+    case 'h16': capB(0.25, 1.07); bang(0.24, 1.02); for (const m of [-1, 1]) { for (let i = 0; i < 7; i++) A('head', 'ball', i % 2 ? hl : hc, m * (0.31 + (i % 2 ? 0.025 : -0.025)), 0.78 - i * 0.075, 0.02 - i * 0.01, 0.07, 0.065, 0.07, 0, 0, m * (i % 2 ? 0.5 : -0.5)); bow(m * 0.31, 0.24, 0.0, ct, 0.8); } break; // tranças longas
+    case 'h17': capB(0.2, 1.08); for (let i = 0; i < 16; i++) { const az = Math.PI + (i - 7.5) * 0.3, el = 1.0 + (i % 3) * 0.22; const q = SH(el, az, 1.08); A('head', 'ring', i % 4 ? hc : hl, q[0], q[1], q[2], 0.06, 0.06, 0.06, Math.PI / 2 + (i % 2) * 0.6, az, 0); } for (let i = -1; i <= 1; i++) { const q = SH(0.55, i * 0.45, 1.06); A('head', 'ring', hc, q[0], q[1] - 0.02, q[2], 0.055, 0.055, 0.055, 0.3, 0, i * 0.4); } break; // cachos soltos
+    case 'h18': capShort(); for (let i = 0; i < 11; i++) { const az = (i * 2.4) % (Math.PI * 2), el = 0.35 + (i % 4) * 0.22; L('lock', i % 3 ? hc : hl, SH(el, az, 1.02), mixd([0, -1, -0.6], NR(el, az), 0.45), 0.16, 0.14, az + Math.PI, 0.5); } bangSwoop(1); break; // pixie em camadas
+    case 'h19': capLong(0.9); ringLocks(7, 1.4, 0.95, 0.17, Math.PI - 1.0, Math.PI + 1.0, 'wave', 0.15, (i) => (i % 2 ? tipc : hc)); for (const m of [-1, 1]) { L('wave', tipc, SH(1.15, m * 1.3, 1.04), [m * 0.1, -1, 0.15], 0.7, 0.13, m * 1.3 + Math.PI, 0.6); star(m * 0.24, 1.0, 0.12, '#fff2a8', 0.04); } bangLocks(4, 0.2, 0.6); break; // fada das estrelas
+    case 'h20': capShort(); A('head', 'ball', hc, 0, 1.2, -0.12, 0.1, 0.12, 0.1); A('head', 'ring', '#e8505b', 0, 1.13, -0.11, 0.07, 0.07, 0.07, 0.2, 0, 0); for (const m of [-1, 1]) L('tip', hc, SH(1.0, m * 1.2, 1.02), [m * 0.1, -1, 0.15], 0.28, 0.1, 0, 0.55); break; // coque samurai
+    case 'h21': capB(0.28, 1.06); for (let i = 0; i < 7; i++) { const az = Math.PI + (i - 3) * 0.32; L('lock', i % 3 ? hc : hl, SH(1.35, az, 1.03), [Math.sin(az) * 0.2, -1, Math.cos(az) * 0.25], 0.42, 0.16, az + Math.PI, 0.6); } for (let i = 0; i < 6; i++) { const az = (i - 2.5) * 0.7, el = 0.4; L('tip', hc, SH(el, az, 1.0), mixd(NR(el, az), [0, -1, -0.4], 0.5), 0.22, 0.15, az + Math.PI, 0.55); } for (const m of [-1, 1]) L('lock', hl, SH(0.95, m * 0.85, 1.04), [m * 0.1, -1, 0.2], 0.3, 0.12, m * 0.85 + Math.PI, 0.6); break; // corte lobo
+    case 'h22': capLong(0.8); bangBlunt(); for (const m of [-1, 1]) { A('head', 'ball', hc, m * 0.3, 0.7, 0.1, 0.07, 0.2, 0.1); A('head', 'box', hc, m * 0.3, 0.56, 0.11, 0.1, 0.07, 0.14); } ringLocks(6, 1.4, 0.7, 0.2, Math.PI - 0.9, Math.PI + 0.9, 'lock', 0.1); break; // princesa (hime)
     default: capB(); bang();
   }
   // corpo e roupa
@@ -6773,7 +6820,7 @@ const PERF27 = { ema: 16, last: 0, t: 0, scale: 1, cap: 1, slow: 0, fast: 0, wor
 const PXF27 = () => ({ forte: 1 / 3.2, medio: 1 / 2.5, suave: 1 / 1.8 }[SET.pixel || 'medio']);
 function perfApplyScale() { if (PXF27()) return; const pr = Math.max(0.55, PERF27.cap * PERF27.scale); if (Math.abs(renderer.getPixelRatio() - pr) < 0.02) return; renderer.setPixelRatio(pr); resize(); }
 { const base = applyQuality; applyQuality = function () { base(); if (!PXF27()) PERF27.cap = renderer.getPixelRatio(); perfApplyScale();
-  const want = SET.quality === 'alta' ? 2 : 0; for (const rt of [composer.renderTarget1, composer.renderTarget2]) if (rt && rt.samples !== want) { rt.samples = want; rt.dispose(); } }; }
+  const want = 0; /* v29: o MSAA era o maior custo do quadro; o FXAA no grade faz o serrilhado sumir quase de graça */ for (const rt of [composer.renderTarget1, composer.renderTarget2]) if (rt && rt.samples !== want) { rt.samples = want; rt.dispose(); } }; }
 function perfTick(now) { if (PERF27.last) { const d = Math.min(100, now - PERF27.last); PERF27.ema = PERF27.ema * 0.92 + d * 0.08; PERF27.frames++; PERF27.ft += d; } PERF27.last = now; }
 function perfGovern(dt) {
   PERF27.t -= dt; if (PERF27.t > 0) return; PERF27.t = 1; PERF27.fps = PERF27.frames ? Math.round(1000 / (PERF27.ft / PERF27.frames)) : 60; PERF27.frames = 0; PERF27.ft = 0;
@@ -6917,6 +6964,134 @@ Object.assign(SFXV, { accept: 0.55, cancel: 0.42, switch: 0.55, hover: 0.45, men
 tone = function (f, d = 0.1, type, v = 0.12, slide = 0) { if (!AC) return; const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(), lpf = AC.createBiquadFilter(); o.type = 'sine'; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, f + slide), t + d);
   lpf.type = 'lowpass'; lpf.frequency.value = 1800; g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v * SET.sfxVol * 0.9, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0008, t + d + 0.08); o.connect(lpf); lpf.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.12); };
 
+/* =================== v29: metade do custo por quadro (borda da floresta recortada, enfeites miúdos só de perto, brilho em 1/4) =================== */
+// Medido com tools/teste/bench.js: o quadro custava ~1,6 s no SwiftShader em 1280×720, com ~2,6 milhões de triângulos (cena + sombra).
+// 1) A borda da floresta (3.600 árvores) era uma malha instanciada por modelo com uma esfera do tamanho do mapa: nunca era recortada,
+//    nem na câmera nem na sombra (~850 mil triângulos duas vezes por quadro). Agora vira blocos de 16×16 no recorte por distância.
+// 2) Grama, flores, frutinhas, samambaias e cogumelos somem a partir de 34 (a névoa começa em 24; ali já estão bem apagados).
+// 3) O brilho (bloom) é calculado em 1/8 da resolução em vez de 1/2.
+function rechunkIM(im, k) {
+  const m = new THREE.Matrix4(), groups = {};
+  for (let i = 0; i < im.count; i++) { im.getMatrixAt(i, m); const key = Math.floor(m.elements[12] / CH) + ',' + Math.floor(m.elements[14] / CH); (groups[key] = groups[key] || []).push(m.clone()); }
+  const out = [];
+  for (const list of Object.values(groups)) { const c = new THREE.InstancedMesh(im.geometry, im.material, list.length); list.forEach((mm, i) => c.setMatrixAt(i, mm)); c.count = list.length; c.instanceMatrix.needsUpdate = true;
+    c.castShadow = im.castShadow; c.receiveShadow = im.receiveShadow; c.userData.k = k; c.computeBoundingSphere(); c.boundingSphere.radius += 3; world.add(c); CULL.list.push(c); if (GH23.ims.has(im)) GH23.ims.add(c); out.push(c); }
+  world.remove(im); CULL.list = CULL.list.filter((x) => x !== im); try { im.dispose(); } catch (e) {} return out; }
+const PERF29 = { edge: 0, chunks: 0 };
+{ const base = buildForestEdge; buildForestEdge = function () { const before = new Set(); world.traverse((o) => { if (o.isInstancedMesh) before.add(o); }); const r = base();
+  const nova = []; world.traverse((o) => { if (o.isInstancedMesh && !before.has(o)) nova.push(o); });
+  for (const im of nova) { if (!im.boundingSphere) im.computeBoundingSphere(); if (im.count > 16 && im.boundingSphere && im.boundingSphere.radius > CH * 1.5) { PERF29.edge += im.count; PERF29.chunks += rechunkIM(im, 'edge').length; } }
+  return r; }; }
+// enfeites miúdos: recorte mais perto
+const SMALL29 = /^(lav|q_grass|q_flower_|qn_flower|qn_fern|qn_mush|qn_pebble|kn_mushgrp|q_clover|q_mush|q_lily|q_apple_item|q_berry_item)/, FAR29 = 34;
+cullUpdate = function (dt) { CULL.t -= dt; if (CULL.t > 0 || !CULL.list.length) return; CULL.t = 0.2;
+  const cx = camera.position.x, cz = camera.position.z, out = mode === 'out';
+  for (const im of CULL.list) { const bs = im.boundingSphere; if (!bs) continue; const far = !out ? 0 : im.userData.small29 !== undefined ? (im.userData.small29 ? FAR29 : CULL.far) : (im.userData.small29 = SMALL29.test(im.userData.k || '')) ? FAR29 : CULL.far;
+    const d = Math.hypot(bs.center.x - cx, bs.center.z - cz) - bs.radius, v = d < far; if (im.userData.cullV !== v) { im.userData.cullV = v; im.visible = v && !im.userData.hideLeaf; } } };
+// o pass SANE (uma cópia em tela cheia só para limpar NaN) saiu: a mesma proteção agora fica no filtro de brilho do bloom e no grade
+SANE.enabled = false;
+{ const m = bloom.materialHighPassFilter; if (m) { m.fragmentShader = m.fragmentShader.replace('vec4 texel = texture2D( tDiffuse, vUv );', 'vec4 texel = texture2D( tDiffuse, vUv ); if (texel.r != texel.r || texel.g != texel.g || texel.b != texel.b || max(texel.r, max(texel.g, texel.b)) > 6.0e4) texel = vec4(0.5, 0.45, 0.55, 1.0); texel.rgb = min(texel.rgb, vec3(12.0));'); m.needsUpdate = true; } }
+// toda malha instanciada do mundo entra no recorte por distância (algumas eram criadas depois da lista ser montada)
+{ const base = precompileAll; precompileAll = function (...a) { try { const inL = new Set(CULL.list); world.traverse((o) => { if (o.isInstancedMesh && !inL.has(o)) { if (!o.boundingSphere) o.computeBoundingSphere(); if (o.boundingSphere) { o.userData.k = o.userData.k || 'misc'; CULL.list.push(o); PERF29.late = (PERF29.late || 0) + 1; } } }); } catch (e) { console.error(e); } return base(...a); }; }
+// chão: o ruído procedural (≈50 hashes por pixel) vira uma textura pré-calculada; cada gv() passa a ser uma leitura só
+const NOISE29 = (() => { const N = 512, C = 128, cell = new Float32Array(C * C); let sd = 1234567; const rnd = () => ((sd = (sd * 1664525 + 1013904223) >>> 0) / 4294967296);
+  for (let i = 0; i < C * C; i++) cell[i] = rnd(); const v = (x, y) => cell[((y % C + C) % C) * C + ((x % C + C) % C)], d = new Uint8Array(N * N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const px = (x + 0.5) / 4, py = (y + 0.5) / 4, ix = Math.floor(px), iy = Math.floor(py); let fx = px - ix, fy = py - iy; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+    const a = v(ix, iy) + (v(ix + 1, iy) - v(ix, iy)) * fx, b = v(ix, iy + 1) + (v(ix + 1, iy + 1) - v(ix, iy + 1)) * fx; d[y * N + x] = Math.round((a + (b - a) * fy) * 255); }
+  const t = new THREE.DataTexture(d, N, N, THREE.RedFormat, THREE.UnsignedByteType); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true; return t; })();
+const GV_OLD = 'float gv(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(gh(i), gh(i + vec2(1.0, 0.0)), f.x), mix(gh(i + vec2(0.0, 1.0)), gh(i + vec2(1.0, 1.0)), f.x), f.y); }';
+{ const base = buildWorld; buildWorld = function () { const r = base(); try { const m = GCV.mesh && GCV.mesh.material; if (m && m.onBeforeCompile && GROUND_GLSL.includes(GV_OLD)) { const ob = m.onBeforeCompile;
+    m.onBeforeCompile = (sh, rr) => { ob(sh, rr); sh.uniforms.uNz = { value: NOISE29 }; sh.fragmentShader = sh.fragmentShader.replace(GV_OLD, 'uniform sampler2D uNz; float gv(vec2 p) { return texture2D(uNz, p * (1.0 / 128.0)).r; }'); };
+    m.customProgramCacheKey = () => 'chao-shader-v29'; m.needsUpdate = true; PERF29.ground = 1; } } catch (e) { console.error(e); } return r; }; }
+// o OutputPass (mais uma cópia em tela cheia) saiu: o grade faz o mapeamento de tom e o sRGB no mesmo pass
+for (const ps of composer.passes) if (ps instanceof OutputPass) ps.enabled = false;
+// árvores e o resto: recorte em 46 (a névoa vai de 24 a 52; ali já está ~80% apagado)
+CULL.far = 46;
+// brilho em 1/8 da resolução (é um borrão: não precisa de mais)
+{ const base = bloom.setSize.bind(bloom); bloom.setSize = (w, h) => base(Math.max(64, Math.round(w / 4)), Math.max(64, Math.round(h / 4))); try { resize(); } catch (e) {} }
+
+/* =================== v30: cabelos estilizados em mechas, expressões dos moradores, sons do criador e girar a personagem =================== */
+// ---------- mechas: tubo que afina até a ponta, com curva (lock), ponta de anime (tip) e onda (wave) ----------
+function lockGeo(curve, flat, seg, rad, pw, wave) { const pos = [], idx = [];
+  for (let i = 0; i <= seg; i++) { const t = i / seg, r = Math.pow(1 - t, pw) * 0.5 + 0.004, z = curve * t * t + wave * 0.09 * Math.sin(t * Math.PI * 3);
+    for (let j = 0; j < rad; j++) { const a = (j / rad) * Math.PI * 2; pos.push(Math.cos(a) * r, -t, z + Math.sin(a) * r * flat); } }
+  for (let i = 0; i < seg; i++) for (let j = 0; j < rad; j++) { const a = i * rad + j, b = i * rad + ((j + 1) % rad), c = a + rad, d = b + rad; idx.push(a, c, b, b, c, d); }
+  const top = pos.length / 3; pos.push(0, 0.02, 0); for (let j = 0; j < rad; j++) idx.push(top, j, (j + 1) % rad);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); const ng = g.toNonIndexed(); ng.deleteAttribute('uv'); return ng; }
+{ const base = fofaG; fofaG = function () { const G = base(); if (!G.lock) { G.lock = lockGeo(0.38, 0.62, 10, 9, 0.85, 0); G.tip = lockGeo(0.06, 0.42, 7, 7, 1.25, 0); G.wave = lockGeo(0.14, 0.6, 16, 9, 0.7, 1); } return G; }; }
+Object.assign(KM_HEADS, { h11: 'Espetado de anime', h12: 'Chanel em mechas', h13: 'Ondas compridas', h14: 'Rabo alto em mechas', h15: 'Topete de lado', h16: 'Tranças longas', h17: 'Cachos soltos', h18: 'Pixie em camadas', h19: 'Fada das estrelas', h20: 'Coque samurai', h21: 'Corte lobo', h22: 'Princesa' });
+WARD_FREE.kh.push('h12', 'h15', 'h18', 'h21'); Object.assign(WARD_PRICE.kh, { h11: 180, h13: 160, h14: 140, h16: 150, h17: 170, h19: 260, h20: 130, h22: 200 });
+// alguns moradores estreiam os penteados novos
+for (const [id, kh] of Object.entries({ pipo: 'h18', iris: 'h19', duda: 'h21', marina: 'h16' })) if (NPCLOOK[id]) NPCLOOK[id].kh = kh;
+const SKINS_KM = Object.fromEntries(Object.entries(SKINS).filter(([k]) => k !== 'orig'));
+
+// ---------- criador: sons por tipo de escolha ----------
+const CR30 = { quiet: 0, mute: null, yaw: 0, vel: 0, drag: null, sway: 1, idle: 9 };
+{ const base = sfx; sfx = function (k, ...a) { if (CR30.mute === k || (CR30.quiet && (k === 'bookFlip2' || k === 'menu' || k === 'accept'))) return; return base(k, ...a); }; }
+{ const base = sfxP; sfxP = function (k, ...a) { if ((k === 'switch' || (k === 'hover' && performance.now() - (CR30.selT || 0) < 600)) && document.querySelector('#modal.on .crbody')) return; return base(k, ...a); }; }
+function crSel30(k, v) { CR30.selT = performance.now(); const hex = (T) => kmHex(T, v, v && v[0] === '#' ? v : null); let col = null;
+  if (k === 'hc') col = hex(HAIRC) || KM_HAIRC[v]; else if (k === 'sk') col = hex(SKINS); else if (k === 'ec') col = hex(KM_ECOL); else if (['ct', 'cb', 'cs'].includes(k)) col = hex(KCOL);
+  if (col) { const hsl = {}; new THREE.Color(col).getHSL(hsl); return sfxP('sel_color', 0.9, 0.78 + hsl.l * 0.55 + hsl.h * 0.12); } // gotinha: cor mais clara = mais aguda
+  if (k === 'kh') return sfxP('sel_hair', 0.9, 0.95 + rand() * 0.1);
+  if (k === 'kb') return sfxP('sel_cloth', 0.9, 0.95 + rand() * 0.1);
+  if (['ey', 'mo', 'br', 'fc'].includes(k)) return sfxP('sel_face', 0.8, 0.95 + rand() * 0.12);
+  if (k === 'sz' || k === 'hd') return sfxP('sel_pop', 0.9, v === 'p' || v === 'n' ? 1.15 : 0.85);
+  return sfxP('sel_pop', 0.8, 1); }
+// ao trocar de aba ou atualizar o criador, a janela não toca de novo o som de abrir
+{ const base = openModal; openModal = function (...a) { const refresh = $('modal').classList.contains('on') && document.querySelector('#modal .crbody'); if (refresh) CR30.quiet = 1; try { return base(...a); } finally { if (refresh) CR30.quiet = 0; } }; }
+
+// ---------- criador: arrastar para girar a personagem (mouse ou dedo), com inércia; Q/E e botões ⟲ ⟳ também giram ----------
+function scRotBind30() { const cv = SC.cv; if (!cv || cv.dataset.rot30) return; cv.dataset.rot30 = 1;
+  cv.addEventListener('pointerdown', (e) => { CR30.drag = { x: e.clientX, t: performance.now() }; CR30.vel = 0; try { cv.setPointerCapture(e.pointerId); } catch (er) {} cv.classList.add('grab'); });
+  cv.addEventListener('pointermove', (e) => { if (!CR30.drag) return; const dx = e.clientX - CR30.drag.x, now = performance.now(), dt = Math.max(1, now - CR30.drag.t); CR30.yaw += dx * 0.012; CR30.vel = (dx * 0.012) / (dt / 1000); CR30.drag.x = e.clientX; CR30.drag.t = now; CR30.idle = 0; });
+  const up = () => { CR30.drag = null; cv.classList.remove('grab'); }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('dblclick', () => { CR30.yaw = 0; CR30.vel = 0; sfxP('sel_pop', 0.6, 1.2); }); }
+function crRotate30(d) { CR30.vel = d * 2.5; CR30.idle = 0; /* ~45° por clique */ sfxP('sel_pop', 0.45, d > 0 ? 1.1 : 0.95); }
+{ const base = scMount; scMount = function (el, obj, opt = {}) { const r = base(el, obj, opt); try { scRotBind30(); CR30.yaw = el && el.id === 'cr3d' ? CR30.yaw : 0; CR30.vel = 0;
+    if (el && opt.char && !el.querySelector('.scrot30')) { el.insertAdjacentHTML('beforeend', '<div class="scrot30"><button class="btn sm" data-rot30="-1" title="Girar (Q)">⟲</button><span>arraste para girar</span><button class="btn sm" data-rot30="1" title="Girar (E)">⟳</button></div>'); el.querySelectorAll('[data-rot30]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); crRotate30(+b.dataset.rot30); })); } } catch (e) {} return r; }; }
+{ const base = scLoop; scLoop = function (now) { base(now); if (!SC.on) return; const tn = performance.now(), dt = Math.min(0.05, (tn - (CR30.last || tn)) / 1000) || 1 / 60; CR30.last = tn;
+    if (!CR30.drag) { CR30.yaw += CR30.vel * dt; CR30.vel *= Math.pow(0.04, dt); if (Math.abs(CR30.vel) < 0.01) CR30.vel = 0; } CR30.idle += dt;
+    const want = CR30.idle > 4 ? 1 : 0; CR30.sway += (want - CR30.sway) * Math.min(1, dt * 2); /* o balanço automático some enquanto você gira e volta depois de 4 s */
+    SC.hold.rotation.y = SC.hold.rotation.y * CR30.sway + CR30.yaw; }; }
+addEventListener('keydown', (e) => { if (!document.querySelector('#modal.on .crbody') || (e.target && e.target.tagName === 'INPUT')) return; if (e.code === 'KeyQ' || e.code === 'KeyE') { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) crRotate30(e.code === 'KeyE' ? 1 : -1); } }, true);
+
+// ---------- moradores com expressões, como no Animal Crossing ----------
+// De vez em quando (e quando você chega perto) eles mudam o rosto, mostram um balãozinho e fazem um gesto: alegria, amor, surpresa, pensando, sono, risada, piscadinha.
+const EMO30 = { t: 0, list: [] };
+const EXPR30 = {
+  alegria: { ey: 'feliz', mo: 'sorrisao', b: '♪', bg: '#ffe18d', anim: 'Cheer', snd: 'emo_feliz' },
+  amor: { ey: 'coracao', mo: 'sorriso', b: '♥', bg: '#ffc2dc', anim: 'Interact', snd: 'emo_amor' },
+  surpresa: { ey: 'brilho', mo: 'surpresa', b: '!', bg: '#fff4dd', anim: 'Jump_Full_Short', snd: 'emo_surpresa' },
+  pensando: { ey: 'ponto', mo: 'linha', br: 'triste', b: '…', bg: '#dfe9ff', anim: 'Interact', snd: 'emo_hmm' },
+  sono: { ey: 'sono', mo: 'linha', b: 'z', bg: '#c9c2ff', anim: null, snd: 'emo_sono' },
+  risada: { ey: 'feliz', mo: 'lingua', b: '✦', bg: '#d9f5c8', anim: 'Cheer', snd: 'emo_risada' },
+  oi: { ey: 'pisca', mo: 'sorriso', b: '✿', bg: '#ffe2c6', anim: 'Waving', snd: 'emo_feliz' },
+};
+const EMOTEX30 = {};
+function emoBubble30(n) { if (!n.e30b) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ depthTest: false, transparent: true })); s.renderOrder = 11; s.visible = false; scene.add(s); n.e30b = s; } return n.e30b; }
+function emoTex30(k) { if (EMOTEX30[k]) return EMOTEX30[k]; const E = EXPR30[k], s = emoteSprite(E.b, E.bg); scene.remove(s); return (EMOTEX30[k] = s.material.map); }
+function npcLook30(n) { return Object.assign({}, KM_DEF, NPCLOOK[n.d.id] || {}); }
+function npcExpress(n, k) { const E = EXPR30[k], o = n.c && n.c.obj; if (!E || !o || !o.userData.kmFace) return false;
+  try { fofaFace(o, Object.assign(npcLook30(n), { ey: E.ey, mo: E.mo }, E.br ? { br: E.br } : {})); } catch (e) { return false; }
+  const b = emoBubble30(n); b.material.map = emoTex30(k); b.material.needsUpdate = true; b.visible = true; n.e30 = { k, t: 0, dur: 2.4 };
+  if (E.anim) try { n.c.play(E.anim, true, 1); } catch (e) {}
+  try { sfx(E.snd, n.x, n.z); } catch (e) {} return true; }
+function npcEmoEnd(n) { try { fofaFace(n.c.obj, npcLook30(n)); } catch (e) {} if (n.e30b) n.e30b.visible = false; n.e30 = null; }
+function emoUpdate30(dt) { if (mode !== 'out' || titleOn) return; const h = hourNow(), night = h >= 21 || h < 6, rain = (WX.k || 0) > 0.35;
+  for (const n of npcs) { const o = n.c && n.c.obj; if (!o) continue;
+    if (n.e30) { n.e30.t += dt; const k = n.e30.t, b = n.e30b; if (b) { const pop = k < 0.18 ? k / 0.18 * 1.15 : k < 0.3 ? 1.15 - (k - 0.18) / 0.12 * 0.15 : 1; const sc = 0.5 * pop * (o.scale.y || 1); b.scale.set(sc, sc, 1); b.position.set(n.x + 0.32, 2.05 * (o.scale.y || 1) + Math.sin(k * 3) * 0.04 + (k > n.e30.dur - 0.4 ? (k - n.e30.dur + 0.4) * 0.6 : 0), n.z); b.material.opacity = k > n.e30.dur - 0.4 ? Math.max(0, (n.e30.dur - k) / 0.4) : 1; }
+      if (k >= n.e30.dur || !o.visible) npcEmoEnd(n); continue; }
+    if (!o.visible || (dlg && dlg.name === n.d.n)) continue;
+    const d = Math.hypot(P.x - n.x, P.z - n.z); n.e30cd = (n.e30cd || 0) - dt; n.e30g = (n.e30g || 0) - dt;
+    if (d < 3.2 && n.e30g <= 0 && n.e30cd <= 0) { n.e30g = 40; n.e30cd = 6; const st = npcSt(n.d.id); npcExpress(n, (st.h || 0) >= 4 && rand() < 0.5 ? 'amor' : 'oi'); continue; } // cumprimenta quando você chega
+    if (d < 6 && P.run && P.moving && n.e30cd <= 0 && rand() < dt * 0.5) { n.e30cd = 10; npcExpress(n, 'surpresa'); continue; }
+    if (n.e30cd <= 0 && d < 22) { n.e30cd = 9 + rand() * 14; if (rand() < 0.55) npcExpress(n, night && rand() < 0.6 ? 'sono' : rain ? 'pensando' : pick(['alegria', 'pensando', 'risada', 'alegria', 'amor'])); } } }
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { emoUpdate30(dt); } catch (e) {} }; }
+/* o balão e o rosto da expressão já ficam prontos no carregamento (sem compilar nada no meio do jogo) */
+{ const base = precompileAll; precompileAll = function (...a) { try { for (const k of Object.keys(EXPR30)) emoTex30(k); const n = npcs[0]; if (n) { const b = emoBubble30(n); b.material.map = emoTex30('alegria'); b.visible = true; b.position.set(n.x, -50, n.z); } } catch (e) {} const r = base(...a); try { if (npcs[0] && npcs[0].e30b) npcs[0].e30b.visible = false; } catch (e) {} return r; }; }
+EXTRA_SFX.push('sel_color', 'sel_hair', 'sel_cloth', 'sel_face', 'sel_pop', 'emo_feliz', 'emo_amor', 'emo_surpresa', 'emo_hmm', 'emo_sono', 'emo_risada');
+Object.assign(SFXV, { sel_color: 0.6, sel_hair: 0.6, sel_cloth: 0.6, sel_face: 0.55, sel_pop: 0.55, emo_feliz: 0.45, emo_amor: 0.45, emo_surpresa: 0.45, emo_hmm: 0.4, emo_sono: 0.35, emo_risada: 0.45 });
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -6960,4 +7135,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { get sfx() { return sfx; }, get tone() { return tone; }, get moveC() { return moveC; }, LOW26, resetTransient, PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { EMOTEX30, NPCLOOK, EMO30, EXPR30, npcExpress, CR30, get crLook() { return crLook; }, get GCVo() { return GCV; }, kmFaceTex, SKINS, HAIRC, KCOL, KM_ECOL, KM_DEF, get KM_HEADSo() { return KM_HEADS; }, LPo: LP, composerX: composer, bloomX: bloom, gradeX: grade, PERF29, get CULLo() { return CULL; }, get sfx() { return sfx; }, get tone() { return tone; }, get moveC() { return moveC; }, LOW26, resetTransient, PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
