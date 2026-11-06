@@ -2,6 +2,33 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v31: roupas novas, estampas e tipos de sapato
+Ideias pesquisadas:
+- as categorias e os estilos de roupa do Animal Crossing (blusas, vestidos, casacos, fantasias, vários estilos);
+- peças cottagecore (jardineira de linho com blusa bufante, cardigã com saia midi, avental pinafore, cores terrosas e pastel);
+- fantasias de personagens chibi (marinheiro, capa de chuva, bichinho, bruxinha).
+
+**12 roupas novas da Fofinha**
+- Jardineira de linho com mangas bufantes e barra dobrada.
+- Cardigã com botões e saia midi.
+- Avental de flores (pinafore) com babado.
+- Vestido balonê com laço nas costas.
+- Capa de chuva com capuz, botões e galochas.
+- Marinheiro com a gola quadrada nas costas e lencinho.
+- Kigurumi de ursinho: capuz com orelhinhas, barriguinha, rabinho e patinhas.
+- Suéter de tricô com gola alta e barra canelada.
+- Quimono com mangas largas e faixa obi com laço.
+- Manto de bruxinha com capa e broche.
+- Conjunto esportivo com listras.
+- Colete de losangos sobre camisa branca.
+- Quatro são de graça e as outras ficam no Ateliê da Fifi.
+
+**Estampas e sapatos**
+- Estampas na blusa ou no vestido: listras, listrinhas, bolinhas, xadrez, degradê e losangos, cada uma com a cor que você escolher.
+- Tipos de sapato: redondinho, botinha e sapatilha.
+
+**Moradores:** a Lia, o Bento, o Otto, o Tomé, a Fifi e a Marina estreiam roupas e estampas novas.
+
 ## v30: cabelos em mechas, moradores com expressões, sons do criador e girar a personagem
 **Cabelos**
 - 12 penteados novos feitos de **mechas estilizadas**, que afinam na ponta e têm curva, onda ou ponta de anime:

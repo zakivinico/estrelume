@@ -5441,7 +5441,7 @@ function kmTabBody(tab, lk, fromTitle) { const C = (k, v) => v.c, row = (t, h) =
     + row('Tom de pele', kmChips(fromTitle, 'sk', null, SKINS_KM, lk.sk, (k, v) => v.c || '#f4c29b') + cpick('sk', lk.sk)) + row('Altura', kmChips(fromTitle, 'sz', null, Object.fromEntries(Object.entries(SIZES).map(([k, v]) => [k, v[0]])), lk.sz || 'n')) + row('Cabeça', kmChips(fromTitle, 'hd', null, Object.fromEntries(Object.entries(HEADS).map(([k, v]) => [k, v[0]])), lk.hd || 'n'));
   if (tab === 'rosto') return row('Olhos', kmChips(fromTitle, 'ey', null, KM_EYES, lk.ey)) + row('Cor dos olhos', kmChips(fromTitle, 'ec', null, KM_ECOL, lk.ec, C)) + row('Sobrancelhas', kmChips(fromTitle, 'br', null, KM_BROWS, lk.br)) + row('Boca', kmChips(fromTitle, 'mo', null, KM_MOUTH, lk.mo)) + row('Bochechas e enfeites', kmChips(fromTitle, 'fc', null, KM_CHEEK, lk.fc || 'none'));
   if (tab === 'cabelo') return row('Penteado', kmChips(fromTitle, 'kh', 'kh', KM_HEADS, lk.kh)) + row('Cor do cabelo', kmChips(fromTitle, 'hc', 'hc', HAIRC, lk.hc, (k, v) => v.c || KM_HAIRC[k] || '#6b4428') + cpick('hc', lk.hc));
-  if (tab === 'roupa') return row('Roupa', kmChips(fromTitle, 'kb', 'kb', KM_BODIES, lk.kb)) + row('Cor da blusa', kmChips(fromTitle, 'ct', 'kc', KCOL, lk.ct, C) + cpick('ct', lk.ct)) + row('Cor da calça ou saia', kmChips(fromTitle, 'cb', 'kc', KCOL, lk.cb, C) + cpick('cb', lk.cb)) + row('Cor dos sapatos', kmChips(fromTitle, 'cs', 'kc', KCOL, lk.cs, C) + cpick('cs', lk.cs));
+  if (tab === 'roupa') return row('Roupa', kmChips(fromTitle, 'kb', 'kb', KM_BODIES, lk.kb)) + row('Cor da blusa', kmChips(fromTitle, 'ct', 'kc', KCOL, lk.ct, C) + cpick('ct', lk.ct)) + row('Cor da calça ou saia', kmChips(fromTitle, 'cb', 'kc', KCOL, lk.cb, C) + cpick('cb', lk.cb)) + row('Cor dos sapatos', kmChips(fromTitle, 'cs', 'kc', KCOL, lk.cs, C) + cpick('cs', lk.cs)) + row('Estampa da blusa ou do vestido', kmChips(fromTitle, 'kp', null, KM_PAT, lk.kp || 'lisa')) + row('Cor da estampa', kmChips(fromTitle, 'kpc', null, KCOL, lk.kpc || 'branco', C)) + row('Tipo de sapato', kmChips(fromTitle, 'ksh', null, KM_SHOE, lk.ksh || 'redondo'));
   return null; }
 { const base = openCreator; openCreator = function (fromTitle) {
   const fresh = !crLook; base(fromTitle);
@@ -6268,7 +6268,7 @@ function fofaG() { if (FOFA.G) return FOFA.G; const G = {
 // peças: [bone, geo, cor, x, y, z (mundo, em repouso), sx, sy, sz, rx, ry, rz]
 function fofaParts(lk) {
   const sk = kmHex(SKINS, lk.sk, null) || '#f4c29b', hc = kmHex(HAIRC, lk.hc, KM_HAIRC[lk.hc] || null) || KM_HAIRC.castanho, ct = kmHex(KCOL, lk.ct) || '#ffd45a', cb = kmHex(KCOL, lk.cb) || '#a88cf0', cs = kmHex(KCOL, lk.cs) || '#f4f1ea';
-  const P = [], A = (b, g, c, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) => P.push([b, g, c, x, y, z, sx, sy, sz, rx, ry, rz]);
+  const P = [], A = (b, g, c, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0, pt = null) => P.push([b, g, c, x, y, z, sx, sy, sz, rx, ry, rz, pt]);
   const dark = (h, k = 0.75) => '#' + new THREE.Color(h).multiplyScalar(k).getHexString(), WHITE = '#fbf7f0';
   // cabeça
   const HC = [0, 0.83, -0.01]; A('head', 'hi', sk, HC[0], HC[1], HC[2], 0.335, 0.31, 0.31);
@@ -6343,11 +6343,18 @@ function fofaParts(lk) {
   }
   // corpo e roupa
   const B = { fa: { sl: 'l', bt: 'p', ex: 'hood' }, fb: { sl: 's', bt: 'k', ex: 'collar' }, fc: { sl: 's', bt: 'd' }, fd: { sl: 'l', bt: 'p', ex: 'lapel' }, fe: { sl: 'l', bt: 'p', ex: 'coat' }, ff: { sl: 'l', bt: 'p', ex: 'zip' },
-    ma: { sl: 's', bt: 'p' }, mb: { sl: 's', bt: 'h', ex: 'big' }, mc: { sl: 'l', bt: 'p', ex: 'belt' }, md: { sl: 'l', bt: 'p', ex: 'tie' }, me: { sl: 's', bt: 'p', ex: 'vest' }, mf: { sl: 's', bt: 'p', ex: 'overall' } }[lk.kb] || { sl: 's', bt: 'p' };
-  const big = B.ex === 'big' ? 1.08 : 1, topC = B.ex === 'vest' ? WHITE : ct;
-  A('spine', 'ball', topC, 0, 0.41, -0.03, 0.2 * big, 0.17, 0.17 * big); // tronco (feijão)
-  A('spine', 'ball', B.bt === 'd' ? ct : cb, 0, 0.32, -0.03, 0.195 * big, 0.11, 0.165 * big); // quadril
-  if (B.bt === 'd') A('spine', 'skirt', ct, 0, 0.255, -0.03, 0.2, 0.16, 0.18);
+    ma: { sl: 's', bt: 'p' }, mb: { sl: 's', bt: 'h', ex: 'big' }, mc: { sl: 'l', bt: 'p', ex: 'belt' }, md: { sl: 'l', bt: 'p', ex: 'tie' }, me: { sl: 's', bt: 'p', ex: 'vest' }, mf: { sl: 's', bt: 'p', ex: 'overall' },
+    /* v31 */ g1: { sl: 'puff', bt: 'p', ex: 'bib' }, g2: { sl: 'l', bt: 'midi', ex: 'cardi' }, g3: { sl: 'puff', bt: 'd', ex: 'pinafore' }, g4: { sl: 's', bt: 'bal', ex: 'bowW' }, g5: { sl: 'l', bt: 'coatL', ex: 'rain' }, g6: { sl: 's', bt: 'k', ex: 'sailor' },
+    g7: { sl: 'l', bt: 'p', ex: 'kigu' }, g8: { sl: 'l', bt: 'p', ex: 'knit' }, g9: { sl: 'wide', bt: 'robe', ex: 'obi' }, g10: { sl: 'wide', bt: 'robe', ex: 'cape' }, g11: { sl: 's', bt: 'h', ex: 'sport' }, g12: { sl: 'l', bt: 'p', ex: 'argyle' } }[lk.kb] || { sl: 's', bt: 'p' };
+  const big = B.ex === 'big' ? 1.08 : 1, topC = B.ex === 'vest' || B.ex === 'argyle' ? WHITE : ct, kigu = B.ex === 'kigu', cbx = kigu ? ct : cb, light = (h, k = 0.3) => '#' + new THREE.Color(h).lerp(new THREE.Color('#ffffff'), k).getHexString();
+  const PT = lk.kp && lk.kp !== 'lisa' && !kigu ? { t: lk.kp, c2: kmHex(KCOL, lk.kpc) || '#ffffff' } : null, ksh = B.ex === 'rain' ? 'bota' : kigu ? 'pata' : lk.ksh || 'redondo';
+  A('spine', 'ball', topC, 0, 0.41, -0.03, 0.2 * big, 0.17, 0.17 * big, 0, 0, 0, topC === ct ? PT : null); // tronco (feijão)
+  A('spine', 'ball', B.bt === 'd' || B.bt === 'bal' || B.bt === 'robe' || B.bt === 'coatL' ? ct : cbx, 0, 0.32, -0.03, 0.195 * big, 0.11, 0.165 * big, 0, 0, 0, B.bt === 'd' || B.bt === 'bal' ? PT : null); // quadril
+  if (B.bt === 'd') A('spine', 'skirt', ct, 0, 0.255, -0.03, 0.2, 0.16, 0.18, 0, 0, 0, PT);
+  if (B.bt === 'bal') { A('spine', 'ball', ct, 0, 0.245, -0.03, 0.25, 0.115, 0.22, 0, 0, 0, PT); A('spine', 'ring', dark(ct, 0.85), 0, 0.17, -0.03, 0.16, 0.16, 0.14, Math.PI / 2, 0, 0); }
+  if (B.bt === 'midi') A('spine', 'skirt', cb, 0, 0.2, -0.03, 0.21, 0.26, 0.19);
+  if (B.bt === 'robe') A('spine', 'skirt', ct, 0, 0.17, -0.03, 0.22, 0.32, 0.2, 0, 0, 0, PT);
+  if (B.bt === 'coatL') A('spine', 'skirt', ct, 0, 0.27, -0.03, 0.215, 0.24, 0.19);
   if (B.bt === 'k') A('spine', 'skirt', cb, 0, 0.275, -0.03, 0.2, 0.11, 0.18);
   A('spine', 'ball', sk, 0, 0.535, -0.02, 0.09, 0.05, 0.085); // pescoço
   if (B.ex === 'hood') A('spine', 'ball', dark(ct, 0.9), 0, 0.53, -0.17, 0.17, 0.09, 0.08);
@@ -6358,15 +6365,34 @@ function fofaParts(lk) {
   if (B.ex === 'belt') { A('spine', 'cyl', dark(cb, 0.6), 0, 0.345, -0.03, 0.198, 0.03, 0.168); A('spine', 'box', '#ffd45a', 0, 0.345, 0.14, 0.05, 0.035, 0.02); }
   if (B.ex === 'vest') { A('spine', 'ball', ct, 0, 0.41, -0.03, 0.205, 0.165, 0.172); A('spine', 'box', WHITE, 0, 0.44, 0.16, 0.06, 0.16, 0.02); }
   if (B.ex === 'overall') { A('spine', 'box', cb, 0, 0.4, 0.13, 0.15, 0.12, 0.06); for (const m of [-1, 1]) { A('spine', 'box', cb, m * 0.1, 0.5, 0.07, 0.035, 0.12, 0.17, 0.25, 0, 0); A('spine', 'ball', '#ffd45a', m * 0.08, 0.45, 0.165, 0.018, 0.018, 0.012); } }
+  // v31: detalhes das roupas novas (ideias de Animal Crossing, cottagecore e personagens chibi)
+  if (B.ex === 'bib') { A('spine', 'box', cbx, 0, 0.4, 0.13, 0.15, 0.13, 0.06); A('spine', 'box', dark(cbx, 0.85), 0, 0.39, 0.165, 0.07, 0.05, 0.01); for (const m of [-1, 1]) { A('spine', 'box', cbx, m * 0.1, 0.5, 0.07, 0.035, 0.12, 0.17, 0.25, 0, 0); A('spine', 'ball', '#f4f1ea', m * 0.08, 0.46, 0.165, 0.02, 0.02, 0.012); A(m > 0 ? 'leg-left' : 'leg-right', 'cyl', light(cbx, 0.35), m * 0.11, 0.075, -0.035, 0.088, 0.03, 0.088); } }
+  if (B.ex === 'cardi') { A('spine', 'box', WHITE, 0, 0.43, 0.148, 0.05, 0.17, 0.02); for (const y of [0.48, 0.43, 0.38]) A('spine', 'ball', dark(ct, 0.65), 0.04, y, 0.152, 0.016, 0.016, 0.01); A('spine', 'ring', ct, 0, 0.54, -0.02, 0.095, 0.095, 0.09, Math.PI / 2, 0, 0); for (const m of [-1, 1]) A('spine', 'box', dark(ct, 0.88), m * 0.1, 0.35, 0.14, 0.05, 0.035, 0.015); }
+  if (B.ex === 'pinafore') { A('spine', 'box', WHITE, 0, 0.36, 0.135, 0.15, 0.2, 0.025); for (const m of [-1, 1]) A('spine', 'box', WHITE, m * 0.085, 0.5, 0.08, 0.03, 0.1, 0.16, 0.25, 0, 0); A('spine', 'ring', WHITE, 0, 0.18, -0.03, 0.2, 0.2, 0.18, Math.PI / 2, 0, 0); A('spine', 'ball', '#ff8fb8', 0, 0.42, 0.15, 0.025, 0.025, 0.012); }
+  if (B.ex === 'bowW') { A('spine', 'cyl', cb, 0, 0.33, -0.03, 0.2, 0.025, 0.17); for (const m of [-1, 1]) A('spine', 'ball', cb, m * 0.07, 0.34, -0.2, 0.07, 0.045, 0.03, 0, 0, m * 0.5); A('spine', 'ball', dark(cb, 0.85), 0, 0.34, -0.2, 0.03, 0.03, 0.03); }
+  if (B.ex === 'rain') { A('spine', 'ball', dark(ct, 0.92), 0, 0.53, -0.17, 0.17, 0.09, 0.08); for (const y of [0.47, 0.4, 0.33]) A('spine', 'ball', '#f4f1ea', 0, y, 0.16, 0.024, 0.024, 0.014); for (const m of [-1, 1]) A('spine', 'box', dark(ct, 0.85), m * 0.11, 0.32, 0.165, 0.06, 0.02, 0.02); }
+  if (B.ex === 'sailor') { A('spine', 'box', cb, 0, 0.55, -0.1, 0.25, 0.02, 0.2, -0.25, 0, 0); A('spine', 'box', WHITE, 0, 0.557, -0.19, 0.22, 0.008, 0.012, -0.25, 0, 0); A('spine', 'cone', '#e8505b', 0, 0.45, 0.15, 0.05, 0.09, 0.02, Math.PI, 0, 0); A('spine', 'ball', '#e8505b', 0, 0.5, 0.14, 0.03, 0.025, 0.02); }
+  if (kigu) { const ear = '#' + new THREE.Color(ct).lerp(new THREE.Color('#ffe3c4'), 0.5).getHexString(); A('spine', 'ball', dark(ct, 0.95), 0, 0.55, -0.19, 0.17, 0.11, 0.09); for (const m of [-1, 1]) { A('spine', 'ball', ct, m * 0.1, 0.65, -0.19, 0.055, 0.055, 0.035); A('spine', 'ball', '#ffb3c8', m * 0.1, 0.65, -0.165, 0.03, 0.03, 0.01); } A('spine', 'ball', ear, 0, 0.37, 0.12, 0.095, 0.085, 0.04); A('spine', 'ball', ear, 0, 0.3, -0.2, 0.05, 0.05, 0.05); }
+  if (B.ex === 'knit') { A('spine', 'cyl', ct, 0, 0.545, -0.02, 0.1, 0.05, 0.095); A('spine', 'cyl', dark(ct, 0.88), 0, 0.26, -0.03, 0.2, 0.025, 0.17); for (const [b, m] of [['arm-left', 1], ['arm-right', -1]]) A(b, 'cyl', dark(ct, 0.88), 0.15 * m + m * 0.155, 0.42, -0.026, 0.06, 0.02, 0.06, 0, 0, Math.PI / 2); }
+  if (B.ex === 'obi') { A('spine', 'cone', WHITE, 0, 0.47, 0.125, 0.07, 0.12, 0.03, Math.PI, 0, 0); A('spine', 'cyl', cb, 0, 0.37, -0.03, 0.205, 0.05, 0.172); A('spine', 'box', dark(cb, 0.7), 0, 0.37, 0.142, 0.17, 0.012, 0.008); for (const m of [-1, 1]) A('spine', 'ball', cb, m * 0.06, 0.38, -0.21, 0.06, 0.05, 0.03, 0, 0, m * 0.4); }
+  if (B.ex === 'cape') { A('spine', 'skirt', dark(ct, 0.78), 0, 0.33, -0.13, 0.22, 0.32, 0.09); A('spine', 'ball', '#ffd45a', 0, 0.52, 0.12, 0.03, 0.03, 0.02); A('spine', 'cone', '#ffd45a', 0, 0.52, 0.13, 0.02, 0.05, 0.01, 0, 0, Math.PI / 2); }
+  if (B.ex === 'sport') { A('spine', 'cyl', WHITE, 0, 0.47, -0.03, 0.198, 0.018, 0.168); for (const m of [-1, 1]) A(m > 0 ? 'leg-left' : 'leg-right', 'box', WHITE, m * 0.18, 0.2, -0.035, 0.012, 0.08, 0.02); A('spine', 'ball', WHITE, 0.07, 0.45, 0.15, 0.03, 0.03, 0.012); }
+  if (B.ex === 'argyle') { A('spine', 'ball', ct, 0, 0.405, -0.03, 0.205, 0.16, 0.172, 0, 0, 0, PT || { t: 'losango', c2: light(ct, 0.45) }); A('spine', 'cone', WHITE, 0, 0.5, 0.12, 0.06, 0.08, 0.025, Math.PI, 0, 0); }
   // braços (em repouso apontam para o lado): manga + mãozinha
   for (const [b, m] of [['arm-left', 1], ['arm-right', -1]]) { const sx = 0.15 * m;
-    A(b, 'ball', topC === WHITE && B.ex === 'vest' ? WHITE : ct, sx + m * 0.06, 0.425, -0.026, 0.085, 0.07, 0.07);
-    A(b, 'ball', B.sl === 'l' ? ct : sk, sx + m * 0.115, 0.42, -0.026, 0.075, 0.058, 0.058);
+    const slc = topC === WHITE ? WHITE : ct, pf = B.sl === 'puff' ? 1.28 : 1;
+    A(b, 'ball', slc, sx + m * 0.06, 0.425, -0.026, 0.085 * pf, 0.07 * pf, 0.07 * pf, 0, 0, 0, slc === ct ? PT : null);
+    A(b, 'ball', B.sl === 'l' || B.sl === 'wide' ? slc : sk, sx + m * 0.115, 0.42, -0.026, 0.075, 0.058, 0.058);
+    if (B.sl === 'wide') A(b, 'cone', ct, sx + m * 0.13, 0.355, -0.026, 0.085, 0.14, 0.075);
     A(b, 'ball', sk, sx + m * 0.185, 0.416, -0.02, 0.062, 0.062, 0.062); }
   // pernas curtinhas e sapatos redondos
-  for (const [b, m] of [['leg-left', 1], ['leg-right', -1]]) { const x = 0.11 * m, legC = B.bt === 'p' ? cb : B.bt === 'h' ? cb : sk;
+  for (const [b, m] of [['leg-left', 1], ['leg-right', -1]]) { const x = 0.11 * m, legC = B.bt === 'p' ? cbx : B.bt === 'h' ? cbx : sk, csx = kigu ? light(ct, 0.15) : cs;
     A(b, 'ball', legC, x, 0.17, -0.035, 0.08, 0.11, 0.08); if (B.bt === 'h') A(b, 'ball', sk, x, 0.1, -0.035, 0.065, 0.07, 0.065);
-    A(b, 'ball', cs, x, 0.05, 0.0, 0.085, 0.058, 0.118); A(b, 'ball', dark(cs, 0.8), x, 0.012, 0.0, 0.08, 0.018, 0.11); }
+    if (ksh === 'bota') { A(b, 'cyl', csx, x, 0.1, -0.02, 0.078, 0.11, 0.078); A(b, 'ball', csx, x, 0.05, 0.01, 0.088, 0.058, 0.12); A(b, 'cyl', dark(csx, 0.85), x, 0.155, -0.02, 0.083, 0.012, 0.083); }
+    else if (ksh === 'sapatilha') { A(b, 'ball', csx, x, 0.04, 0.0, 0.082, 0.042, 0.115); A(b, 'box', dark(csx, 0.7), x, 0.075, 0.03, 0.09, 0.012, 0.014); }
+    else if (ksh === 'pata') { A(b, 'ball', csx, x, 0.05, 0.0, 0.09, 0.06, 0.12); for (const k of [-1, 0, 1]) A(b, 'ball', '#ffb3c8', x + k * 0.03, 0.04, 0.11, 0.014, 0.014, 0.01); }
+    else A(b, 'ball', csx, x, 0.05, 0.0, 0.085, 0.058, 0.118);
+    A(b, 'ball', dark(csx, 0.8), x, 0.012, 0.0, 0.08, 0.018, 0.11); }
   return P;
 }
 function fofaBuild(lk) { // geometria por osso (no espaço do osso), com cache
@@ -7030,10 +7056,10 @@ const CR30 = { quiet: 0, mute: null, yaw: 0, vel: 0, drag: null, sway: 1, idle: 
 { const base = sfx; sfx = function (k, ...a) { if (CR30.mute === k || (CR30.quiet && (k === 'bookFlip2' || k === 'menu' || k === 'accept'))) return; return base(k, ...a); }; }
 { const base = sfxP; sfxP = function (k, ...a) { if ((k === 'switch' || (k === 'hover' && performance.now() - (CR30.selT || 0) < 600)) && document.querySelector('#modal.on .crbody')) return; return base(k, ...a); }; }
 function crSel30(k, v) { CR30.selT = performance.now(); const hex = (T) => kmHex(T, v, v && v[0] === '#' ? v : null); let col = null;
-  if (k === 'hc') col = hex(HAIRC) || KM_HAIRC[v]; else if (k === 'sk') col = hex(SKINS); else if (k === 'ec') col = hex(KM_ECOL); else if (['ct', 'cb', 'cs'].includes(k)) col = hex(KCOL);
+  if (k === 'hc') col = hex(HAIRC) || KM_HAIRC[v]; else if (k === 'sk') col = hex(SKINS); else if (k === 'ec') col = hex(KM_ECOL); else if (['ct', 'cb', 'cs', 'kpc'].includes(k)) col = hex(KCOL);
   if (col) { const hsl = {}; new THREE.Color(col).getHSL(hsl); return sfxP('sel_color', 0.9, 0.78 + hsl.l * 0.55 + hsl.h * 0.12); } // gotinha: cor mais clara = mais aguda
   if (k === 'kh') return sfxP('sel_hair', 0.9, 0.95 + rand() * 0.1);
-  if (k === 'kb') return sfxP('sel_cloth', 0.9, 0.95 + rand() * 0.1);
+  if (k === 'kb' || k === 'kp' || k === 'ksh') return sfxP('sel_cloth', 0.9, 0.95 + rand() * 0.1);
   if (['ey', 'mo', 'br', 'fc'].includes(k)) return sfxP('sel_face', 0.8, 0.95 + rand() * 0.12);
   if (k === 'sz' || k === 'hd') return sfxP('sel_pop', 0.9, v === 'p' || v === 'n' ? 1.15 : 0.85);
   return sfxP('sel_pop', 0.8, 1); }
@@ -7092,6 +7118,42 @@ function emoUpdate30(dt) { if (mode !== 'out' || titleOn) return; const h = hour
 EXTRA_SFX.push('sel_color', 'sel_hair', 'sel_cloth', 'sel_face', 'sel_pop', 'emo_feliz', 'emo_amor', 'emo_surpresa', 'emo_hmm', 'emo_sono', 'emo_risada');
 Object.assign(SFXV, { sel_color: 0.6, sel_hair: 0.6, sel_cloth: 0.6, sel_face: 0.55, sel_pop: 0.55, emo_feliz: 0.45, emo_amor: 0.45, emo_surpresa: 0.45, emo_hmm: 0.4, emo_sono: 0.35, emo_risada: 0.45 });
 
+/* =================== v31: roupas novas, estampas e tipos de sapato =================== */
+// Ideias pesquisadas: categorias e estilos de roupa do Animal Crossing (blusas, vestidos, casacos, fantasias), peças cottagecore
+// (jardineira de linho com blusa bufante, cardigã com saia midi, avental pinafore, cores terrosas e pastel) e fantasias chibi
+// (marinheiro, capa de chuva, kigurumi de bichinho, bruxinha).
+Object.assign(KM_BODIES, { g1: 'Jardineira de linho', g2: 'Cardigã e saia midi', g3: 'Avental de flores', g4: 'Vestido balonê', g5: 'Capa de chuva', g6: 'Marinheiro', g7: 'Kigurumi de ursinho', g8: 'Suéter de tricô', g9: 'Quimono', g10: 'Manto de bruxinha', g11: 'Conjunto esportivo', g12: 'Colete de losangos' });
+KM_VAR.push('g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9', 'g10', 'g11', 'g12'); /* lista de roupas válidas (os modelos km_* já foram carregados antes, só com as 12 originais) */
+WARD_FREE.kb.push('g1', 'g2', 'g8', 'g11'); Object.assign(WARD_PRICE.kb, { g3: 180, g4: 200, g5: 160, g6: 220, g7: 300, g9: 260, g10: 280, g12: 170 });
+const KM_PAT = { lisa: 'Lisa', listras: 'Listras', listrinhas: 'Listrinhas', bolinhas: 'Bolinhas', xadrez: 'Xadrez', degrade: 'Degradê', losango: 'Losangos' };
+const KM_SHOE = { redondo: 'Redondinho', bota: 'Botinha', sapatilha: 'Sapatilha' };
+Object.assign(KM_DEF, { kp: 'lisa', kpc: 'branco', ksh: 'redondo' });
+// estampa por triângulo (fica nítida): u = volta em torno da peça, v = altura, na geometria da peça antes de posicionar
+const PAT31 = new THREE.Color(), PAT31b = new THREE.Color();
+function patColor(pt, base, lp, out) { const v = (lp.y + 1) / 2, a = Math.atan2(lp.z, lp.x) / (Math.PI * 2) + 0.5; PAT31.set(pt.c2); out.copy(base);
+  switch (pt.t) {
+    case 'listras': if (Math.floor(v * 7) % 2) out.copy(PAT31); break;
+    case 'listrinhas': if (Math.floor(v * 14) % 2) out.copy(PAT31); break;
+    case 'bolinhas': { const row = Math.floor(v * 6), u = a * 12 + (row % 2) * 0.5, fu = u - Math.round(u), fv = v * 6 - row - 0.5; if (fu * fu + fv * fv < 0.065) out.copy(PAT31); break; }
+    case 'xadrez': { const s1 = Math.floor(v * 8) % 2, s2 = Math.floor(a * 18) % 2; if (s1 && s2) out.copy(PAT31); else if (s1 || s2) out.lerp(PAT31, 0.45); break; }
+    case 'degrade': out.lerp(PAT31, Math.min(1, Math.max(0, 1 - v))); break;
+    case 'losango': { const u = a * 10, w = v * 4, du = Math.abs(u - Math.floor(u) - 0.5), dw = Math.abs(w - Math.floor(w) - 0.5); if (du + dw < 0.32) out.copy(PAT31); else if (Math.abs(du - dw) < 0.035) out.copy(base).lerp(PAT31, 0.6); break; } }
+  return out; }
+{ const base = fofaG; fofaG = function () { const G = base(); if (!G.ballP) { const mk = (g) => { const n = g.index ? g.toNonIndexed() : g; n.deleteAttribute('uv'); return n; }; G.ballP = mk(new THREE.SphereGeometry(1, 48, 32)); G.skirtP = mk(new THREE.CylinderGeometry(0.72, 1, 1, 48, 12, true)); } return G; }; }
+fofaBuild = function (lk) { // v31: como a da v24, mais estampa por triângulo e as chaves novas no cache
+  const key = [lk.kb, lk.kh, lk.sk, lk.hc, lk.ct, lk.cb, lk.cs, lk.kp, lk.kpc, lk.ksh].join('|'); if (FOFA.geo[key]) return FOFA.geo[key];
+  const R = fofaRef(), G = fofaG(), by = {}, c = new THREE.Color(), cc = new THREE.Color(), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), lp = new THREE.Vector3();
+  for (const [b, gk0, col, x, y, z, sx, sy, sz, rx, ry, rz, pt] of fofaParts(lk)) { const r = R[b]; if (!r) continue; const gk = pt ? (gk0 === 'skirt' ? 'skirtP' : gk0 === 'ball' ? 'ballP' : gk0) : gk0, src = G[gk], g = src.clone(), s = 1 / (r.s || 1);
+    m4.compose(new THREE.Vector3((x - r.p.x) * s, (y - r.p.y) * s, (z - r.p.z) * s), q.setFromEuler(e.set(rx, ry, rz)), new THREE.Vector3(sx * s, sy * s, sz * s)); g.applyMatrix4(m4);
+    c.set(col); const n = g.attributes.position.count, ca = new Float32Array(n * 3), sp = src.attributes.position;
+    if (!pt) { for (let i = 0; i < n; i++) { ca[i * 3] = c.r; ca[i * 3 + 1] = c.g; ca[i * 3 + 2] = c.b; } }
+    else { const smooth = pt.t === 'degrade'; for (let t = 0; t < n; t += 3) { if (smooth) { for (let k = 0; k < 3; k++) { lp.fromBufferAttribute(sp, t + k); if (gk === 'skirtP') lp.y *= 2; patColor(pt, c, lp, cc); ca.set([cc.r, cc.g, cc.b], (t + k) * 3); } continue; }
+        lp.set(0, 0, 0); for (let k = 0; k < 3; k++) { lp.x += sp.getX(t + k) / 3; lp.y += sp.getY(t + k) / 3; lp.z += sp.getZ(t + k) / 3; } if (gk === 'skirtP') lp.y *= 2; patColor(pt, c, lp, cc); for (let k = 0; k < 3; k++) ca.set([cc.r, cc.g, cc.b], (t + k) * 3); } }
+    g.setAttribute('color', new THREE.BufferAttribute(ca, 3)); (by[b] = by[b] || []).push(g); }
+  const out = {}; for (const [b, list] of Object.entries(by)) out[b] = mergeGeometries(list, false); return (FOFA.geo[key] = out); };
+// moradores com roupas novas
+for (const [id, lk] of Object.entries({ lia: { kb: 'g3', kp: 'bolinhas', kpc: 'branco' }, bento: { kb: 'g2', ct: 'bege' }, otto: { kb: 'g12' }, tome: { kb: 'g8', kp: 'listras', kpc: 'creme' }, fifi: { kb: 'g4', kp: 'xadrez', kpc: 'branco' }, marina: { kb: 'g6', ksh: 'sapatilha' } })) if (NPCLOOK[id]) Object.assign(NPCLOOK[id], lk);
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -7135,4 +7197,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { EMOTEX30, NPCLOOK, EMO30, EXPR30, npcExpress, CR30, get crLook() { return crLook; }, get GCVo() { return GCV; }, kmFaceTex, SKINS, HAIRC, KCOL, KM_ECOL, KM_DEF, get KM_HEADSo() { return KM_HEADS; }, LPo: LP, composerX: composer, bloomX: bloom, gradeX: grade, PERF29, get CULLo() { return CULL; }, get sfx() { return sfx; }, get tone() { return tone; }, get moveC() { return moveC; }, LOW26, resetTransient, PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { KM_PAT, KM_SHOE, get KM_BODIESo() { return KM_BODIES; }, EMOTEX30, NPCLOOK, EMO30, EXPR30, npcExpress, CR30, get crLook() { return crLook; }, get GCVo() { return GCV; }, kmFaceTex, SKINS, HAIRC, KCOL, KM_ECOL, KM_DEF, get KM_HEADSo() { return KM_HEADS; }, LPo: LP, composerX: composer, bloomX: bloom, gradeX: grade, PERF29, get CULLo() { return CULL; }, get sfx() { return sfx; }, get tone() { return tone; }, get moveC() { return moveC; }, LOW26, resetTransient, PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
