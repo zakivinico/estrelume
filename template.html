@@ -941,6 +941,8 @@ body[data-input=pad] #hint .key{background:#ffe18d}
 body.bigtxt .modal,body.bigtxt #modal{font-size:110%}
 body.bigtxt #hint,body.bigtxt #toast{font-size:18px}
 body.calm *{animation-duration:0s!important;transition-duration:0s!important}
+/* v27: avisos que somem no fim da animação continuam aparecendo com "Menos animação" (com 0 s eles iam direto para o fim, invisíveis) */
+body.calm #lvup.on{animation-duration:3s!important}body.calm #itemget img{animation-duration:2.4s!important}body.calm #areaT.on{animation-duration:3.2s!important}body.calm #cut .csn.on{animation-duration:5s!important}
 .seth{margin:14px 0 4px;font-size:15px}
 @media (max-width:700px){#hudTR #qlist{display:none}#hudTR.open #qlist{display:block}}
 /* v25: abertura com cenas */
