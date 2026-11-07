@@ -129,8 +129,8 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Casas: modelos `hx_*` (KayKit Medieval Hexagon, licença em `game/assets/LICENSE-KayKit-Medieval-Hexagon-CC0.txt`). `houseModel(o, x, y)` escolhe o modelo de cada casa das vilas (a da jogadora e a da Vovó ficam como eram).
 - HUD: `hudHearts()` redesenha `#hearts` (corações em SVG, `#stbar`/`#sttxt` mantidos para a atualização por quadro). Relógio do retrato: `DIAL`/`dialUpdate` com `dialIcon` (sol e lua desenhados em canvas).
 - Arena: `ARENA26` (achada por `arenaFind` num campo aberto da vila ou da praia, montada em `PRE_GH` para ficar plana). `RB` e `PVP` usam o centro e o raio dela; `RB.wall` é o anel de pétalas no chão.
-- Pulo: `P.jy`/`P.jv` (`JUMP.v0`, `JUMP.g`), `doJump()` (tecla C, LT no controle, botão `#tJ`), `jumpUpdate`. No ar o `moveC` deixa passar por cima de `LOW26`. A altura é aplicada só no desenho (embrulho do `renderer.render`).
-- Parkour: `PK26.plats` (`x`, `z`, `w`, `d`, `h`); `platTop` dá o chão em cima delas e `platBlock` barra quem está mais baixo. Recorde em `S.pk`.
+- Pulo: `P.jy`/`P.jv` (`JUMP.v0`, `JUMP.g`), `doJump()` (Espaço desde a v1.31, LT no controle, botão `#tJ`), `jumpUpdate`. No ar o `moveC` deixa passar por cima de `LOW26`. A altura é aplicada só no desenho (embrulho do `renderer.render`).
+- Parkour (removido na v1.32): `PK26.plats` fica vazio; `platTop`/`platBlock` continuam, sem plataformas.
 
 ## Desempenho automático, título e introdução (v27)
 
@@ -185,3 +185,15 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Desejo: `playWishG` foi substituído por uma coreografia em canvas 2D (`#wcv131`, `WISH131`: moedinhas, carga em espiral, promoção da cor por raridade, voo das estrelas, explosão). Não usa WebGL nem shader novo. `WISH131.pause` congela o tempo nos testes. O modo calmo (`body.calm`) reduz partículas e tremida.
 - Poço: `wellKM131()` substitui o `k_well` da praça (a água `WELL131.water` pisca no `shrineUpdate`), e o ícone `THUMB.well` vem de `p31_well`. A praça do Poço agora é `rect(35, 28, 50, 35)` mais a faixa `41–50 × 36`.
 - Cores: `vibMat131`/`vibTex131` passam cores e texturas dos modelos de cenário pela curva `vib131` no `prepare` (não mexe em `ch_`, `km_`, `hr_` nem em personagens). Texturas iguais são processadas uma vez e dividem a mesma `source` (`VIB131.src`). Use `?novib=1` para comparar.
+
+## Protagonista, arma, ilha da Vovó, aulas e mapa maior (v1.32)
+
+- Proporções da Fofinha (`PROP132`): o embrulho de `fofaParts` estica as pernas, e `prop132` (chamado no `kmLook`) sobe o nó do modelo `lift` e encolhe tudo que está preso no osso da cabeça (cabelo, rosto, chapéu e óculos), além de alongar os braços. O que for preso na cabeça depois do `kmLook` passa por `prop132Head` (embrulhos de `attachHead` e `equipSlots`).
+- Contorno só da protagonista: `outline132` (casca invertida com `OUTM132`, compilado no carregamento por uma malha invisível). Brilho de anime no cabelo: peça `arc` (de `fofaG`) sobre a touca.
+- Empunhadura: `gripQ132` calcula, uma vez, a rotação da mão na pose Idle; armas `w:` na mão ficam com a lâmina para a frente e para cima (`GRIP132.tilt`), com o cabo no punho e escala `GRIP132.sw` (espada) ou `GRIP132.pick`.
+- Animação procedural (`ANIM132`): quique, inclinações, cabeça, respiração e aterrissagem nos ossos da protagonista, só no desenho (embrulho do `renderer.render`, que desfaz tudo depois).
+- Arma: `pwSel()` vale também fora dos duelos. O Machado usa o `swordAttack` com `WPN132.axeT` (dano e empurrão maiores em `hitSlime`/`bossHit`); o Arco usa `bowShot132` e as flechas de `WPN132.arrows`. No jogo novo, `wpnPicker132` aparece no criador e o `#crOk` não deixa começar sem arma (`wpnSet132`).
+- Desafio da Vovó (`A132`): ilha montada por `arenaBuild132` em (820, 320) e apagada no embrulho de `rosaCleanup`, que leva você de volta à praça. Lá dentro o `moveC` anda livre e o `snapshot` salva na praça. Aulas em `TUT132` (golpe, combo, esquiva, giro): `tutStep132` avança, e durante as aulas a Vovó não ataca (`RB.cd = 99`) e o dano é cortado. `S.tut132` marca que já foram feitas.
+- Professores: `TEACH132[ev]` faz um morador falar quando você chega perto durante aquele passo do tutorial (`S.taught132`). Aulas dos moradores em `LES132` (`who`, `goal`, `ev`, `need`); `S.les132 = { done, cur, n }`. Os eventos novos (`cook`, `move`, `mine`, `pet`, `deliver`, `view`, `atelie`, `boat`) passam pelo `ev()`. O 📘 sobre a cabeça vem de `lesMarks132`.
+- Mapa: `H = 150` (era 120). Crescer só para o sul mantém os índices dos tiles salvos (`S.cut`, `S.rocks`); mudar o `W` exigiria converter esses saves. O parkour foi desligado (`parkourBuild` vazio). Corredor da praia: o embrulho de `regionAt` devolve a Praia do Sol em `ROAD132` (x 39,5–46,5) entre os Campos do Sul.
+- Peças novas por cima de antigas: `NEWKH132` (penteados `h23`–`h27`) e `NEWKB132` (roupas `n1`–`n5`) chamam o `fofaParts` com a peça base e acrescentam detalhes. Estampas novas no embrulho de `patColor` (`coracoes`, `estrelas`, `flores`, `vichy`, `ondas`, `arcoiris`).

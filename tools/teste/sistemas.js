@@ -1,4 +1,4 @@
-// Passeio automático pelos sistemas: casa, lojas, caverna, pesca, barco, fazenda, arena, parkour, poço, salvar/carregar,
+// Passeio automático pelos sistemas: casa, lojas, caverna, pesca, barco, fazenda, arena da Vovó (ilha fora do mapa), poço, salvar/carregar,
 // novo dia, morte, qualidade, título e controle. Mostra o estado depois de cada passo e os erros que apareceram.
 // Uso: node tools/teste/sistemas.js "http://localhost:8765/?noauto=1"   (SHOT=1 salva uma foto por passo; OUT=pasta)
 const { chromium } = require('playwright');
@@ -66,13 +66,14 @@ const SHOT = process.env.SHOT === '1';
   // fazenda
   await step('fazenda', "g.openFarm(); return !!g.farmEd;", 1500);
   await key('Escape'); await step('esc fazenda', 'return !!g.farmEd;', 1000);
-  // arena e parkour
+  // desafio da Vovó (ilha fora do mapa, com aulas) e arena de duelo
   await step('rosa luta', "g.rosaStart(); return g.RB && g.RB.on;", 3000);
+  await step('rosa ilha', "return [g.A132.on, !!g.A132.g, Math.round(P.x), g.A132.tut];", 500);
   await step('rosa ataque', "for (let i = 0; i < 3; i++) g.swordAttack && g.swordAttack(); return g.RB.on;", 2000);
+  await step('rosa fim', "g.rosaCleanup(); return [g.RB.on, !!g.A132.g];", 1500);
+  await step('rosa volta', "return [Math.round(P.x), Math.round(P.z)];", 500);
   await step('pvp', "g.pvpEnter(); return g.PVP.on;", 2000);
   await step('pvp sai', "g.pvpLeave(); return g.PVP.on;", 1500);
-  await step('parkour', "const pl = g.PK26.plats[0]; if (!pl) return 'sem'; P.x = pl.x; P.z = pl.z + 2; return [pl.x, pl.z];", 1500);
-  await key('Space'); await step('pulo parkour', 'return P.jy;', 1500);
   // poço
   await step('desejo x10', "g.closeModal(); try { g.doWish(10); } catch (e) { return 'ERR ' + e.message; } return 1;", 4000);
   await step('passa desejo', "for (let i = 0; i < 40; i++) { if (!document.getElementById('wish').classList.contains('on')) break; g.wishAdvance(); } return document.getElementById('wish').classList.contains('on');", 2500);
