@@ -231,3 +231,10 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
   - `wsklOk135(i)` diz se a habilidade está liberada; `skillBarLocks135()` põe o cadeado (`.lock135`). O `useSkill` recusa a habilidade trancada e o `WSKM135` aplica o dano extra.
   - Maestrias: `espada_m` (bloqueio do escudo), `machado_m` (multiplicador) e `arco_m` (recarga).
   - `TREEFIX135` (uma vez, `S.skt135`) devolve os pontos de `chuva`/`estocada` e libera de graça o R da arma atual em saves antigos.
+
+## Árvore em constelação (v1.36)
+
+- O `openSkills` da v1.36 abre um `#sk136` vazio e o `skRender136()` desenha tudo dentro dele. Selecionar e aprender só redesenham o conteúdo, sem chamar o `openModal` de novo (ele tocaria os sons de abrir).
+- Ramos: `skBranches136()` (arma pelo `wNodes135`, depois Combate, Natureza e Magia). `pos[id] = [coluna, linha]` numa grade 3×3, e as linhas ligam `req` ao nó. Nó novo no `SKT`: entra na lista `by([...])` e no `pos` do ramo.
+- Estado da UI: `SKUI136` (`tab`, `sel`, `pop` para o pulinho de quem acabou de ser aprendido, `ent` para a entrada das estrelas tocar só ao abrir e ao trocar de ramo). `skState136(n)` dá a classe da estrela (`lock`, `open`, `av`, `has`, `max`) e `can`.
+- Teclas: um `keydown` em captura no `document` age só com `#skb136` aberto (setas/WASD, Q/E, `[`/`]`, Tab, Enter, Espaço). O C é tratado no handler da v1.31, que chama `skLearn136()` quando a árvore está aberta.
