@@ -208,3 +208,9 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Ícones em pixel: o embrulho de `thumb` pixela a imagem (`pixCanvas133`) enquanto `PIX133.on` está ligado (durante o `ico3d`). Os ícones dos pratos também passam por ele. Ícone novo de habilidade: entrada em `ICON3D` no embrulho do `ico3d`.
 - Brilho das portas: `glowAlign133` mede só o maior modelo perto da porta (sem caixa de correio ou placa), com raios na altura 0,28 (escada) e 1,15 (parede). Ajuste manual em `GLOWFIX133` (a forja).
 - Título: `titleOutside133` força o modo de fora; o `titleCam` atualiza `areaUpdate`/`cullUpdate` e esconde os balões; `body.ttl #ov` esconde a camada 2D.
+
+## Armas com modelos CC0 (v1.34)
+
+- Modelos `w_shield`, `w_shield2`, `w_axe`, `w_quiver` e `w_arrow` (KayKit Adventurers) e `w_bow`, `w_bow2` (Quaternius Medieval Weapons, convertidos de FBX com o FBXLoader e o GLTFExporter do three.js no Chromium), registrados em `V134M` (altura em `FIT`).
+- O `heldObj` usa esses modelos para `#bow` e `#axe` (com o cabo no punho), o `mkShield133` usa o `w_shield` e as flechas saem do `mkArrow134()`. A aljava (`BACK133.q`) vai nas costas de quem usa o arco.
+- Todos ficam em pé no eixo Y com a face fina no Z. Ao trocar por outro modelo, mantenha essa orientação ou ajuste no embrulho.
