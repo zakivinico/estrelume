@@ -1053,6 +1053,28 @@ body.calm .w131.charge131,body.calm .w131 .wglow.on131,body.calm .rays131.on{ani
 .wp132.on{background:#ffe3f0;border-color:#c0407e;box-shadow:0 0 0 3px #ffb3d6,0 3px 0 rgba(58,40,64,.3);transform:translateY(-2px) scale(1.03)}
 #crOk.dim132{filter:grayscale(.6);opacity:.75}
 .wpk132.shake132{animation:qk131 .45s linear;border-color:#ff4f9a}
+/* v1.33: no título a camada 2D (nomes, balões) some */
+body.ttl #ov{visibility:hidden}
+/* v1.33: interface mais reativa */
+.btn{transition:transform .12s cubic-bezier(.3,1.6,.5,1),filter .12s,box-shadow .12s}
+.btn:not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.06)}
+.btn:not(:disabled):active{transform:translateY(1px) scale(.96);filter:brightness(.96);transition-duration:.05s}
+.btn:focus-visible,.slot:focus-visible,.app:focus-visible{outline:3px solid #ff8fbd;outline-offset:2px}
+.slot{transition:transform .16s cubic-bezier(.3,1.7,.5,1),background .15s}
+.slot:not(.on):hover{transform:translateY(-3px)}
+.slot.pop133{animation:pop133 .32s cubic-bezier(.3,1.8,.5,1)}
+@keyframes pop133{0%{transform:translateY(-6px) scale(.86)}55%{transform:translateY(-9px) scale(1.12)}100%{transform:translateY(-6px) scale(1)}}
+.slot img,.sk img,.fcard img,.oreq img,.gs img,.mini img{image-rendering:pixelated}
+.money.bump133{animation:bump133 .38s cubic-bezier(.3,1.8,.5,1)}
+@keyframes bump133{0%{transform:scale(1)}40%{transform:scale(1.18) rotate(-3deg)}100%{transform:scale(1)}}
+.sk{transition:transform .14s cubic-bezier(.3,1.7,.5,1)}
+.sk:hover{transform:translateY(-3px) scale(1.05)}
+.sk:active{transform:scale(.92)}
+.fcard{transition:transform .14s,box-shadow .14s}
+.fcard:hover{transform:translateY(-2px);box-shadow:0 5px 0 rgba(58,40,64,.18)}
+.app i{transition:transform .16s cubic-bezier(.3,1.7,.5,1)}
+.app:hover i,.app.sel i{transform:translateY(-4px) scale(1.08) rotate(-3deg)}
+body.calm .slot.pop133,body.calm .money.bump133{animation:none}
 </style>
 </head>
 <body class="ttl">
@@ -1132,7 +1154,7 @@ body.calm .w131.charge131,body.calm .w131 .wglow.on131,body.calm .rays131.on{ani
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v1.32</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v1.33</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script src="bundle.js"></script>

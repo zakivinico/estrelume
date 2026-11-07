@@ -197,3 +197,14 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Professores: `TEACH132[ev]` faz um morador falar quando você chega perto durante aquele passo do tutorial (`S.taught132`). Aulas dos moradores em `LES132` (`who`, `goal`, `ev`, `need`); `S.les132 = { done, cur, n }`. Os eventos novos (`cook`, `move`, `mine`, `pet`, `deliver`, `view`, `atelie`, `boat`) passam pelo `ev()`. O 📘 sobre a cabeça vem de `lesMarks132`.
 - Mapa: `H = 150` (era 120). Crescer só para o sul mantém os índices dos tiles salvos (`S.cut`, `S.rocks`); mudar o `W` exigiria converter esses saves. O parkour foi desligado (`parkourBuild` vazio). Corredor da praia: o embrulho de `regionAt` devolve a Praia do Sol em `ROAD132` (x 39,5–46,5) entre os Campos do Sul.
 - Peças novas por cima de antigas: `NEWKH132` (penteados `h23`–`h27`) e `NEWKB132` (roupas `n1`–`n5`) chamam o `fofaParts` com a peça base e acrescentam detalhes. Estampas novas no embrulho de `patColor` (`coracoes`, `estrelas`, `flores`, `vichy`, `ondas`, `arcoiris`).
+
+## Armas nas costas, escudo, habilidades por arma, ícones e portas (v1.33)
+
+- Arma guardada: `BACK133` (`w` arma nas costas, `sh` escudo, `drawn`, `last`). `backBuild133` cria a arma das costas no osso `spine` e `backFit133` compensa a escala do osso, então serve para todo tamanho de personagem.
+  - `draw133()` é chamado no `swordAttack` e nas habilidades: a arma salta para a mão, com o "pop" de escala em `BACK133.pop`.
+  - `sheath133()` guarda a arma depois de 4 s sem atacar e sem inimigo perto. `backSync133()` (no embrulho do `updateHand`) decide o que fica visível.
+- Escudo (só com a Espada): `mkShield133`; `shieldPlace133(inHand)` alterna entre o braço esquerdo e as costas. O embrulho de `hurtPlayer` corta 50% do dano que vem de frente quando a espada está na mão.
+- Habilidades por arma: `WSK133[arma]` troca `SKILLS[0]` e `SKILLS[1]` (`skillsFor133`, chamado no `wpnSet132` e no `startFrom`). Os efeitos estão em `skillFx133` e os projéteis em `SKX133.fx` (`skx133`). `s.stun` deixa o slime parado (no laço dos slimes).
+- Ícones em pixel: o embrulho de `thumb` pixela a imagem (`pixCanvas133`) enquanto `PIX133.on` está ligado (durante o `ico3d`). Os ícones dos pratos também passam por ele. Ícone novo de habilidade: entrada em `ICON3D` no embrulho do `ico3d`.
+- Brilho das portas: `glowAlign133` mede só o maior modelo perto da porta (sem caixa de correio ou placa), com raios na altura 0,28 (escada) e 1,15 (parede). Ajuste manual em `GLOWFIX133` (a forja).
+- Título: `titleOutside133` força o modo de fora; o `titleCam` atualiza `areaUpdate`/`cullUpdate` e esconde os balões; `body.ttl #ov` esconde a camada 2D.
