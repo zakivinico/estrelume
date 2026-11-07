@@ -2,6 +2,16 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.36: árvore de habilidades em constelação
+- A Árvore de Habilidades ganhou outra interface:
+  - abas para os ramos (arma, Combate, Natureza e Magia), com os pontos gastos em cada um e um pontinho quando há algo para aprender;
+  - um céu noturno onde cada habilidade é uma estrela ligada ao pré-requisito;
+  - um painel de detalhes ao lado.
+- As estrelas mudam conforme o estado: apagada com cadeado (bloqueada), brilhando em dourado (dá para aprender), acesa (aprendida) e mais clara (no máximo). As habilidades R e F têm cantos quadrados, e as que dependem do nível mostram "Nv 3" ou "Nv 5".
+- O painel mostra o tipo (Habilidade R/F, Melhoria, Maestria ou Passiva), o efeito de agora e o do próximo nível, os requisitos marcados com ✔ ou ✖ e o botão Aprender.
+- Clicar numa estrela só seleciona. O botão (ou duplo clique, Enter, Espaço ou C) aprende.
+- Navegação pelo teclado e pelo controle: setas ou WASD escolhem, Q/E ou LB/RB trocam de ramo. No celular, as abas e o painel ficam empilhados.
+
 ## v1.35: falas sem marcação crua, sem contorno, roupas no corpo novo, casa vazia, itens empilhados e árvore de habilidades de verdade
 **Textos e visual**
 - As falas não mostram mais `<span class="key">` cru: o texto da máquina de escrever é limpo e as teclas voltam a aparecer como teclinhas.
