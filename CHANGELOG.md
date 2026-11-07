@@ -2,6 +2,13 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.34: armas com modelos CC0 da internet
+- O escudo, o machado, a aljava e as flechas agora são do KayKit Character Pack Adventurers (Kay Lousberg, CC0), o mesmo pacote das espadas. Os anteriores eram feitos à mão no código.
+- O arco é o arco de madeira do Medieval Weapons Pack do Quaternius (CC0), convertido de FBX para GLB.
+- Quem usa o arco leva a aljava nas costas. As flechas do arco e da Flecha Perfurante usam o modelo novo.
+- Tudo continua preso nos ossos da mão, do braço e do tronco, então acompanha qualquer tamanho de personagem.
+- Créditos e licenças em `game/assets/CREDITS-v17-modelos.md`, `LICENSE-KayKit-Adventurers-CC0.txt` e `LICENSE-Quaternius-CC0.txt`, e na tela de créditos.
+
 ## v1.33: armas guardadas e sacadas, escudo, habilidades por arma, ícones em pixel, brilho nas portas e título consertado
 **Armas**
 - Fora de combate a arma fica nas costas, presa no tronco, então serve para qualquer tamanho de personagem e de cabeça.

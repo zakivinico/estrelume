@@ -12,3 +12,7 @@
 
 Os modelos foram convertidos para GLB, simplificados e otimizados (meshopt + WebP) com `tools/opt.mjs`.
 As vegetações `st_tree*`, `k_pine_b` e `q_flower_y` também foram simplificadas (menos triângulos) na v17.
+
+## v1.34: armas
+- **Escudo, machado, aljava e flecha** (`w_shield`, `w_shield2`, `w_axe`, `w_quiver`, `w_arrow`): KayKit Character Pack Adventurers 1.0, de Kay Lousberg (www.kaylousberg.com), CC0. Fonte: https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0. Licença em `LICENSE-KayKit-Adventurers-CC0.txt`.
+- **Arco** (`w_bow`, `w_bow2`): Medieval Weapons Pack (setembro de 2018), de Quaternius (https://quaternius.com), CC0. Convertido de FBX para GLB com o FBXLoader e o GLTFExporter do three.js. Licença em `LICENSE-Quaternius-CC0.txt`.
