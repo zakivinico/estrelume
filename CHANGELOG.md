@@ -2,6 +2,29 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.33: armas guardadas e sacadas, escudo, habilidades por arma, ícones em pixel, brilho nas portas e título consertado
+**Armas**
+- Fora de combate a arma fica nas costas, presa no tronco, então serve para qualquer tamanho de personagem e de cabeça.
+- No primeiro golpe ela salta para a mão com som de sacar e já ataca. Depois de 4 s sem atacar e sem inimigo por perto, volta para as costas sozinha.
+- A Espada vem com escudo: no braço esquerdo quando a espada está na mão (segura metade do dano que vem de frente, com "Bloqueio!") e nas costas quando ela está guardada.
+
+**Habilidades de cada arma** (R e F mudam com a arma; T, o Abraço da Flor, continua para todas)
+- Espada: Estocada Estelar e Investida de Escudo (corre com o escudo, empurra e atordoa).
+- Machado: Golpe Sísmico (onda em volta que atordoa) e Machado Bumerangue (vai e volta girando).
+- Arco: Flecha Perfurante (atravessa todos no caminho) e Chuva de Flechas (marca um ponto à frente).
+- Inimigos atordoados ficam parados um instante, com estrelinhas.
+
+**Ícones e interface**
+- As miniaturas 3D dos ícones (itens, ferramentas, pratos) viram pixel art, com cores reduzidas e contorno, no mesmo estilo do atlas.
+- Ícones novos para o escudo, o bumerangue e a chuva de flechas. O cristal voltou a ser azul.
+- Botões, slots, cartões e apps respondem ao passar o mouse e ao apertar. O slot escolhido salta e as moedas e os desejos pulam quando mudam. Tudo fica mais calmo no modo calmo.
+
+**Correções**
+- Brilho das portas medido no próprio modelo: a escada aparece como saliência no raio baixo e o brilho vai para a parede da porta logo acima. Isso arrumou as casas com escada de lado, a forja e o moinho.
+- Ao voltar para a tela de título vindo de dentro de casa ou de uma loja, o vale de fora é desenhado de novo (antes o píer sumia e a personagem ficava sobre a água). Os balões e nomes dos moradores também não aparecem mais por cima do menu.
+
+**Desempenho:** nenhum shader novo durante o jogo (98 do início ao fim). No bench, 481 ms em média.
+
 ## v1.32: protagonista nova, espada na mão, arena da Vovó com aulas, moradores que ensinam, escolha de arma e mapa maior
 **Protagonista**
 - Proporções novas: pernas mais longas, cabeça um pouco menor e braços mais compridos. O modelo inteiro sobe e as pernas esticam até o chão, então as animações continuam certas.
