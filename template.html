@@ -1075,6 +1075,18 @@ body.ttl #ov{visibility:hidden}
 .app i{transition:transform .16s cubic-bezier(.3,1.7,.5,1)}
 .app:hover i,.app.sel i{transform:translateY(-4px) scale(1.08) rotate(-3deg)}
 body.calm .slot.pop133,body.calm .money.bump133{animation:none}
+/* v1.35: árvore de habilidades com o ramo da arma */
+.sktree.st135{grid-template-columns:1.15fr 1fr 1fr 1fr;gap:12px}
+@media (max-width:900px){.sktree.st135{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.sktree.st135{grid-template-columns:1fr}}
+.skcol.wcol135{background:linear-gradient(180deg,#fff1f8,#ffe6f1);border-color:#c0407e}
+.skcol.wcol135 h3{color:#c0407e;display:flex;gap:6px;align-items:center;justify-content:center}
+.skcol.wcol135 h3 img{width:26px;height:26px;image-rendering:pixelated}
+.sknode.unl135{border-style:dashed}
+.sknode.unl135.has{border-style:solid;background:#fff3d6}
+.skcol .note{font-size:.78em;margin:8px 2px 0;opacity:.75}
+#skills .sk.lock135 img{filter:grayscale(1);opacity:.45}
+#skills .sk.lock135::after{content:'🔒';position:absolute;right:-3px;top:-6px;font-size:14px}
 </style>
 </head>
 <body class="ttl">
@@ -1154,7 +1166,7 @@ body.calm .slot.pop133,body.calm .money.bump133{animation:none}
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v1.34</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v1.35</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script>/*GAME*/</script>

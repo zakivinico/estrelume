@@ -2,6 +2,26 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.35: falas sem marcação crua, sem contorno, roupas no corpo novo, casa vazia, itens empilhados e árvore de habilidades de verdade
+**Textos e visual**
+- As falas não mostram mais `<span class="key">` cru: o texto da máquina de escrever é limpo e as teclas voltam a aparecer como teclinhas.
+- A protagonista não tem mais contorno.
+- As saias, vestidos e barras das roupas descem junto com as pernas mais longas da v1.32, sem deixar um vão na cintura.
+
+**Casa**
+- O jogo novo começa com a casa vazia, sem móveis nem fogão de presente: tudo se compra no Tico. Saves antigos continuam com os móveis que já tinham.
+- Sem cama, dá para dormir no chão perto da parede do fundo.
+
+**Itens empilhados**
+- Itens pequenos (abajur, livros, quadros, porta-retrato, cactos e vasinhos) podem ir em cima de superfícies (mesas, armários, prateleiras baixas, bancada, banquinho e lareira).
+- O item de cima fica na altura do tampo do móvel e a luz do abajur sobe junto. Ao guardar ou mover, o item de cima sai primeiro. Se o móvel de baixo sai, o de cima volta para o inventário.
+
+**Árvore de Habilidades**
+- Quatro ramos: o da arma equipada, Combate, Natureza e Magia.
+- No ramo da arma você desbloqueia a habilidade R (no nível 2) e a F (a partir do nível 3), melhora cada uma (até +60% de dano e 2,4 s a menos de recarga) e chega à maestria no nível 5: Guarda Firme (escudo), Peso Pesado (machado) ou Mão Rápida (arco).
+- R e F ficam com cadeado na barra até serem desbloqueadas. Cada arma guarda os próprios pontos.
+- A Chuva de Estrelas e a Estocada Ágil saíram da árvore e os pontos voltam. Saves antigos ganham de graça a habilidade R da arma atual.
+
 ## v1.34: armas com modelos CC0 da internet
 - O escudo, o machado, a aljava e as flechas agora são do KayKit Character Pack Adventurers (Kay Lousberg, CC0), o mesmo pacote das espadas. Os anteriores eram feitos à mão no código.
 - O arco é o arco de madeira do Medieval Weapons Pack do Quaternius (CC0), convertido de FBX para GLB.
