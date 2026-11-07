@@ -2,6 +2,44 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.32: protagonista nova, espada na mão, arena da Vovó com aulas, moradores que ensinam, escolha de arma e mapa maior
+**Protagonista**
+- Proporções novas: pernas mais longas, cabeça um pouco menor e braços mais compridos. O modelo inteiro sobe e as pernas esticam até o chão, então as animações continuam certas.
+- Contorno suave em volta dela, para se destacar do chão vista de cima.
+- Brilho de anime no cabelo: um arco mais claro sobre a touca, para o cabelo escuro não virar um borrão.
+- A espada fica na mão do jeito certo: lâmina para a frente e para cima na pose parada, cabo no punho e tamanho de meia Fofinha. A inclinação vem da pose Idle, então ela acompanha a mão nos golpes sem sair de lado. A picareta segue a mesma regra.
+- Animações mais vivas por cima das do Kenney: quique no passo, inclinação para a frente ao correr e para dentro nas curvas, cabeça que olha para a curva, respiração parada, achatadinha ao aterrissar e balanço dos braços.
+
+**Arma escolhida no criador (obrigatória)**
+- No jogo novo, você escolhe Espada, Machado ou Arco antes de começar.
+- A arma vale também nas aventuras:
+  - o Machado bate 60% mais forte, empurra mais e é mais lento;
+  - o Arco atira flechas de longe e, carregado, solta um leque de 5.
+- Dá para trocar depois em Armas de duelo.
+
+**Desafio da Vovó**
+- Agora é numa ilha flutuante fora do mapa, montada quando a luta começa e desmontada quando ela acaba. Você volta para a praça.
+- Na primeira vez, a Vovó dá quatro aulas antes da luta valendo: golpe, combo, esquiva e golpe carregado. Durante as aulas ela não ataca de verdade e você não cai.
+
+**Moradores ensinam**
+- Seu Bento ensina a pescar quando você chega no píer, e o Tico mostra a loja e a decoração.
+- Depois do tutorial, 10 moradores oferecem aulas próprias. Quem tem aula mostra um 📘 sobre a cabeça e o botão "📘 Aula" no menu dele.
+  - Vovó Rosa: cozinha. Seu Bento: pesca. Pipo: pulo e dash. Duda: mineração.
+  - Íris: bichinhos. Otto: pedidos do dia. Lia: mirantes. Fifi: Ateliê. Marina: barco. Tomé: desejos.
+- Cada aula tem um objetivo no painel e dá 🪙, ⭐ e XP.
+
+**Mundo**
+- O mapa cresceu de 170×120 para 170×150 tiles: mais 30 linhas de Campos do Sul até a praia.
+- O circuito de parkour saiu.
+- Névoa organizada: a estrada que desce até a praia virou um corredor da Praia do Sol (nível 1). Antes, os Campos do Sul (nível 4) ficavam no caminho e a praia liberada era inalcançável.
+
+**Visual**
+- 5 penteados novos: ondas longas com presilha, chanel com tiara de contas, chiquinhas com fitas, cachinhos com antena e coque com franja de anime.
+- 5 roupas novas: vestido de laçarote, moletom de gatinho, colete de explorador, macacão estrelado e blusa de babados.
+- 6 estampas novas: corações, estrelinhas, florzinhas, vichy, ondas e arco-íris.
+
+**Desempenho:** nenhum shader novo durante o jogo (98 do início ao fim). No bench, 483 ms em média.
+
 ## v1.31: combate fluido, pulo no Espaço, escadas, cômodos, cozinha, desejo épico e cores vivas
 A numeração passa a ser 1.31 (a seção no código é `v1.31`).
 

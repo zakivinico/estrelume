@@ -115,7 +115,7 @@ setInterval(() => { if (!titleOn && ready) writeSlot('ve3d-auto'); }, 30000);
 addEventListener('pagehide', () => { if (!titleOn && ready) writeSlot('ve3d-auto'); });
 
 /* =================== mapa =================== */
-const W = 170, H = 120, GR = 0, PA = 1, SO = 2, SA = 3, WA = 4, DK = 6;
+const W = 170, H = 150, GR = 0, PA = 1, SO = 2, SA = 3, WA = 4, DK = 6;
 const tile = new Uint8Array(W * H), obj = new Array(W * H).fill(null);
 const I = (x, y) => y * W + x, inb = (x, y) => x >= 0 && y >= 0 && x < W && y < H, tAt = (x, y) => (inb(x, y) ? tile[I(x, y)] : GR);
 const LAKE = { x: 63, y: 47 };
@@ -1206,6 +1206,8 @@ function openHelp() {
    <div class="hc"><h4>${ic(THUMB.slime)} Combate e habilidades</h4><p>Golpes seguidos fazem um <b>combo de 3</b>. Segure <span class="key">C</span> para o <b>giro</b>. <span class="key">Q</span> esquiva (fica invulnerável por um instante). Habilidades com recarga, na barra acima dos itens: <span class="key">R</span> Estocada Estelar, <span class="key">F</span> Chuva de Estrelas (nível 3) e <span class="key">T</span> Abraço da Flor, que cura (nível 5). Inimigos: slimes de várias cores, abelhas, cogumelos bravos, morcegos na caverna e fantasminhas que só aparecem à noite.</p></div>
    <div class="hc"><h4>${ic(THUMB.well)} Explorar o vale</h4><p>O vale ficou muito maior! A leste ficam o <b>Bosque das Fadas</b>, as <b>Ruínas Estelares</b>, o <b>Observatório</b> e o <b>Farol das Estrelas</b>; ao sul, os <b>Campos de Lavanda</b> e o <b>Pomar</b>. Toque nas <b>Pedras do Vento</b> 🪨 para despertá-las e depois viajar entre elas. As histórias do vale são contadas pelos moradores e pelos lugares que você visita.</p></div>
    <div class="hc"><h4>${ic(THUMB.slime)} Slimes e bichinhos</h4><p>Golpeie slimes com a espada (1). Seu bichinho luta junto: cada um tem um ataque, como bola de fogo, esporos, estrelas, arranhão, espinhos e latido.</p></div>
+   <div class="hc"><h4>📘 Aulas dos moradores</h4><p>Depois dos primeiros passos, quem tem um 📘 sobre a cabeça ensina algo novo: cozinha, pesca, pulo e dash, mineração, bichinhos, pedidos, mirantes, moda, barco e desejos. Fale com o morador e escolha "📘 Aula".</p></div>
+   <div class="hc"><h4>⚔️ Sua arma</h4><p>Espada (combo de 3 golpes), Machado (lento e forte) ou Arco (flechas de longe). Use com <span class="key">C</span>; segure para o golpe carregado. Troque em Armas de duelo.</p></div>
    <div class="hc"><h4>🍳 Cozinha</h4><p>Coloque o Fogãozinho Rosa em casa (modo decorar) ou use a cozinha das casas dos moradores. Escolha a receita e jogue os minigames: cortar, mexer, fogo e tempero. Com capricho, sai porção dupla! Farinha, ovo, manteiga, arroz e açúcar ficam na Despensa.</p></div>
    <div class="hc"><h4>${ic(THUMB.well)} Desejos</h4><p>No Poço da praça (ou <span class="key">G</span>), troque ⭐ Desejos por bichinhos, amigas e peças do Ateliê. Há pity como no Genshin (★5 garantido no 80º desejo), banners de evento e o banner padrão; repetidos viram Pó Estelar para a Troca. Equipe no Álbum (<span class="key">L</span>).</p></div>
    <div class="hc"><h4>👑 Rei Slime</h4><p>No fim da trilha ao norte, na floresta, mora o Rei Slime. Ele pula em círculos vermelhos, chama ajudantes e, com raiva, cospe bolhas em roda. Vença para ganhar 180🪙, 100⭐, XP e uma estátua para a fazenda. Ele volta todo dia!</p></div>
@@ -3139,7 +3141,7 @@ function regionBlocked(nx, nz) { if (mode !== 'out' || CUT) return false; const 
 // portões (cancelas com placa) onde as estradas cruzam as fronteiras
 const GATES = [];
 function buildGates() {
-  const spots = [[62.5, 32.5, 'girassol', Math.PI / 2], [42.5, 16.5, 'norte', 0], [42.5, 58.5, 'sul', 0], [120.5, 32.5, 'leste', Math.PI / 2], [120.5, 70.5, 'leste', Math.PI / 2], [42.5, BEACHY - 9.5, 'praia', 0]];
+  const spots = [[62.5, 32.5, 'girassol', Math.PI / 2], [42.5, 16.5, 'norte', 0], [42.5, 58.5, 'praia', 0], [120.5, 32.5, 'leste', Math.PI / 2], [120.5, 70.5, 'leste', Math.PI / 2]]; /* v1.32: a estrada para a praia é um corredor da Praia do Sol (o portão fica na entrada dela) */
   for (const [x, z, id, ry] of spots) { const r = REGIONS.find((q) => q.id === id), g = new THREE.Group(), w = lam('#b07a50'), red = lam('#e0566f'), white = lam('#fff6ea');
     for (const sx of [-1.4, 1.4]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 1.1, 8), w); p.position.set(sx, 0.55, 0); g.add(p); }
     for (let i = 0; i < 6; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.16, 0.08), i % 2 ? white : red); b.position.set(-1.15 + i * 0.46, 0.75, 0); g.add(b); }
@@ -7484,6 +7486,267 @@ function canKM131() { const g = new THREE.Group(), body = lam('#8fd3ff'), dk = l
 const SWORD131 = { rx: -0.9, k: 1.3 / 1.6 };
 { const base = updateHand; updateHand = function () { base(); try { if (!player || player.key !== 'km' || !handProp || !handKey || !handKey.startsWith('w:') || TOOLS[S.slot].id !== 'espada' || handProp.userData.s131) return; handProp.userData.s131 = 1; handProp.rotation.set(SWORD131.rx, 0, 0); if (handProp.userData.kmS) handProp.scale.multiplyScalar(SWORD131.k); } catch (e) {} }; }
 
+/* =================== v1.32: protagonista com proporções melhores, espada bem segurada, névoa organizada, mapa maior, arena da Vovó, tutoriais e criador =================== */
+// ---------- névoa organizada: a estrada que desce até a praia é um corredor da Praia do Sol ----------
+// Antes os Campos do Sul (nível 4) ficavam entre a vila e a praia (nível 1), então a praia liberada era inalcançável.
+const ROAD132 = { x0: 39.5, x1: 46.5 };
+{ const base = regionAt; regionAt = function (x, z) { if (x < 300 && x >= ROAD132.x0 && x <= ROAD132.x1 && z > 56 && z < BEACHY - 9) return REGIONS[1]; return base(x, z); }; }
+// ---------- sem parkour: o circuito saiu (o campo do sul fica livre) ----------
+parkourBuild = function () { PK26.plats = []; };
+// ---------- penteados, roupas e estampas novos ----------
+// Cada peça nova parte de uma existente (base) e ganha detalhes por cima: assim usa as mesmas formas e o mesmo cache.
+const NEWKH132 = { h23: { b: 'fe', n: 'Ondas longas com presilha' }, h24: { b: 'h5', n: 'Chanel com tiara' }, h25: { b: 'ff', n: 'Chiquinhas com fitas' }, h26: { b: 'ma', n: 'Cachinhos com antena' }, h27: { b: 'fa', n: 'Coque com franja de anime' } };
+const NEWKB132 = { n1: { b: 'fc', n: 'Vestido de laçarote' }, n2: { b: 'fa', n: 'Moletom de gatinho' }, n3: { b: 'ff', n: 'Colete de explorador' }, n4: { b: 'g1', n: 'Macacão estrelado' }, n5: { b: 'fb', n: 'Blusa de babados' } };
+for (const [k, v] of Object.entries(NEWKH132)) KM_HEADS[k] = v.n; for (const [k, v] of Object.entries(NEWKB132)) { KM_BODIES[k] = v.n; KM_VAR.push(k); }
+WARD_FREE.kh.push('h24', 'h26'); Object.assign(WARD_PRICE.kh, { h23: 190, h25: 170, h27: 210 }); WARD_FREE.kb.push('n2', 'n5'); Object.assign(WARD_PRICE.kb, { n1: 240, n3: 200, n4: 260 });
+{ const base = fofaParts; fofaParts = function (lk) { const nh = NEWKH132[lk.kh], nb = NEWKB132[lk.kb]; if (!nh && !nb) return base(lk);
+  const P = base(Object.assign({}, lk, nh ? { kh: nh.b } : {}, nb ? { kb: nb.b } : {})); const A = (b, g, c, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) => P.push([b, g, c, x, y, z, sx, sy, sz, rx, ry, rz, null]);
+  const hc = kmHex(HAIRC, lk.hc, KM_HAIRC[lk.hc] || null) || KM_HAIRC.castanho, hl = hairHi(hc, 1), ct = kmHex(KCOL, lk.ct) || '#ffd45a', cb = kmHex(KCOL, lk.cb) || '#a88cf0', dark = (h, k = 0.75) => '#' + new THREE.Color(h).multiplyScalar(k).getHexString(), WHITE = '#fbf7f0';
+  const HC = [0, 0.83, -0.01], SH = (el, az, k = 1.06) => [HC[0] + Math.sin(el) * Math.sin(az) * 0.335 * k, HC[1] + Math.cos(el) * 0.31 * k, HC[2] + Math.sin(el) * Math.cos(az) * 0.31 * k];
+  const QL = new THREE.Quaternion(), QT = new THREE.Quaternion(), EL = new THREE.Euler(), DN = new THREE.Vector3(0, -1, 0), UPY = new THREE.Vector3(0, 1, 0);
+  const L = (gk, col, p, d, len, w, tw = 0, th = 1) => { const v = new THREE.Vector3(d[0], d[1], d[2]).normalize(); QL.setFromUnitVectors(DN, v); QT.setFromAxisAngle(UPY, tw); QL.multiply(QT); EL.setFromQuaternion(QL); A('head', gk, col, p[0], p[1], p[2], w, len, w * th, EL.x, EL.y, EL.z); };
+  const bow = (x, y, z, col, s2 = 1, ry = 0) => { for (const m of [-1, 1]) A('head', 'ball', col, x + m * 0.07 * s2 * Math.cos(ry), y, z - m * 0.07 * s2 * Math.sin(ry), 0.075 * s2, 0.05 * s2, 0.035 * s2, 0, ry, m * 0.5); A('head', 'ball', dark(col, 0.85), x, y, z, 0.03 * s2, 0.03 * s2, 0.03 * s2); };
+  const star = (b, x, y, z, col = '#ffd45a', r = 0.045) => { for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; A(b, 'cone', col, x + Math.sin(a) * r * 0.7, y + Math.cos(a) * r * 0.7, z, r * 0.4, r * 0.9, r * 0.25, Math.PI / 2, 0, -a); } A(b, 'ball', col, x, y, z, r * 0.55, r * 0.55, r * 0.35); };
+  switch (lk.kh) {
+    case 'h23': for (const m of [-1, 1]) for (let i = 0; i < 3; i++) { const az = m * (1.35 + i * 0.5); L('wave', i % 2 ? hl : hc, SH(1.45, az, 1.0), [Math.sin(az) * 0.25, -1, Math.cos(az) * 0.25 - 0.1], 0.5 + i * 0.05, 0.1, 0, 0.7); }
+      star('head', 0.27, 0.98, 0.13, '#ffd45a', 0.04); break;
+    case 'h24': for (let i = -7; i <= 7; i++) { const t = i / 7 * 1.35, p = SH(Math.abs(t), (t < 0 ? -1 : 1) * (Math.PI / 2 - 0.5), 1.09); A('head', 'ball', i % 2 ? '#ffd6e8' : '#ff8fbd', p[0], p[1], p[2], 0.032, 0.032, 0.032); } bow(0.2, 1.08, 0.05, '#ff8fbd', 0.75); break;
+    case 'h25': for (const m of [-1, 1]) { bow(m * 0.31, 1.0, -0.08, '#ff6f9f', 0.95, m * 0.9); L('lock', '#ff6f9f', [m * 0.33, 0.97, -0.1], [m * 0.2, -1, -0.3], 0.22, 0.035, 0, 0.3); } break;
+    case 'h26': L('tip', hc, SH(0.12, 0.3, 1.0), [0.25, 1, 0.35], 0.24, 0.05, 0.4, 0.6); for (const m of [-1, 1]) A('head', 'ball', hl, m * 0.29, 0.72, 0.05, 0.075, 0.09, 0.075); break;
+    case 'h27': for (let i = -2; i <= 2; i++) L('tip', i % 2 ? hl : hc, SH(0.62, i * 0.32, 1.02), [i * 0.25, -1, 0.85], 0.2 - Math.abs(i) * 0.02, 0.07, 0, 0.6); break;
+  }
+  switch (lk.kb) {
+    case 'n1': A('spine', 'cyl', dark(cb, 0.8), 0, 0.33, -0.03, 0.2, 0.035, 0.17); for (const m of [-1, 1]) A('spine', 'ball', cb, m * 0.1, 0.35, -0.2, 0.1, 0.07, 0.04, 0, 0, m * 0.45); A('spine', 'ball', dark(cb, 0.85), 0, 0.35, -0.2, 0.04, 0.04, 0.04); for (const m of [-1, 1]) A('spine', 'cone', cb, m * 0.05, 0.27, -0.21, 0.035, 0.12, 0.02, 0, 0, m * 0.25); break;
+    case 'n2': for (const m of [-1, 1]) { A('spine', 'cone', dark(ct, 0.9), m * 0.11, 0.64, -0.17, 0.05, 0.09, 0.04, -0.2, 0, -m * 0.3); A('spine', 'cone', '#ffb3c8', m * 0.11, 0.635, -0.15, 0.028, 0.055, 0.015, -0.2, 0, -m * 0.3); } A('spine', 'box', dark(ct, 0.88), 0, 0.36, 0.148, 0.16, 0.07, 0.03); A('spine', 'ball', WHITE, -0.04, 0.47, 0.155, 0.012, 0.03, 0.01); A('spine', 'ball', WHITE, 0.04, 0.47, 0.155, 0.012, 0.03, 0.01); break;
+    case 'n3': A('spine', 'ball', '#c98a5a', 0, 0.41, -0.03, 0.208, 0.165, 0.174); for (const [x, y] of [[-0.09, 0.4], [0.09, 0.4], [-0.09, 0.33], [0.09, 0.33]]) A('spine', 'box', '#a86a3e', x, y, 0.158, 0.06, 0.045, 0.02); A('spine', 'ring', '#ff9a3c', 0, 0.535, -0.02, 0.1, 0.1, 0.095, Math.PI / 2, 0, 0); A('spine', 'cone', '#ff9a3c', 0.05, 0.5, 0.13, 0.03, 0.08, 0.015, 0.3, 0, 0.3); star('spine', -0.08, 0.46, 0.165, '#ffd45a', 0.028); break;
+    case 'n4': star('spine', 0, 0.4, 0.168, '#ffd45a', 0.04); star('spine', -0.1, 0.3, 0.155, WHITE, 0.025); for (const [b, m] of [['leg-left', 1], ['leg-right', -1]]) star(b, m * 0.12, 0.17, 0.08, '#ffd45a', 0.025); break;
+    case 'n5': for (let i = 0; i < 3; i++) A('spine', 'ring', WHITE, 0, 0.47 - i * 0.04, 0.04, 0.12 - i * 0.012, 0.05, 0.1, Math.PI / 2 + 0.25, 0, 0); for (const [b, m] of [['arm-left', 1], ['arm-right', -1]]) A(b, 'ring', WHITE, 0.15 * m + m * 0.13, 0.43, -0.026, 0.06, 0.03, 0.06, 0, 0, Math.PI / 2); break;
+  }
+  return P; }; }
+// estampas novas (por triângulo, como as da v31)
+Object.assign(KM_PAT, { coracoes: 'Corações', estrelas: 'Estrelinhas', flores: 'Florzinhas', vichy: 'Vichy', ondas: 'Ondas', arcoiris: 'Arco-íris' });
+const RAIN132 = ['#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#4dabf7', '#b197fc'].map((c) => new THREE.Color(c));
+{ const base = patColor; patColor = function (pt, b0, lp, out) { const t = pt && pt.t; if (!['coracoes', 'estrelas', 'flores', 'vichy', 'ondas', 'arcoiris'].includes(t)) return base(pt, b0, lp, out);
+  const v = (lp.y + 1) / 2, a = Math.atan2(lp.z, lp.x) / (Math.PI * 2) + 0.5; PAT31.set(pt.c2); out.copy(b0);
+  const cell = (nu, nv) => { const row = Math.floor(v * nv), u = a * nu + (row % 2) * 0.5; return [u - Math.floor(u) - 0.5, v * nv - row - 0.5]; };
+  if (t === 'coracoes') { const [fu, fv] = cell(9, 5), x = fu * 2.6, y = -fv * 2.6 + 0.25, q = x * x + y * y - 1; if (q * q * q - x * x * y * y * y < 0) out.copy(PAT31); }
+  else if (t === 'estrelas') { const [fu, fv] = cell(9, 5), r = Math.hypot(fu, fv), an = Math.atan2(fv, fu); if (r < 0.34 * (0.55 + 0.45 * Math.cos(5 * an))) out.copy(PAT31); }
+  else if (t === 'flores') { const [fu, fv] = cell(8, 5), r = Math.hypot(fu, fv), an = Math.atan2(fv, fu); if (r < 0.1) out.set('#ffd45a'); else if (r < 0.36 * (0.62 + 0.38 * Math.cos(5 * an))) out.copy(PAT31); }
+  else if (t === 'vichy') { const s1 = Math.floor(v * 14) % 2, s2 = Math.floor(a * 30) % 2; if (s1 && s2) out.copy(PAT31); else if (s1 || s2) out.lerp(PAT31, 0.5); }
+  else if (t === 'ondas') { if (Math.floor(v * 7 + 0.22 * Math.sin(a * Math.PI * 2 * 7)) % 2) out.copy(PAT31); }
+  else if (t === 'arcoiris') out.copy(RAIN132[Math.min(5, Math.floor(v * 6))]).lerp(b0, 0.15);
+  return out; }; }
+// ---------- proporções da Fofinha: pernas mais longas, cabeça um pouco menor e braços mais compridos ----------
+// O modelo inteiro sobe `lift` e as pernas esticam para alcançar o chão (os ossos não mudam, então as animações continuam certas).
+// A cabeça encolhe em volta do pescoço junto com tudo que está preso nela (cabelo, rosto, chapéu, óculos).
+const PROP132 = { lift: 0.075, head: 0.86, arm: 1.14, hip: 0.264, shoe: 0.11 };
+{ const base = fofaParts; fofaParts = function (lk) { const P = base(lk), { hip, shoe, lift } = PROP132, f = (hip - shoe + lift) / (hip - shoe);
+  for (const p of P) { if (p[0] !== 'leg-left' && p[0] !== 'leg-right') continue; const y = p[4]; if (y >= hip) continue;
+    if (y <= shoe) p[4] = y - lift; /* sapato: fica no chão */ else { p[4] = hip - (hip - y) * f; p[7] *= f; } }
+  return P; }; }
+const V132 = new THREE.Vector3(), V132b = new THREE.Vector3();
+function prop132(obj) { const bones = {}; obj.traverse((o) => { if (o.isBone) bones[o.name] = o; }); const root = bones.root, head = bones.head; if (!root || !head) return;
+  const N = root.parent; if (N && !N.userData.l132) { N.userData.l132 = 1; obj.updateMatrixWorld(true); const so = obj.getWorldScale(V132).y || 1, sp = N.parent ? N.parent.getWorldScale(V132b).y || 1 : 1; N.position.y += PROP132.lift * so / sp; }
+  prop132Head(obj, head);
+  for (const b of ['arm-left', 'arm-right']) { const bn = bones[b]; if (!bn) continue; for (const c of bn.children) { if (c.userData.a132) continue; c.userData.a132 = 1; if (c.userData.fofa) c.scale.x *= PROP132.arm; else if (c.name === 'handslot.r') c.position.x *= PROP132.arm; } } }
+function prop132Head(obj, head) { if (!head) obj.traverse((o) => { if (!head && o.isBone && o.name === 'head') head = o; }); if (!head) return; const k = PROP132.head;
+  for (const c of head.children) { if (c.userData.h132) continue; c.userData.h132 = 1; c.position.multiplyScalar(k); c.scale.multiplyScalar(k); } }
+const isKmObj132 = (o) => { let km = false; o.traverse((n) => { if (!km && n.isBone && n.name === 'spine') km = true; }); return km; };
+{ const base = kmLook; kmLook = function (obj, look) { const r = base(obj, look); try { prop132(obj); } catch (e) { console.error(e); } return r; }; }
+{ const base = attachHead; attachHead = function (obj, ...a) { const r = base(obj, ...a); try { if (obj && obj.userData && obj.userData.fofa) prop132Head(obj); } catch (e) {} return r; }; }
+{ const base = equipSlots; equipSlots = function (obj, ...a) { const r = base(obj, ...a); try { if (obj && obj.userData && obj.userData.fofa) prop132Head(obj); } catch (e) {} return r; }; }
+// ---------- brilho de anime no cabelo: um arco mais claro sobre a touca (o cabelo não vira um borrão visto de cima) ----------
+{ const base = fofaG; fofaG = function () { const G = base(); if (!G.arc) { const g = new THREE.TorusGeometry(1, 0.06, 6, 30, Math.PI * 0.72); g.rotateZ(Math.PI * 0.14); g.rotateX(Math.PI / 2); const n = g.index ? g.toNonIndexed() : g; n.deleteAttribute('uv'); G.arc = n; } return G; }; }
+{ const base = fofaParts; fofaParts = function (lk) { const P = base(lk); try { const hc = kmHex(HAIRC, lk.hc, KM_HAIRC[lk.hc] || null) || KM_HAIRC.castanho, cap = P.find((p) => p[0] === 'head' && p[1] === 'cap' && p[2] === hc);
+    if (cap) { const [, , , x, y, z, sx, sy, sz, rx] = cap, el = 0.66, h = Math.cos(el) * sy, r = Math.sin(el) * sx * 1.02, hl2 = hairHi(hc, 1.6); P.push(['head', 'arc', hl2, x, y + h * Math.cos(rx), z + h * Math.sin(rx), r, r, r * (sz / sx), rx, 0, 0, null]); } } catch (e) { console.error(e); } return P; }; }
+// ---------- contorno suave na protagonista: ela se destaca do chão e do cabelo escuro vista de cima ----------
+const OUT132 = { t: 0.0085, col: '#3b2635' };
+const OUTM132 = new THREE.MeshBasicMaterial({ color: OUT132.col, side: THREE.BackSide });
+OUTM132.onBeforeCompile = (sh) => { sh.uniforms.uOT = { value: OUT132.t }; sh.vertexShader = 'uniform float uOT;\n' + sh.vertexShader.replace('#include <begin_vertex>', 'vec3 transformed = vec3(position) + normalize(normal) * uOT;'); };
+OUTM132.customProgramCacheKey = () => 'out132';
+{ const warm = new THREE.Mesh(new THREE.SphereGeometry(0.01, 6, 4), OUTM132); warm.visible = false; warm.frustumCulled = false; scene.add(warm); } // compila no carregamento
+function outline132(obj) { for (const m of obj.userData.fofa || []) { if (m.userData.o132) continue; m.userData.o132 = 1; const o = new THREE.Mesh(m.geometry, OUTM132); o.userData.fofa = 0; o.userData.isOut = 1; o.castShadow = false; o.receiveShadow = false; m.add(o); } }
+{ const base = kmLook; kmLook = function (obj, look) { const r = base(obj, look); try { if (player && obj === player.obj) outline132(obj); } catch (e) { console.error(e); } return r; }; }
+// ---------- espada (e picareta) bem seguradas: lâmina para a frente e um pouco para cima na pose parada ----------
+// A rotação é calculada uma vez a partir da pose Idle, então a arma acompanha a mão nos golpes e no andar sem nunca sair de lado.
+const GRIP132 = { q: null, tilt: 0.92, sw: 0.62, pick: 0.85 };
+function gripQ132() { if (GRIP132.q) return GRIP132.q; const o = cloneM('ch_km'); o.position.set(0, 0, 0); o.rotation.set(0, 0, 0); o.scale.set(1, 1, 1);
+  const cl = kmClips().find((c) => c.name === 'idle') || kmClips().find((c) => c.name === 'Idle'); if (cl) { const mx = new THREE.AnimationMixer(o); mx.clipAction(cl).play(); mx.update(0.3); }
+  o.updateMatrixWorld(true); let hs = null; o.traverse((n) => { if (!hs && n.name === 'handslot.r') hs = n; }); if (!hs) return null; const qh = hs.getWorldQuaternion(new THREE.Quaternion());
+  const d = new THREE.Vector3(0, Math.sin(GRIP132.tilt), Math.cos(GRIP132.tilt)), qd = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d);
+  return (GRIP132.q = qh.invert().multiply(qd)); }
+{ const base = updateHand; updateHand = function () { base(); try { if (!player || player.key !== 'km' || !handProp || !handKey || !handKey.startsWith('w:') || handProp.userData.g132) return; const q = gripQ132(); if (!q) return;
+  handProp.userData.g132 = 1; handProp.quaternion.copy(q); handProp.scale.multiplyScalar(/sword/.test(handKey) ? GRIP132.sw : GRIP132.pick); /* espada do tamanho de meia Fofinha */ // o cabo fica na mão: a arma desce até o ponto de pegada (12% do comprimento a partir da base)
+  const bb = new THREE.Box3(); handProp.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(handProp.matrixWorld).invert(); bb.makeEmpty(); handProp.traverse((n) => { if (n.isMesh) { n.geometry.computeBoundingBox(); const b2 = n.geometry.boundingBox.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, n.matrixWorld)); bb.union(b2); } });
+  if (!bb.isEmpty()) { const len = bb.max.y - bb.min.y, gy = bb.min.y + len * 0.12; handProp.position.copy(new THREE.Vector3(-(bb.min.x + bb.max.x) / 2, -gy, -(bb.min.z + bb.max.z) / 2).multiply(handProp.scale).applyQuaternion(handProp.quaternion)); } } catch (e) { console.error(e); } }; }
+// ---------- desafio da Vovó numa ilha flutuante fora do mapa (existe só durante a luta) com aulas de combate ----------
+// A ilha é montada quando a luta começa e desmontada quando ela acaba. Na primeira vez, a Vovó ensina: golpe, combo, esquiva e giro carregado.
+const A132 = { x: 820, z: 320, R: 6.4, on: false, g: null, tut: -1, n: 0, t: 0, el: null, home: [44.5, 34.6] };
+const TUT132 = [
+  { k: 'golpe', t: 'Golpe', d: 'Chegue perto e aperte <span class="key">C</span> (ou clique) para me acertar com a espada. Acerte <b>2 vezes</b>.', need: 2 },
+  { k: 'combo', t: 'Combo', d: 'Aperte <span class="key">C</span> três vezes seguidas: o 3º golpe dá um pulinho e bate mais forte.', need: 1 },
+  { k: 'esquiva', t: 'Esquiva', d: 'Vou soltar estrelinhas devagar. Aperte <span class="key">Q</span> para dar um dash e passar por elas sem se machucar. Esquive <b>2 vezes</b>.', need: 2 },
+  { k: 'giro', t: 'Golpe carregado', d: '<b>Segure</b> <span class="key">C</span> até brilhar e solte: um giro que acerta tudo em volta.', need: 1 },
+];
+function arenaBuild132() { const g = new THREE.Group(), deco = new THREE.Group(), M = {}, mt = (c) => M[c] || (M[c] = lam(c)), R = A132.R, add = (geo, c, x, y, z, grp = deco) => { const m = new THREE.Mesh(geo, mt(c)); m.position.set(x, y, z); grp.add(m); return m; };
+  const top = new THREE.Mesh(new THREE.CircleGeometry(R + 4.2, 48).rotateX(-Math.PI / 2), mt('#8fd16a')); top.receiveShadow = true; g.add(top);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(R, 48).rotateX(-Math.PI / 2), mt('#f3e2c2')); floor.position.y = 0.01; floor.receiveShadow = true; g.add(floor);
+  add(new THREE.CylinderGeometry(R + 4.2, R + 1.2, 3.2, 40), '#b07a50', 0, -1.62, 0); add(new THREE.ConeGeometry(R + 1.2, 4, 40), '#8a5a3b', 0, -5.2, 0).rotation.x = Math.PI; // ilha
+  for (let i = 0; i < 40; i++) { const a = (i / 40) * Math.PI * 2; add(new THREE.BoxGeometry(0.5, 0.08, 0.3), i % 2 ? '#e8d2ac' : '#d9bd90', Math.sin(a) * (R - 0.25), 0.04, Math.cos(a) * (R - 0.25)).rotation.y = a; }
+  for (let i = 0; i < 26; i++) { const a = (i / 26) * Math.PI * 2, r = R + 0.9 + (i % 2) * 0.35; add(new THREE.SphereGeometry(0.42 + (i % 3) * 0.08, 10, 8), i % 4 ? '#5fae4a' : '#4f9a3e', Math.sin(a) * r, 0.32, Math.cos(a) * r);
+    const fc = ['#ff8fbd', '#ffe18d', '#ffffff', '#c79bff'][i % 4]; add(new THREE.SphereGeometry(0.09, 8, 6), fc, Math.sin(a) * r, 0.78, Math.cos(a) * r); }
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + 0.2, r = R + 2.6; add(new THREE.CylinderGeometry(0.06, 0.07, 1.6, 8), '#7a5236', Math.sin(a) * r, 0.8, Math.cos(a) * r); add(new THREE.SphereGeometry(0.18, 10, 8), '#ffd6e8', Math.sin(a) * r, 1.7, Math.cos(a) * r); }
+  deco.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); g.add(bakeVC(deco));
+  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2, t = cloneM(i % 2 ? 'st_tree5' : 'st_tree1'); if (!t) continue; t.position.set(Math.sin(a) * (R + 3.4), 0, Math.cos(a) * (R + 3.4)); t.scale.multiplyScalar(0.9); t.traverse((n) => { if (n.isMesh) n.castShadow = true; }); g.add(t); }
+  const wall = new THREE.Group(); const cyl = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 1.8, 48, 1, true), new THREE.MeshBasicMaterial({ color: '#ffb3e6', transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })); cyl.position.y = 0.9; wall.add(cyl);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(R - 0.12, R, 64).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#fff0fa', transparent: true, opacity: 0.8, depthWrite: false })); ring.position.y = 0.03; wall.add(ring); g.add(wall);
+  g.position.set(A132.x, 0, A132.z); g.userData.noGH = 1; g.userData.noArea = 1; scene.add(g); A132.g = g; return wall; }
+function arenaDestroy132() { const g = A132.g; if (!g) return; scene.remove(g); g.traverse((n) => { if (n.isMesh && !n.userData.shared) { if (n.geometry && !n.geometry.userData.keep) n.geometry.dispose(); } }); A132.g = null; }
+function tutPanel132() { if (A132.tut < 0 || A132.tut >= TUT132.length) { if (A132.el) A132.el.classList.remove('on'); return; }
+  if (!A132.el) { A132.el = document.createElement('div'); A132.el.id = 'tut132'; document.body.appendChild(A132.el); } const s = TUT132[A132.tut];
+  A132.el.innerHTML = `<img src="${THUMB.rosa || ''}"><div><b>Aula ${A132.tut + 1}/${TUT132.length} · ${s.t}</b><p>${s.d}</p><div class="dots">${TUT132.map((_, i) => `<i class="${i < A132.tut ? 'ok' : i === A132.tut ? 'on' : ''}"></i>`).join('')}${s.need > 1 ? `<span>${A132.n}/${s.need}</span>` : ''}</div></div>`; A132.el.classList.add('on'); }
+function tutStep132(k) { if (!RB.on || A132.tut < 0) return; const s = TUT132[A132.tut]; if (!s || s.k !== k) return; A132.n++; sfx('chime'); if (A132.n < s.need) return tutPanel132();
+  A132.tut++; A132.n = 0; A132.t = 0; floatText(P.x, 2.2, P.z, 'Aula concluída!', '#ffe18d', true); burst(P.x, 1.2, P.z, ['#ffe18d', '#ffffff', '#ff8fbd'], 18, 2, true, true); sfx('success');
+  if (A132.tut >= TUT132.length) { A132.tut = -1; S.tut132 = 1; tutPanel132(); bubble({ x: rosa.x, z: rosa.z, d: { sc: 1 }, c: rosaC }, 'Muito bem! Agora é pra valer, querida!', 3); RB.cd = 1.4; return; }
+  bubble({ x: rosa.x, z: rosa.z, d: { sc: 1 }, c: rosaC }, ['Isso!', 'Que combo lindo!', 'Ótima esquiva!'][A132.tut - 1] || 'Isso!', 2.2); tutPanel132(); }
+{ const base = rosaStart; rosaStart = function () { if (RB.on || mode !== 'out') return base();
+    A132.sv = { cx: RB.cx, cz: RB.cz, R: RB.R, wall: RB.wall }; RB.cx = A132.x; RB.cz = A132.z; RB.R = A132.R; RB.wall = arenaBuild132(); A132.on = true;
+    A132.tut = S.tut132 ? -1 : 0; A132.n = 0; A132.t = 0; base(); if (ARENA26.ring) ARENA26.ring.visible = false;
+    setTimeout(() => { try { if (petObj) { pet.x = P.x + 0.8; pet.z = P.z + 0.4; } if (A132.tut >= 0) { tutPanel132(); bubble({ x: rosa.x, z: rosa.z, d: { sc: 1 }, c: rosaC }, 'Primeiro, umas aulinhas!', 3); } } catch (e) {} }, 450); }; }
+{ const base = rosaCleanup; rosaCleanup = function () { base(); if (!A132.on) return; A132.on = false; A132.tut = -1; tutPanel132(); if (ARENA26.ring) ARENA26.ring.visible = false;
+    const sv = A132.sv || {}; RB.wall = sv.wall || null; if (RB.wall) RB.wall.visible = false; RB.cx = A132.home[0]; RB.cz = A132.home[1] - 1.2; RB.R = sv.R || RB.R; // quem chama depois (derrota) já cai na praça
+    const back = () => { P.x = A132.home[0]; P.z = A132.home[1] + 1.2; P.roll = null; rosa.x = A132.home[0]; rosa.z = A132.home[1] - 0.4; rosa.tx = rosa.x; rosa.tz = rosa.z; if (rosaC) rosaC.obj.position.y = 0; if (petObj) { pet.x = P.x + 0.8; pet.z = P.z; } camera.position.set(P.x, 9.5, P.z + 8.6); camLook.set(P.x, 0.6, P.z); arenaDestroy132(); RB.cx = sv.cx; RB.cz = sv.cz; };
+    if (ready && !titleOn && mode === 'out') fade(back); else back(); }; }
+// movimento livre dentro da ilha (fora do mapa os tiles contam como sólidos)
+{ const base = moveC; moveC = function (o, dx, dz, r) { if (A132.on && Math.hypot(o.x - A132.x, o.z - A132.z) < A132.R + 6) { o.x += dx; o.z += dz; return; } return base(o, dx, dz, r); }; }
+// nunca salva no meio da ilha
+{ const base = snapshot; snapshot = function () { if (!A132.on) return base(); const x = P.x, z = P.z; P.x = A132.home[0]; P.z = A132.home[1] + 1.2; try { return base(); } finally { P.x = x; P.z = z; } }; }
+// aulas: o que conta em cada uma
+{ const base = swordAttack; swordAttack = function (spin) { const r = base(spin); try { if (RB.on && A132.tut >= 0) { if (spin) tutStep132('giro'); else if (CB131.step === 3) tutStep132('combo'); } } catch (e) {} return r; }; }
+{ const base = rosaHit; rosaHit = function (hx, hz, r, mult, col) { const h0 = RB.hp, ok = base(hx, hz, r, mult, col); if (ok && A132.tut >= 0) { RB.hp = Math.max(RB.hp, RB.max * 0.55); if (RB.phase === 2 && RB.hp > RB.max * 0.5) RB.phase = 1; rosaBar(); tutStep132('golpe'); } return ok; }; }
+{ const base = dodge; dodge = function () { const was = !!P.roll; base(); if (!was && P.roll && RB.on && A132.tut >= 0 && TUT132[A132.tut].k === 'esquiva') { const near = RB.shots.some((s) => Math.hypot(s.m.position.x - P.x, s.m.position.z - P.z) < 3.2); if (near) tutStep132('esquiva'); else floatText(P.x, 2, P.z, 'Espere a estrelinha chegar perto!', '#ffd1ec'); } }; }
+{ const base = hurtPlayer; hurtPlayer = function (n, fx, fz) { if (RB.on && A132.tut >= 0) { n = Math.min(n * 0.5, Math.max(0, P.hp - 12)); if (n <= 0) return; } return base(n, fx, fz); }; }
+// nas aulas a Vovó não ataca (só solta estrelinhas devagar na aula de esquiva)
+{ const base = rosaUpdate; rosaUpdate = function (dt) { if (RB.on && A132.tut >= 0) { RB.cd = 99; const s = TUT132[A132.tut]; A132.t += dt;
+      if (s && s.k === 'esquiva' && !dlg && A132.t > 1.6) { A132.t = 0; const a0 = Math.atan2(P.x - rosa.x, P.z - rosa.z); rosaShot(rosa.x, rosa.z, Math.sin(a0) * 3.1, Math.cos(a0) * 3.1, false); rosaC && rosaC.play('Spellcast_Shoot', true, 1.2); sfx('magic'); } }
+    return base(dt); }; }
+// ---------- moradores ensinam: os passos do tutorial ganham professores e, depois dele, cada morador tem uma aula ----------
+const K132 = (k) => `<span class="key">${k}</span>`;
+// professores dos primeiros passos: falam sozinhos quando você chega perto (uma vez por save)
+const TEACH132 = {
+  plant: { who: 'rosa', near: 9, lines: ['A horta é o coração do vale, querida!', `Escolha a semente com ${K132('5')} e aperte ${K132('C')} de frente para um canteiro de terra.`, 'Cada semente custa um pouquinho, mas a colheita paga de volta.'] },
+  water: { who: 'rosa', near: 9, lines: [`Agora o regador: tecla ${K132('2')} e ${K132('C')} na sementinha.`, 'Planta regada cresce no dia seguinte. Se chover, a chuva rega por você!'] },
+  wish: { who: 'rosa', near: 9, lines: ['Está vendo o Poço dos Desejos ali no meio da praça?', `Chegue perto e aperte ${K132('E')}. Os ⭐ Desejos que você junta viram bichinhos e amigas.`] },
+  harvest: { who: 'rosa', near: 9, lines: [`Quando a planta brilhar ✨, aperte ${K132('E')} nela para colher.`] },
+  sell: { who: 'rosa', near: 9, lines: [`A Barraca de Venda compra tudo o que está na mochila: aperte ${K132('E')} nela.`, 'As 🪙 Moedas servem para sementes, móveis, ferramentas e para reformar a casa.'] },
+  fish: { who: 'bento', near: 3.6, lines: ['Ô, menina! Veio aprender a pescar com o velho Bento?', `Pegue a vara com ${K132('3')} e aperte ${K132('C')} de frente para a água.`, `Quando aparecer o ❗, aperte de novo. Depois, segure ${K132('Espaço')} para manter o peixe dentro da barrinha.`, 'Peixe raro puxa mais forte. Paciência é tudo!'] },
+  shop: { who: 'tico', near: 99, lines: ['Bem-vinda à Lojinha do Tico!', 'Aqui tem móveis, pisos, papéis de parede, sementes e lanchinhos.', 'Escolha uma aba lá em cima e compre algo para a sua casa!'] },
+  decor: { who: 'tico', near: 99, lines: [`Agora vá para casa e aperte ${K132('V')} para decorar.`, 'Escolha o móvel na lista, gire com R e clique no chão para colocar. Fácil, né?'] },
+};
+const TUTTXT132 = { fish: 'Vá ao <b>píer do lago</b>: o <b>Seu Bento</b> te ensina a pescar', shop: 'Visite a <b>Lojinha do Tico</b>: ele te mostra a loja e você compra algo' };
+for (const st of TUT) if (TUTTXT132[st.ev]) st.txt = TUTTXT132[st.ev];
+function teachWho132(w) { if (w === 'rosa') return rosa ? { x: rosa.x, z: rosa.z, name: 'Vovó Rosa', face: THUMB.rosa, c: rosaC } : null; if (w === 'tico') return { x: P.x, z: P.z, name: 'Tico · Lojista', face: THUMB.tico || THUMB.shop, c: null };
+  const n = npcs.find((q) => q.d.id === w); return n && !npcAway(n) ? { x: n.x, z: n.z, name: `${n.d.n} · ${n.d.role}`, face: THUMB['npc_' + n.d.id], c: n.c, n } : null; }
+let teachT132 = 0;
+function teachTick132(dt) { teachT132 -= dt; if (teachT132 > 0) return; teachT132 = 0.4; if (!ready || titleOn || dlg || CUT || modalOpen() || P.fishing || RB.on) return;
+  const st = TUT[S.tstep]; if (!st) return; const T = TEACH132[st.ev]; if (!T) return; S.taught132 = S.taught132 || {}; if (S.taught132[st.ev]) return;
+  if (st.ev === 'shop') { if (!(mode === 'shop' && curShop === 'tico')) return; } else if (st.ev === 'decor') { if (mode !== 'shop' && mode !== 'out') return; } else if (mode !== 'out') return;
+  const w = teachWho132(T.who); if (!w || Math.hypot(P.x - w.x, P.z - w.z) > T.near) return; S.taught132[st.ev] = 1;
+  if (w.n) { w.n.wait = 6; w.n.ang = Math.atan2(P.x - w.n.x, P.z - w.n.z); } if (w.c) try { w.c.play('Waving', true, 1.2); } catch (e) {} sayWho = w.c; say(w.name, w.face, T.lines); }
+// aulas dos moradores, depois do tutorial
+const LES132 = [
+  { id: 'cozinha', who: 'rosa', n: 'Cozinha da Vovó', goal: 'Cozinhe um prato num fogão', ev: 'cook', need: 1, lines: ['Hora de aprender as receitas da família!', `Coloque o Fogãozinho Rosa em casa (modo decorar, ${K132('V')}) ou use a cozinha de uma casa da vila.`, 'Escolha a receita e capriche nos minigames: cortar, mexer, fogo e tempero.', 'Com capricho de verdade, sai porção dupla!'] },
+  { id: 'pesca', who: 'bento', n: 'Pesca de mestre', goal: 'Pesque 3 peixes', ev: 'fish', need: 3, lines: ['Já sabe pescar, mas pescar BEM é outra história!', 'Peixe raro aparece mais de manhã cedo e no fim da tarde.', `No puxão, ${K132('Espaço')} segura a barrinha: solte um pouco quando o peixe descer.`, 'Me traga a prova: pesque três peixes!'] },
+  { id: 'movimento', who: 'pipo', n: 'Corre, pula e foge!', goal: 'Pule 3 vezes e dê 2 dashes', ev: 'move', need: 5, lines: ['Ei, ei! Quer ser rápida que nem eu?', `${K132('Espaço')} pula (dá para subir em cercas baixas e escadas). ${K132('Shift')} corre.`, `${K132('Q')} é o dash: você fica invencível um tiquinho e passa pelas magias.`, 'Pula três vezes e dá dois dashes. Valendo!'] },
+  { id: 'minerio', who: 'duda', n: 'Pedras e minérios', goal: 'Quebre 3 pedras com a picareta', ev: 'mine', need: 3, lines: ['Uma ferreira sem minério não é nada!', `Pegue a picareta e aperte ${K132('C')} nas pedras do vale ou da Caverna Cintilante.`, 'Cobre, ferro e cristal viram ferramentas e espadas melhores aqui na Forja.', 'Quebre três pedras para mim.'] },
+  { id: 'bichinho', who: 'iris', n: 'Amigos bichinhos', goal: 'Equipe um bichinho no Álbum', ev: 'pet', need: 1, lines: ['Cada bichinho nasce de um desejo, sabia?', `No Álbum (${K132('L')}) você escolhe quem anda com você. Cada um ajuda de um jeito.`, 'Equipe um bichinho para eu ver!'] },
+  { id: 'pedido', who: 'otto', n: 'Bons vizinhos', goal: 'Entregue um pedido do dia a um morador', ev: 'deliver', need: 1, lines: ['Uma vila feliz é uma vila onde todos se ajudam!', 'Cada morador pede uma coisa por dia. Fale com ele e escolha "Pedido do dia".', 'Entregar dá ⭐, amizade e, com 3 ♥, um presente especial.'] },
+  { id: 'explorar', who: 'lia', n: 'Exploradora', goal: 'Aprecie a vista de um mirante 👀', ev: 'view', need: 1, lines: ['O vale é enorme! Cada região tem um mirante no ponto mais alto.', `Abra o mapa com ${K132('M')} e procure o 👀. Lá em cima, aperte ${K132('E')} para apreciar a vista.`, 'A névoa só sai das regiões quando seu brilho (nível) é alto o bastante.'] },
+  { id: 'moda', who: 'fifi', n: 'Estilo próprio', goal: 'Visite o Ateliê da Fifi', ev: 'atelie', need: 1, lines: ['Querida, estilo é tudo!', 'No meu Ateliê você troca roupa, penteado, estampa e acessórios.', 'Venha me visitar na Vila Girassol!'] },
+  { id: 'barco', who: 'marina', n: 'Mar aberto', goal: 'Navegue de barco', ev: 'boat', need: 1, lines: ['O mar guarda tesouros... e o Kraken!', `No píer da praia, aperte ${K132('E')} no barco. ${K132('Espaço')} atira e as setas navegam.`, 'Dê uma volta para eu ver!'] },
+  { id: 'desejo', who: 'tome', n: 'Estrelas e desejos', goal: 'Faça um desejo no Poço', ev: 'wish', need: 1, lines: ['As estrelas caem no vale toda noite. Junte-as!', 'No Poço, 1 desejo custa ⭐. A cada 80 desejos um ★5 é garantido.', 'Repetidos viram Pó Estelar, que se troca por prêmios.'] },
+];
+const lesSt132 = () => S.les132 || (S.les132 = { done: {}, cur: null, n: 0 });
+const lesAvail132 = (who) => tutDone() && LES132.find((l) => l.who === who && !lesSt132().done[l.id] && lesSt132().cur !== l.id);
+function lesStart132(L, w) { const st = lesSt132(); st.cur = L.id; st.n = 0; sayWho = w && w.c; say(w ? w.name : L.n, w ? w.face : THUMB.rosa, [...L.lines], () => { toast(`📘 Aula: <b>${L.n}</b> · ${L.goal}`); goalUI(); }); }
+function lesEv132(name) { const st = S.les132; if (!st || !st.cur) return; const L = LES132.find((l) => l.id === st.cur); if (!L || L.ev !== name) return; st.n++; if (st.n < L.need) { goalUI(); return; }
+  st.done[L.id] = 1; st.cur = null; st.n = 0; S.coins += 80; S.stars += 15; gainXp(20); sfx('quest'); floatText(P.x, 1.9, P.z, '+80🪙 +15⭐', C.yellow, true); toast(`🎓 Aula concluída: <b>${L.n}</b>! Volte para conversar com quem te ensinou.`); lastHud = ''; hud(); goalUI(); }
+{ const base = ev; ev = function (name) { base(name); try { lesEv132(name); } catch (e) {} }; }
+{ const base = goalUI; goalUI = function () { base(); try { const st = S.les132, g = $('goal'); if (!TUT[S.tstep] && st && st.cur) { const L = LES132.find((l) => l.id === st.cur); if (!L) return; g.classList.add('on'); g.innerHTML = `<div class="gstep">📘 Aula · ${L.n}</div><div class="gtxt">${L.goal}${L.need > 1 ? ` (${st.n}/${L.need})` : ''}</div>`; } } catch (e) {} }; }
+// eventos novos para as aulas
+{ const base = finishCook131; finishCook131 = function () { const had = !!COOK131.cur; base(); if (had) ev('cook'); }; }
+{ const base = doJump; doJump = function () { const j = P.jv; base(); if (P.jv !== j && P.jv > 0) ev('move'); }; }
+{ const base = dodge; dodge = function () { const was = !!P.roll; base(); if (!was && P.roll) ev('move'); }; }
+{ const base = mineRock; mineRock = function (tx, ty) { const i = I(tx, ty), was = obj[i] && obj[i].t === 'rock'; const r = base(tx, ty); if (was && !obj[i]) ev('mine'); return r; }; }
+{ const base = setPet; setPet = function (force) { const k = petKey; base(force); if (S.pet && S.pet !== k && ready && !titleOn) ev('pet'); }; }
+{ const base = deliverNpc; deliverNpc = function (n) { const r = base(n); ev('deliver'); return r; }; }
+{ const base = viewEnjoy; viewEnjoy = function (...a) { const r = base(...a); ev('view'); return r; }; }
+{ const base = boardBoat; boardBoat = function (...a) { const r = base(...a); if (P.boat) ev('boat'); return r; }; }
+{ const base = enterShop; enterShop = function (id, ...a) { const r = base(id, ...a); if (id === 'atelie') ev('atelie'); return r; }; }
+// botão "📘 Aula" no menu do morador e a Vovó oferecendo a dela
+{ const base = npcMenu; npcMenu = function (n) { base(n); try { const L = lesAvail132(n.d.id), box = document.querySelector('.npcb'); if (!L || !box) return; box.insertAdjacentHTML('afterbegin', `<button class="btn candy" id="les132">📘 Aula: ${L.n}</button>`);
+    $('les132').onclick = () => { closeModal(); lesStart132(L, teachWho132(n.d.id)); }; } catch (e) { console.error(e); } }; }
+{ const base = talkRosa; talkRosa = function () { const L = !RB.on && lesAvail132('rosa'); if (L && !TUT[S.tstep]) { rosa.wait = 4; lesStart132(L, teachWho132('rosa')); return; } return base(); }; }
+// 📘 sobre quem tem aula para dar
+const LESM132 = { list: [], t: 0 };
+function lesMarks132(dt) { LESM132.t -= dt; if (LESM132.t > 0) return; LESM132.t = 0.5; if (!ready || titleOn) return; const want = [];
+  if (mode === 'out' && tutDone()) { for (const n of npcs) if (!npcAway(n) && !n.hidden && lesAvail132(n.d.id)) want.push([n.x, n.z]); if (rosa && !RB.on && lesAvail132('rosa')) want.push([rosa.x, rosa.z]); }
+  while (LESM132.list.length < want.length) { const sp = emoteSprite("📘", "#dff1ff"); sp.scale.setScalar(0.82); scene.add(sp); LESM132.list.push(sp); }
+  LESM132.list.forEach((sp, i) => { const w = want[i]; sp.visible = !!w; if (w) sp.position.set(w[0], 2.85 + Math.sin(gtime * 3 + i) * 0.06, w[1]); }); }
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { teachTick132(dt); lesMarks132(dt); } catch (e) { console.error(e); } }; }
+// ---------- arma escolhida no criador: Espada, Machado ou Arco também nas aventuras ----------
+// A arma do slot 1 segue a arma equipada (pwSel). Machado: golpes 60% mais fortes e mais lentos, empurrão maior. Arco: flechas de longe (carregado = leque de 5).
+const WPN132 = { axeT: -1, chain: 0, last: -9, arrows: [], pick: null };
+const WPND132 = { espada: { ic: 'sword', d: 'Rápida, com combo de 3 golpes e giro carregado.' }, machado: { ic: 'axe', d: 'Lento e pesado: cada golpe bate muito e empurra longe.' }, arco: { ic: 'arco', d: 'Ataca de longe com flechas. Carregado solta um leque.' } };
+function wpnSet132(k) { S.pw = S.pw || { espada: 1, machado: 0, arco: 0 }; S.pw[k] = Math.max(1, S.pw[k] || 0); S.pwSel = k; wpnUI132(); try { updateHand(); } catch (e) {} }
+function wpnUI132() { const k = pwSel(), T = TOOLS.find((t) => t.id === 'espada'); if (T) T.n = PVPW[k].n; try { THUMB.t_espada = k === 'espada' ? icon(SWORDS[(S.gear && S.gear.sword) || 0].ic) : icon(PVPW[k].ic); buildHotbar(); } catch (e) {} }
+{ const base = updateHand; updateHand = function () { if (!player || fighting() || mode === 'in' || P.bike || TOOLS[S.slot].id !== 'espada' || pwSel() === 'espada') return base();
+    player.setWeapon(null); const want = pwSel() === 'arco' ? '#bow' : '#axe'; if (want === handKey && handProp) return; if (handProp) handProp.parent && handProp.parent.remove(handProp); handProp = null; handKey = want;
+    if (player.hand) { const g = heldObj(want); player.obj.updateMatrixWorld(true); const inv = 1 / player.hand.getWorldScale(new THREE.Vector3()).x; g.scale.multiplyScalar(inv * (want === '#axe' ? 1.15 : 0.95) * (player.key === 'km' ? 1.35 : 1)); g.userData.kmS = 1; player.hand.add(g); handProp = g; } }; }
+function bowShot132(spin) { try { if (mode === 'out' || mode === 'cave') softAim131(); } catch (e) {} const n = Math.hypot(P.fx, P.fz) || 1, a0 = Math.atan2(P.fx / n, P.fz / n), dirs = spin ? [-0.5, -0.25, 0, 0.25, 0.5] : [0];
+  if (spin) { P.useT = 0.62; P.st -= 30; P.stT = 0.8; P.combo = 0; } else P.useT = 0.36; anim('Throw', 1.7); sfx('swish_2'); CB131.t = 0; CB131.step = spin ? 4 : 1;
+  for (const da of dirs) { const a = a0 + da, m = new THREE.Mesh(arrowGeo, arrowMat); m.position.set(P.x + Math.sin(a) * 0.5, 0.9, P.z + Math.cos(a) * 0.5); m.rotation.y = a; scene.add(m); WPN132.arrows.push({ m, x: m.position.x, z: m.position.z, dx: Math.sin(a), dz: Math.cos(a), left: 11, spd: 15 }); }
+  if (!spin) { WPN132.chain = gtime - WPN132.last < 1.3 ? WPN132.chain + 1 : 1; WPN132.last = gtime; if (WPN132.chain >= 3) { WPN132.chain = 0; try { tutStep132('combo'); } catch (e) {} } } else try { tutStep132('giro'); } catch (e) {} }
+function arrows132(dt) { for (let i = WPN132.arrows.length - 1; i >= 0; i--) { const a = WPN132.arrows[i], st = a.spd * dt; a.x += a.dx * st; a.z += a.dz * st; a.left -= st; a.m.position.set(a.x, 0.9, a.z);
+    if (rand() < 0.5) emit(PG, { x: a.x, y: 0.9, z: a.z, vx: 0, vy: 0, vz: 0, g: 0, life: 0.25, max: 0.25, c: '#ffe18d' });
+    let hit = false; for (const s of slimes) if (!s.dead && Math.hypot(s.x - a.x, s.z - a.z) < 0.6 + (s.big ? 0.35 : 0)) { hitSlime(s, 1.05, a.dx, a.dz, '#ffe18d', 5); hit = true; break; }
+    if (!hit && bossHit && bossHit(a.x, a.z, 0.5, 1.05, '#ffe18d')) hit = true;
+    if (hit) burst(a.x, 0.9, a.z, ['#ffe18d', '#ffffff'], 8, 2);
+    if (hit || a.left <= 0 || (!A132.on && solidW(a.x, a.z))) { scene.remove(a.m); WPN132.arrows.splice(i, 1); } } }
+{ const base = swordAttack; swordAttack = function (spin) { if (fighting()) return base(spin); const k = pwSel(); if (k === 'arco') return bowShot132(spin);
+    if (k === 'machado') { WPN132.axeT = gtime + 0.7; const r = base(spin); P.useT *= 1.6; return r; } return base(spin); }; }
+{ const base = hitSlime; hitSlime = function (s, mult, ux, uz, col, kb) { if (gtime < WPN132.axeT && pwSel() === 'machado') { mult *= 1.6; kb = (kb || 0) * 1.8; } return base(s, mult, ux, uz, col, kb); }; }
+{ const base = bossHit; bossHit = function (hx, hz, r, mult, col) { if (gtime < WPN132.axeT && pwSel() === 'machado') mult *= 1.6; return base(hx, hz, r, mult, col); }; }
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { arrows132(dt); } catch (e) {} }; }
+// no criador (jogo novo), escolher a arma é obrigatório para começar
+function wpnPicker132() { const opts = Object.entries(WPND132).map(([k, w]) => `<button class="wp132 ${WPN132.pick === k ? 'on' : ''}" data-wp132="${k}"><img src="${icon(w.ic, 64)}"><b>${PVPW[k].n}</b><small>${w.d}</small></button>`).join('');
+  return `<div class="wpk132" id="wpk132"><div class="crl">⚔️ Sua arma <span class="req">obrigatório</span></div><div class="wpl">${opts}</div></div>`; }
+{ const base = openCreator; openCreator = function (fromTitle) { const r = base(fromTitle); try { const ok = $('crOk'); if (!fromTitle || !ok || $('wpk132')) return r;
+    ok.insertAdjacentHTML('beforebegin', wpnPicker132()); ok.classList.toggle('dim132', !WPN132.pick);
+    document.querySelectorAll('[data-wp132]').forEach((el) => (el.onclick = () => { WPN132.pick = el.dataset.wp132; sfx('sel_pop'); document.querySelectorAll('[data-wp132]').forEach((b) => b.classList.toggle('on', b === el)); ok.classList.remove('dim132'); }));
+    const go = ok.onclick; ok.onclick = (e) => { if (!WPN132.pick) { sfx('cancel'); const p = $('wpk132'); if (p) { p.classList.remove('shake132'); void p.offsetWidth; p.classList.add('shake132'); p.scrollIntoView({ block: 'center', behavior: 'smooth' }); } toast('⚔️ Escolha a sua <b>arma</b> antes de começar!'); return; }
+      const k = WPN132.pick; go && go.call(ok, e); WPN132.pick = null; wpnSet132(k); }; } catch (e) { console.error(e); } return r; }; }
+{ const base = spaceHint; spaceHint = function () { const h = base(); try { if (h && h.t && /com a espada/.test(h.t) && pwSel() !== 'espada') h.t = h.t.replace('Golpear com a espada', pwSel() === 'arco' ? 'Atirar com o arco' : 'Golpear com o machado').replace('use a espada (1)', 'use a arma (1)'); } catch (e) {} return h; }; }
+// ao carregar um save, o slot 1 mostra a arma certa
+{ const base = buildHotbar; buildHotbar = function (...a) { const k = typeof pwSel === 'function' && S && S.pw ? pwSel() : 'espada', T = TOOLS.find((t) => t.id === 'espada'); if (T) T.n = PVPW[k] ? PVPW[k].n : 'Espada'; if (k !== 'espada' && ICON_IMG) THUMB.t_espada = icon(PVPW[k].ic); return base(...a); }; }
+// ---------- animações mais vivas: camada procedural nos ossos da protagonista (só no desenho) ----------
+// Passo com quique, inclinação para a frente ao correr e para dentro nas curvas, cabeça que olha para a curva, respiração parada,
+// achatadinha ao aterrissar do pulo e um balanço leve dos braços. As animações do Kenney continuam por baixo.
+const ANIM132 = { sp: 0, ph: 0, ang: null, tv: 0, land: -1, air: 0, t: 0, bones: null, obj: null };
+const QA132 = new THREE.Quaternion(), EA132 = new THREE.Euler();
+function animBones132() { if (!player) return null; if (ANIM132.obj === player.obj && ANIM132.bones) return ANIM132.bones; const b = {}; player.obj.traverse((n) => { if (n.isBone) b[n.name] = n; }); ANIM132.obj = player.obj; return (ANIM132.bones = b.spine ? b : null); }
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { const A = ANIM132; A.t += dt; const mv = P.moving && !P.fishing && !dlg ? (P.run && !P.tired ? 1.45 : 1) : 0; A.sp += (mv - A.sp) * Math.min(1, dt * 8);
+    A.ph += dt * (P.run ? 12.5 : 9) * Math.min(1, A.sp); if (A.ang === null) A.ang = P.ang; let d = P.ang - A.ang; d = Math.atan2(Math.sin(d), Math.cos(d)); A.ang = P.ang; const tv = dt > 0 ? d / dt : 0; A.tv += (Math.max(-8, Math.min(8, tv)) - A.tv) * Math.min(1, dt * 6);
+    const jy = P.jy || 0; if (jy > 0.12) A.air = 1; else if (A.air && jy <= 0.01) { A.air = 0; A.land = 0; } if (A.land >= 0) { A.land += dt; if (A.land > 0.32) A.land = -1; } } catch (e) {} }; }
+{ const base = renderer.render.bind(renderer); renderer.render = function (sc, cam) { const B = sc === scene && player && player.key === 'km' && !P.dead ? animBones132() : null; if (!B) return base(sc, cam);
+    const A = ANIM132, sp = Math.min(1.45, A.sp), run = Math.max(0, sp - 1) / 0.45, s = Math.sin(A.ph), bob = Math.abs(s), idle = 1 - Math.min(1, sp * 3), lk = A.land >= 0 ? Math.sin(Math.PI * Math.min(1, A.land / 0.32)) : 0;
+    const sv = []; const rot = (b, x, y, z) => { if (!b || (!x && !y && !z)) return; sv.push([b, b.quaternion.clone(), null, null]); QA132.setFromEuler(EA132.set(x, y, z)); b.quaternion.multiply(QA132); };
+    const root = B.root; if (root) { sv.push([root, null, root.position.clone(), root.scale.clone()]); root.position.y += (bob * 0.022 * Math.min(1, sp) + Math.sin(A.t * 2.2) * 0.004 * idle) * (1 / 1.5); if (lk) { root.scale.y *= 1 - 0.13 * lk; root.scale.x *= 1 + 0.07 * lk; root.scale.z *= 1 + 0.07 * lk; } }
+    const turn = Math.max(-0.2, Math.min(0.2, -A.tv * 0.05)) * Math.min(1, sp + 0.3);
+    rot(B.spine, 0.05 * Math.min(1, sp) + 0.13 * run + Math.sin(A.t * 2.2) * 0.02 * idle, s * 0.07 * Math.min(1, sp), turn);
+    rot(B.head, -0.04 * Math.min(1, sp) - 0.08 * run + Math.sin(A.t * 2.2 + 0.6) * 0.025 * idle, Math.max(-0.3, Math.min(0.3, A.tv * 0.05)), -turn * 0.5);
+    if (sp > 0.05 && !P.useT && !P.charging) { rot(B['arm-left'], 0, 0, s * 0.12 * Math.min(1, sp)); rot(B['arm-right'], 0, 0, s * 0.12 * Math.min(1, sp)); }
+    try { return base(sc, cam); } finally { for (let i = sv.length - 1; i >= 0; i--) { const [b, q, p, sc2] = sv[i]; if (q) b.quaternion.copy(q); if (p) b.position.copy(p); if (sc2) b.scale.copy(sc2); } } }; }
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -7527,4 +7790,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { DISH131, COOK131, openCook131, startCook131, cookSpot131, get nearestSpecial() { return nearestSpecial; }, get eatItem() { return eatItem; }, WISH131, VIB131, get rebuildFurniture() { return rebuildFurniture; }, HOME_LV, get IW() { return IW; }, get IH() { return IH; }, RX, RZ, STEP131, stepAt131, STEPH131, get heldObj() { return heldObj; }, get fofaRef() { return fofaRef; }, KM_PAT, KM_SHOE, get KM_BODIESo() { return KM_BODIES; }, EMOTEX30, NPCLOOK, EMO30, EXPR30, npcExpress, CR30, get crLook() { return crLook; }, get GCVo() { return GCV; }, kmFaceTex, SKINS, HAIRC, KCOL, KM_ECOL, KM_DEF, get KM_HEADSo() { return KM_HEADS; }, LPo: LP, composerX: composer, bloomX: bloom, gradeX: grade, PERF29, get CULLo() { return CULL; }, get sfx() { return sfx; }, get tone() { return tone; }, get moveC() { return moveC; }, LOW26, resetTransient, PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { NEWKH132, NEWKB132, ANIM132, WPN132, wpnSet132, get pwSel() { return pwSel; }, LESM132, LES132, TEACH132, get lesAvail132() { return lesAvail132; }, get ev() { return ev; }, get goalUI() { return goalUI; }, A132, TUT132, get rosaStart() { return rosaStart; }, get rosaCleanup() { return rosaCleanup; }, get RBo() { return RB; }, get regionAt() { return regionAt; }, PROP132, GRIP132, OUT132, DISH131, COOK131, openCook131, startCook131, cookSpot131, get nearestSpecial() { return nearestSpecial; }, get eatItem() { return eatItem; }, WISH131, VIB131, get rebuildFurniture() { return rebuildFurniture; }, HOME_LV, get IW() { return IW; }, get IH() { return IH; }, RX, RZ, STEP131, stepAt131, STEPH131, get heldObj() { return heldObj; }, get fofaRef() { return fofaRef; }, KM_PAT, KM_SHOE, get KM_BODIESo() { return KM_BODIES; }, EMOTEX30, NPCLOOK, EMO30, EXPR30, npcExpress, CR30, get crLook() { return crLook; }, get GCVo() { return GCV; }, kmFaceTex, SKINS, HAIRC, KCOL, KM_ECOL, KM_DEF, get KM_HEADSo() { return KM_HEADS; }, LPo: LP, composerX: composer, bloomX: bloom, gradeX: grade, PERF29, get CULLo() { return CULL; }, get sfx() { return sfx; }, get tone() { return tone; }, get moveC() { return moveC; }, LOW26, resetTransient, PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
