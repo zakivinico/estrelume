@@ -214,3 +214,20 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Modelos `w_shield`, `w_shield2`, `w_axe`, `w_quiver` e `w_arrow` (KayKit Adventurers) e `w_bow`, `w_bow2` (Quaternius Medieval Weapons, convertidos de FBX com o FBXLoader e o GLTFExporter do three.js no Chromium), registrados em `V134M` (altura em `FIT`).
 - O `heldObj` usa esses modelos para `#bow` e `#axe` (com o cabo no punho), o `mkShield133` usa o `w_shield` e as flechas saem do `mkArrow134()`. A aljava (`BACK133.q`) vai nas costas de quem usa o arco.
 - Todos ficam em pé no eixo Y com a face fina no Z. Ao trocar por outro modelo, mantenha essa orientação ou ajuste no embrulho.
+
+## Falas, casa vazia, empilhar e árvore de habilidades (v1.35)
+
+- Falas: o `say` limpa as linhas com `dlgClean135` (`<span class="key">X</span>` vira `⟦X⟧`, o resto do HTML sai) e a máquina de escrever chama `dlgShow135`, que escapa o texto e remonta as teclas. Fala nova pode ter `<span class="key">`, mas nenhum outro HTML.
+- O contorno da v1.32 está desligado (`outline132` vazio).
+- Roupas: um embrulho de `fofaParts` desce as saias (`skirt` no `spine`) e as barras (`ring`) para acompanhar o `PROP132.lift`.
+- Casa vazia: no jogo novo, o embrulho de `applyState` zera `S.home.items` e `S.furn` (`S.empty135`). Sem cama, o `nearestSpecial` oferece dormir no chão.
+- Empilhar: itens com `t: 1` em `S.home.items` ficam em cima do móvel do mesmo tile (`OCCT135[tile]` = índice do item de cima, fora do `occ`).
+  - `SURF135` lista as superfícies e `SMALL135` os itens que podem subir; `topH135(id)` dá a altura do tampo.
+  - `canPlaceFloor135` é o `canPlace` original e o `canPlace` novo também aceita `stackOk135`.
+  - `stackClean135` devolve ao inventário o item de cima que ficou sem base.
+  - O `rebuildFurniture` casa os filhos do `furnGroup` com os itens pela ordem.
+- Árvore: `WTREE135[arma]` e `wNodes135(arma)` dão os nós do ramo da arma.
+  - Nós: `_r` (libera R), `_r2` (melhora), `_f` (libera F, nível 3), `_f2` e `_m` (maestria, nível 5).
+  - `wsklOk135(i)` diz se a habilidade está liberada; `skillBarLocks135()` põe o cadeado (`.lock135`). O `useSkill` recusa a habilidade trancada e o `WSKM135` aplica o dano extra.
+  - Maestrias: `espada_m` (bloqueio do escudo), `machado_m` (multiplicador) e `arco_m` (recarga).
+  - `TREEFIX135` (uma vez, `S.skt135`) devolve os pontos de `chuva`/`estocada` e libera de graça o R da arma atual em saves antigos.
