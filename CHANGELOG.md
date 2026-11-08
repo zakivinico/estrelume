@@ -2,6 +2,22 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.38: Arena dos Campos de verdade
+- **Quadro na entrada** (tecla E) explicando a arena, com o Desafio das Ondas, os duelos com amigas e dicas de combate. Na primeira visita aparece um aviso.
+- **Desafio das Ondas:** um modo para quem joga sozinha.
+  - São 5 ondas de bichos de todo o vale: gelatinas, Planícies, Deserto, Ruínas e, por último, os gigantes da Montanha com um elite.
+  - Uma barreira de pétalas fecha a arena. Entre as ondas há uma contagem e você recupera 30% da vida.
+  - Prêmios: 🪙 por onda e ⭐ ao vencer as 5, com bônus na primeira vitória.
+  - Fica salvo o recorde de onda, o melhor tempo e as vitórias.
+  - O modo **Difícil** deixa os bichos 50% mais fortes e dobra os prêmios.
+  - A força dos bichos se ajusta ao seu nível. Cair encerra o desafio sem perder moedas e dá para desistir pelo painel.
+- **Visual novo:**
+  - muro de pedra com borda rosa e 4 portões;
+  - arquibancadas de madeira com uma torcida de bichinhos, que pula quando você vence uma onda;
+  - arco com bandeirolas no portão virado para a estrada;
+  - 8 braseiros com fogo, bandeirolas em volta e uma estrela dourada no centro.
+- O quadro e a placa ficam dos dois lados do portão, fora da estrada. O chão da arena e das arquibancadas é plano.
+
 ## v1.37: biomas novos, trava no alvo, arco de puxar, moradores que desviam e colmeias novas
 **Biomas** (cada um é uma região com nível e névoa própria)
 - **Planícies Douradas** (nível 5): campo aberto com prados de flores, fardos de feno, árvores soltas e dois moinhos. Bichos: Javali Fofo (investe em linha reta e fica tonto se trombar) e Gafanhoto Saltador (pula onde você está).

@@ -1095,6 +1095,26 @@ body.calm .slot.pop133,body.calm .money.bump133{animation:none}
 #lock137 .hb{height:9px;margin-top:4px;border:2px solid #5a3d68;border-radius:6px;background:#fff;overflow:hidden}#lock137 .hb i{display:block;height:100%;background:linear-gradient(90deg,#ff6f8f,#ff9fc8);transition:width .15s}
 #lock137 p{margin:4px 0 0;font-size:11px;color:#8a6a7a}
 body.calm #bow137.full{animation:none}
+/* v1.38: Arena dos Campos */
+#arena138{position:fixed;left:50%;top:calc(132px * var(--hs,1));z-index:25;transform:translate(-50%,-8px);opacity:0;pointer-events:none;min-width:260px;max-width:min(380px,86vw);padding:7px 12px 8px;background:linear-gradient(180deg,#fff4f9,#ffe2ef);border:3px solid #5a3d68;border-radius:12px;box-shadow:0 3px 0 #5a3d68;font:13px 'Pixelify Sans',monospace;color:#4a3048;transition:opacity .15s,transform .15s}
+#arena138.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#arena138 .ln{display:flex;align-items:center;justify-content:space-between;gap:8px}#arena138 .ln b{font-size:14px}#arena138 .btn.sm{padding:2px 8px!important;font-size:11px}
+#arena138 .dots{display:flex;gap:5px;margin:5px 0 2px}#arena138 .dots i{flex:1;height:8px;border:2px solid #5a3d68;border-radius:5px;background:#fff}#arena138 .dots i.ok{background:#9fe0b0}#arena138 .dots i.on{background:#ff9fc8;animation:pts136 1s infinite}
+#arena138 p{margin:2px 0 0}
+.mp.arena138m{max-width:900px!important}
+.arn138{display:grid;grid-template-columns:1.1fr 1fr;gap:14px}
+.arn138 section{background:#fffaf2;border:3px solid var(--c-line);border-radius:var(--r-lg);padding:12px;box-shadow:inset 0 0 0 2px #fff}
+.arn138 h3{margin:0 0 6px;font:700 17px var(--f-ui);color:var(--c-line)}.arn138 h3:not(:first-child){margin-top:12px}
+.arn138 p{margin:0 0 8px;font-size:14px;line-height:1.35}
+.arn138 .wv{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:4px}
+.arn138 .wv li{display:grid;grid-template-columns:26px 1fr;column-gap:8px;align-items:center;padding:4px 8px;border:2px solid #e8d6c8;border-radius:var(--r-sm);background:#fff}
+.arn138 .wv li b{grid-row:span 2;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--c-pink);color:#fff;font-family:var(--f-ui)}
+.arn138 .wv li.ok b{background:var(--c-mint-d)}.arn138 .wv li span{font:600 13px var(--f-ui)}.arn138 .wv li small{font-size:11px;color:var(--c-mute)}
+.arn138 .rec{background:#fff8dc;border:2px solid var(--c-gold-d);border-radius:var(--r-sm);padding:5px 8px}
+.arn138 .bt{display:flex;gap:8px;flex-wrap:wrap}.arn138 .bt .btn{flex:1}
+.arn138 .tips{margin:0;padding-left:18px;font-size:13px;line-height:1.5}
+@media (max-width:720px){.arn138{grid-template-columns:1fr}}
+body.calm #arena138 .dots i.on{animation:none}
 /* v1.36: árvore de habilidades em constelação */
 .mp.sk136{max-width:1000px!important}
 #sk136 .skh136{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 34px 10px 0}
@@ -1250,7 +1270,7 @@ body.calm .sky136::before,body.calm .sn136,body.calm .pts.on,body.calm .skt136 .
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v1.37</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v1.38</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script src="bundle.js"></script>
