@@ -1084,6 +1084,17 @@ body.calm .slot.pop133,body.calm .money.bump133{animation:none}
 .skcol.wcol135 h3 img{width:26px;height:26px;image-rendering:pixelated}
 .sknode.unl135{border-style:dashed}
 .sknode.unl135.has{border-style:solid;background:#fff3d6}
+/* v1.37: arco de puxar, trava no alvo */
+#bow137{position:fixed;z-index:30;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;pointer-events:none;opacity:0;transform:scale(.6);transition:opacity .12s,transform .12s;background:conic-gradient(#ffe18d var(--k),rgba(40,26,60,.45) 0);box-shadow:0 0 0 3px #5a3d68,inset 0 0 0 7px rgba(255,250,242,.95)}
+#bow137.on{opacity:1;transform:scale(1)}
+#bow137.full{background:conic-gradient(#ffd45a 100%,#ffd45a 0);box-shadow:0 0 0 3px #5a3d68,inset 0 0 0 7px #fffaf2,0 0 16px #ffd45a;animation:bow137 .5s ease-in-out infinite alternate}
+@keyframes bow137{to{transform:scale(1.12)}}
+#lock137{position:fixed;left:50%;top:calc(64px * var(--hs,1));z-index:25;transform:translate(-50%,-8px);opacity:0;pointer-events:none;min-width:210px;max-width:min(320px,80vw);padding:7px 12px 8px;background:linear-gradient(180deg,#fffaf2,#ffe9d6);border:3px solid #5a3d68;border-radius:12px;box-shadow:0 3px 0 #5a3d68;font:13px 'Pixelify Sans',monospace;color:#4a3048;transition:opacity .15s,transform .15s}
+#lock137.on{opacity:1;transform:translate(-50%,0)}
+#lock137 .ln{display:flex;align-items:center;gap:6px}#lock137 .ln b{font-size:15px}#lock137 .ln small{margin-left:auto;color:#8a6a7a}
+#lock137 .hb{height:9px;margin-top:4px;border:2px solid #5a3d68;border-radius:6px;background:#fff;overflow:hidden}#lock137 .hb i{display:block;height:100%;background:linear-gradient(90deg,#ff6f8f,#ff9fc8);transition:width .15s}
+#lock137 p{margin:4px 0 0;font-size:11px;color:#8a6a7a}
+body.calm #bow137.full{animation:none}
 /* v1.36: árvore de habilidades em constelação */
 .mp.sk136{max-width:1000px!important}
 #sk136 .skh136{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 34px 10px 0}
@@ -1239,7 +1250,7 @@ body.calm .sky136::before,body.calm .sn136,body.calm .pts.on,body.calm .skt136 .
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v1.36</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v1.37</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script>/*GAME*/</script>
