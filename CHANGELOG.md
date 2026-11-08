@@ -2,6 +2,34 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.37: biomas novos, trava no alvo, arco de puxar, moradores que desviam e colmeias novas
+**Biomas** (cada um é uma região com nível e névoa própria)
+- **Planícies Douradas** (nível 5): campo aberto com prados de flores, fardos de feno, árvores soltas e dois moinhos. Bichos: Javali Fofo (investe em linha reta e fica tonto se trombar) e Gafanhoto Saltador (pula onde você está).
+- **Deserto do Sol** (nível 7): areia com dunas, cactos, arenito, ossos, um oásis com palmeiras e uma pirâmide. Bichos: Escorpião Dourado (ferroada com aviso) e Cactinho Espinhento (solta espinhos em volta).
+- **Ruínas Antigas** (nível 8): piso antigo, colunas, muros caídos, estátuas e um portal sobre a trilha. Bichos: Sentinela de Pedra (mira e atira de longe) e Armadura Oca (bloqueia de frente; ponto fraco nas costas).
+- **Montes de Pedra** (nível 9): montanhas de verdade em blocos, subindo em degraus até o cume com neve e cristais. Sobe 1 bloco andando e até 3 pulando, e descer de um degrau alto é uma queda. Quando um bloco fica entre a câmera e você, ele abre um buraco para você aparecer. Bichos: Cabrito Montês (investida que empurra longe) e Golem da Neve (arremessa pedras).
+- Estrada nova ligando as Planícies e o Deserto à estrada do leste, com trilha para as montanhas. Pólen, areia ao vento, luzinhas e neve dão o clima de cada bioma.
+- Acampamentos novos nas Planícies, no Deserto e nas Ruínas. O mapa mostra o relevo das montanhas e o nome dos biomas.
+
+**Combate**
+- Trava no alvo: tecla V, botão do meio do mouse, R3 no controle ou 🎯 no toque.
+  - A personagem fica de frente para o inimigo, os golpes e as habilidades vão nele, as flechas fazem curva até ele e a câmera enquadra os dois.
+  - Um cartão mostra o nome, o nível, a vida e uma dica do bicho. Apertar de novo troca de alvo ou solta; quando o alvo cai, a trava passa para o mais perto.
+- Arco de puxar e soltar:
+  - Segure para puxar a corda (os braços entram na pose) e solte para atirar. Um medidor sobre a cabeça mostra a força.
+  - O dano vai de 0,55× a 1,9×. A puxada completa é um tiro perfeito que atravessa até 3 inimigos.
+  - Enquanto puxa, a personagem anda devagar. O leque de flechas saiu do botão segurado e ficou só na habilidade.
+- Machado mais pesado: bate 12% mais, é um pouco mais lento e o 3º golpe atordoa.
+- Esquivar na hora do golpe deixa um contra-ataque pronto: o próximo golpe em 1,6 s bate 1,8×.
+
+**Mundo e moradores**
+- A arena saiu da praia e virou a Arena dos Campos, nas Planícies. Ela fica livre de bichos para os duelos.
+- Moradores andam com A*: contornam casas, cercas e árvores, desviam uns dos outros e de você e não ficam mais presos nem teleportam.
+- Colmeias novas: cestinhas de palha num toco, com abelhinhas voando e flores em volta.
+- A placa dos Campos de Lavanda saiu da estrada. Nenhuma placa fica mais em cima de caminho.
+- Monstros de acampamento não nascem mais em cima das barracas.
+- As sombras dos blocos e dos enfeites novos são aquecidas no carregamento. A bandeirinha dos mirantes não projeta mais sombra: ela compilava um shader novo na primeira visita.
+
 ## v1.36: árvore de habilidades em constelação
 - A Árvore de Habilidades ganhou outra interface:
   - abas para os ramos (arma, Combate, Natureza e Magia), com os pontos gastos em cada um e um pontinho quando há algo para aprender;

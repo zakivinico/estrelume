@@ -238,3 +238,28 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Ramos: `skBranches136()` (arma pelo `wNodes135`, depois Combate, Natureza e Magia). `pos[id] = [coluna, linha]` numa grade 3×3, e as linhas ligam `req` ao nó. Nó novo no `SKT`: entra na lista `by([...])` e no `pos` do ramo.
 - Estado da UI: `SKUI136` (`tab`, `sel`, `pop` para o pulinho de quem acabou de ser aprendido, `ent` para a entrada das estrelas tocar só ao abrir e ao trocar de ramo). `skState136(n)` dá a classe da estrela (`lock`, `open`, `av`, `has`, `max`) e `can`.
 - Teclas: um `keydown` em captura no `document` age só com `#skb136` aberto (setas/WASD, Q/E, `[`/`]`, Tab, Enter, Espaço). O C é tratado no handler da v1.31, que chama `skLearn136()` quando a árvore está aberta.
+
+## Biomas, montanhas em blocos, trava no alvo, arco e moradores (v1.37)
+
+- Biomas: `BIO137[1..4]` (planicie, deserto, ruinas, montanha) com retângulo e borda irregular (ruído); `BIOT` guarda o bioma de cada tile, `bioAt`/`bioId` leem.
+  - Cada bioma é uma região em `REGIONS` (o embrulho de `regionAt` devolve `REG137`, menos no corredor da praia) e entra na névoa automaticamente.
+  - A geração roda no topo do script, antes do `buildWorld`: limpa a natureza antiga, abre estradas (`pave137`), põe areia e o oásis, os enfeites (tipos `*137` no `obj`) e os pontos de nascimento em `SLIME_SPOTS`.
+  - Os enfeites viram `InstancedMesh` por blocos de 16 em `decoBuild137` (receitas em `DECO137`, geometria com cor por vértice em `vcg137`). Tipo sólido novo: `SOLID.add`; dá para pular por cima: `LOW26`.
+  - Marcos (moinhos, pirâmide, portal) em `BIO137.marks` e `marksBuild137`.
+- Montanhas em blocos: `MT137.h` é a altura em blocos (`BS` = 0,5) por tile, subindo para o norte.
+  - Um passe de alcance garante que todo tile é alcançável subindo 1 bloco por vez.
+  - O embrulho de `GH` devolve a altura do degrau, então árvores, bichos e a personagem ficam em cima dos blocos. O `ghMask` deixa o chão plano ali.
+  - Os blocos (`blocksBuild137`, material `bloco137`) são colunas instanciadas com `aTop`, linhas de bloco no shader e recorte com pontilhado em volta da personagem (`BLK137.u`). Levam `noGH` e são montados depois do relevo.
+  - O `moveC` impede subir mais de 1 bloco andando (até 3 pulando). Descer vira queda (`P.jy`), subir suaviza por `MT137.off`, e a câmera sobe junto (`MT137.camEx`).
+- Bichos novos: `EN.javali`, `gafanhoto`, `escorpiao`, `cactinho`, `sentinela`, `armadura`, `cabrito` e `golem` (modelos `make*` com `mob137`), IA em `mobUpdate137` (investida comum em `charge137`).
+  - Dicas no cartão do alvo em `MOBTIP137`. Espinhos, raios e pedras em `FP137`/`fpShoot137`.
+  - O `enemyFor` escolhe o par de bichos pelo bioma. Bicho novo: modelo, entrada no `EN`, um ramo no `mobUpdate137` e o nome em `MOB137`.
+- Trava no alvo: `LOCK137` (`lockToggle137`, tecla V, botão do meio, `PADMAP[11]`, botão `#tL`). O `softAim131` mira o alvo travado, o `lockUpdate137` vira a personagem e puxa a câmera, e `#lock137` é o cartão.
+- Arco: `BOW137` (`bowStart137`, `bowUpdate137`, `bowFire137`). O ataque com arco começa a puxar, e o `releaseCharge` solta.
+  - A pose é feita no desenho por `aimBone137`, que gira o osso do braço para apontar numa direção do mundo. Os braços do Kenney são um osso só; a mão é o `player.hand`.
+  - As flechas (`arrows132` novo) têm `mult`, `pierce` e `home`.
+- Contra-ataque: o embrulho de `hurtPlayer` detecta a esquiva perfeita (`CTR137`).
+- Moradores: `navPath137` (A* em 8 direções, sem cortar quina, alisado por linha de visão) e `navFollow137` (desvia de moradores e de você). O `wander` e o `nevMove` novos usam os dois.
+- Arena: o `arenaFind` novo procura campo livre nas Planícies. Os acampamentos usam `CAMP_RIDS` (lista de regiões).
+- Sombras: o `precompileAll` da v1.37 desenha cópias dos blocos e dos enfeites e uma malha comum com sombra, nos dois alvos, para os programas de profundidade nascerem no carregamento.
+  - Meça com uma visita a cada bioma: `renderer.info.programs` não deve crescer.
