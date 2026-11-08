@@ -263,3 +263,15 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Arena: o `arenaFind` novo procura campo livre nas Planícies. Os acampamentos usam `CAMP_RIDS` (lista de regiões).
 - Sombras: o `precompileAll` da v1.37 desenha cópias dos blocos e dos enfeites e uma malha comum com sombra, nos dois alvos, para os programas de profundidade nascerem no carregamento.
   - Meça com uma visita a cada bioma: `renderer.info.programs` não deve crescer.
+
+## Arena dos Campos e Desafio das Ondas (v1.38)
+
+- Construção: o `arenaDeco138` (em `PRE_GH`, depois do `arenaBuild`) escolhe o portão principal pelo caminho mais perto (`ARN138.gate`).
+  - Ele monta numa malha só o muro (raio `ARN138.Rw` = R + 1,7) com 4 portões, as arquibancadas, o arco, as bandeirolas e a estrela.
+  - A torcida (`ARN138.spect`, bichos `a_*`) e os braseiros (`ARN138.fires`, com luz do pool) ficam à parte.
+  - Os tiles do muro e da arquibancada viram `part` sólidos. O embrulho de `decoBuild137` tira os enfeites dos biomas em volta, e o do `ghMask` deixa tudo plano.
+- Quadro: `ARN138.board` + embrulho de `nearestSpecial` → `openArena138()` (explicação e botões). A placa `ARENA26.sign` fica do outro lado do portão.
+- Desafio: `WAVES138` lista as ondas (`foes: [[tipo, quantos]]`, `elite`). As peças são `arenaStart138(hard)`, `arenaSpawn138`, `arenaClear138` e `arenaEnd138('win'|'lose'|'quit')`; o `arenaUpdate138` prende a personagem e os bichos dentro do raio.
+  - Os bichos levam `e.arena138`. O embrulho de `die` encerra o desafio sem morte, e `spawnSlimes`, `resetTransient` e `snapshot` também tratam o desafio.
+  - O recorde fica em `S.arn138` (`best`, `bestT`, `wins`, `hardWins`) e o painel é o `#arena138`.
+  - Onda nova: uma entrada em `WAVES138`.
