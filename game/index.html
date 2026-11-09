@@ -1199,6 +1199,16 @@ body.calm .sky136::before,body.calm .sn136,body.calm .pts.on,body.calm .skt136 .
 .fx139 .now{position:absolute;top:4px;right:4px;font-style:normal;font-size:10px;padding:1px 5px;border-radius:6px;background:#8fd16a;color:#fff;border:2px solid #5a3d68}
 .fsl139{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px 12px;align-items:center;margin:4px 0 6px}
 .fsl139 label{display:flex;flex-direction:column;font-size:12px;color:#4a3048}.fsl139 input[type=range]{width:100%;accent-color:#ff8fbd}.fsl139 .btn{justify-self:start}
+/* v1.40: criador com miniaturas e prévia */
+.thg140{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;width:100%}.thg140.big{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}
+.btn.chip.th140{flex-direction:column;gap:3px;padding:6px 4px 7px!important;border-radius:16px!important;font-size:11.5px!important;line-height:1.15;text-align:center;justify-content:flex-start;min-height:92px}
+.th140 img{width:76px;height:44px;object-fit:contain;border-radius:10px;background:linear-gradient(90deg,#f3eaf6,#fff6fb,#f3eaf6);background-size:200% 100%;animation:sh140 1.2s linear infinite}.th140 img.ok{animation:none;background:none}
+.thg140.big .th140 img{width:88px;height:88px;border-radius:14px}.th140 span{display:block;max-width:100%;overflow-wrap:anywhere}
+.th140.on{box-shadow:0 0 0 3px #ff8fbd,0 3px 0 var(--plumd,#5a3d68)!important}.th140:hover{transform:translateY(-2px)}
+@keyframes sh140{to{background-position:-200% 0}}
+.pv140{position:absolute;left:50%;bottom:58px;transform:translate(-50%,6px);z-index:4;opacity:0;pointer-events:none;text-align:center;padding:5px 12px;border-radius:14px;background:rgba(255,255,255,.92);border:2px solid #5a3d68;color:#4a3048;font-size:13px;transition:opacity .12s,transform .12s;white-space:nowrap}.pv140 small{font-size:11px;color:#8a6a7a}.pv140.on{opacity:1;transform:translate(-50%,0)}
+.cr>.cr3d{position:sticky!important;top:4px;z-index:2}
+@media(max-width:760px){.cr>.cr3d{height:250px!important;min-height:0}}
 </style>
 </head>
 <body class="ttl">
@@ -1278,7 +1288,7 @@ body.calm .sky136::before,body.calm .sn136,body.calm .pts.on,body.calm .skt136 .
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v1.39</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v1.40</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script src="bundle.js"></script>

@@ -2,6 +2,12 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.40: criador visual com prévia na personagem
+- Penteados, roupas, olhos, sobrancelhas, bocas e estampas viraram cartões com miniatura, nas cores da sua personagem. As miniaturas 3D (penteado e roupa) aparecem aos poucos, sem travar a janela.
+- Passar o mouse (ou o foco do teclado e do controle) num cartão veste a opção na prévia 3D, com o nome e "clique para escolher"; ao sair, volta o que estava escolhido.
+- Tocar ou clicar num item trancado (🔒) prova a peça por 3 s e diz que ela está à venda no Ateliê da Fifi.
+- A prévia 3D fica parada no lugar enquanto você rola as opções; no celular ela fica menor.
+
 ## v1.39: nada de ficar presa, câmera livre, pesca nova e rosto ajustável
 **Colisões e caminhos**
 - Árvores, pedras, postes, Pedras do Vento e outros sólidos soltos colidem como círculo: dá para contornar sem enroscar na quina, e andando de frente para eles a personagem escorrega para o lado.
