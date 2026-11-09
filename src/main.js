@@ -223,7 +223,11 @@ function canPlace(id, x, y, r, ignore = -1) {
   return true;
 }
 const solidRoom = (x, z) => { const cx = Math.floor(x - RX), cz = Math.floor(z - RZ); if (cx < 0 || cz < 0 || cx >= IW || cz >= IH) return true; const v = occ[cz * IW + cx]; return v !== null && FURN[S.home.items[v].id].solid; };
-const solidW = (x, z) => (mode === 'shop' ? solidShop(x, z) : mode === 'in' ? solidRoom(x, z) : mode === 'cave' ? solidCave(x, z) : solidAt(Math.floor(x), Math.floor(z)));
+const solidW = (x, z) => (mode === 'shop' ? solidShop(x, z) : mode === 'in' ? solidRoom(x, z) : mode === 'cave' ? solidCave(x, z) : solidOut139(x, z));
+// v1.39: árvore, pedra, poste, totem e outros sólidos soltos (sem vizinho sólido) colidem como círculo, então dá para contornar sem enroscar na quina
+const ROUND139 = { tree: 0.36, pine: 0.36, palm: 0.3, rock: 0.42, bush: 0.4, lamp: 0.24, part: 0.42, box: 0.44, umbrella: 0.22, board: 0.34, fdecor: 0.38, on: true };
+function roundAt139(tx, tz) { if (!ROUND139.on || !solidAt(tx, tz)) return 0; const o = obj[I(tx, tz)], r = o && tile[I(tx, tz)] !== WA ? ROUND139[o.t] : 0; if (!r) return 0; if (solidAt(tx + 1, tz) || solidAt(tx - 1, tz) || solidAt(tx, tz + 1) || solidAt(tx, tz - 1)) return 0; return r; }
+function solidOut139(x, z) { const tx = Math.floor(x), tz = Math.floor(z); if (!solidAt(tx, tz)) return false; const r = roundAt139(tx, tz); if (!r) return true; const dx = x - tx - 0.5, dz = z - tz - 0.5; return dx * dx + dz * dz < r * r; }
 
 /* =================== três: cena e qualidade =================== */
 const canvas = $('c');
@@ -845,7 +849,7 @@ function fishPress() {
   if (f.phase === 'cast' || f.phase === 'wait') { endFish(); toast('Puxou cedo demais... espere o ❗ 🐟'); sfx('cancel'); return; }
   if (f.phase === 'bite') { const r = rand(); f.rar = r < 0.06 + (has('bigode') ? 0.04 : 0) ? 2 : r < 0.3 ? 1 : 0; f.zw = [0.34, 0.24, 0.15][f.rar] + PERK.zone(); f.zc = 0.2 + rand() * 0.6; f.sp = [1.3, 1.9, 2.7][f.rar]; f.phase = 'mini'; f.t = 0; f.nd = 0; return; }
   if (f.phase === 'mini') {
-    const ok = Math.abs(f.nd - f.zc) <= f.zw / 2, item = ['peixe', 'palhaco', 'baiacu'][f.rar];
+    const ok = Math.abs(f.nd - f.zc) <= f.zw / 2, item = f.item || ['peixe', 'palhaco', 'baiacu'][f.rar];
     if (ok) { drop(P.x, P.z, 'item', item); burst(f.bx, 0, f.bz, ['#71ddee', '#ffffff'], 22, 3); fxRing(f.bx, -0.05, f.bz, '#ffffff', 1.4, 0.6); sfx(f.rar === 2 ? 'secret' : 'bonus'); anim('Cheer', 1.3); floatText(P.x, 2, P.z, f.rar === 2 ? '★ ' + ITEMS[item].n + '! ★' : ITEMS[item].n + '!', f.rar === 2 ? C.gold : f.rar === 1 ? C.pink : '#fff', true); qProg('fish'); ev('fish'); if (f.rar === 2) { shake = 0.3; burst(P.x, 1.4, P.z, ['#ffe18d', '#ffcb8d'], 20, 3, true, true); } }
     else { sfx('cancel'); floatText(P.x, 2, P.z, 'Escapou...', C.pink); burst(f.bx, 0, f.bz, ['#71ddee'], 8, 1.5); }
     endFish(); P.useT = 0.4;
@@ -1298,7 +1302,7 @@ canvas.addEventListener('pointerdown', (e) => {
   if (e.button === 2) interact(); else { useTool(); if (TOOLS[S.slot].id === 'espada' && mode !== 'in' && !farmEd && !P.dead && !P.bike && !P.boat) { P.charging = true; P.chargeT = 0; P.chargeOk = false; } }
 });
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-addEventListener('wheel', (e) => { if (!modalOpen() && mode === 'out') setSlot(S.slot + (e.deltaY > 0 ? 1 : -1)); }, { passive: true });
+addEventListener('wheel', (e) => { if (modalOpen() || titleOn || e.target !== canvas) return; if (e.shiftKey && mode === 'out') return setSlot(S.slot + (e.deltaY > 0 ? 1 : -1)); camZoom139(e.deltaY > 0 ? 0.09 : -0.09); }, { passive: true }); /* v1.39: a rodinha aproxima e afasta; Shift + rodinha troca a ferramenta */
 $('dlg').addEventListener('click', advDlg);
 $('modal').addEventListener('mousedown', (e) => { if (e.target.id === 'modal') closeModal(); });
 $('bSide').onclick = () => { $('hudBR').classList.toggle('open'); sfx('switch'); }; document.querySelectorAll('#hudBR .sidelist .rb').forEach((b) => b.addEventListener('click', () => $('hudBR').classList.remove('open'))); $('bWish').onclick = () => openWish(); $('bDiary').onclick = () => openDiary(); if ($('bSkill')) $('bSkill').onclick = () => openSkills(); $('plv').onclick = () => openSkills(); $('qhead').onclick = () => { const t = $('hudTR'); t.classList.toggle('pin'); t.classList.remove('idle'); sfx('switch'); }; $('bAlbum').onclick = () => openAlbum(); $('bBag').onclick = () => openBag(); $('bMap').onclick = () => openMap(); $('bHelp').onclick = () => openHelp(); $('bMenu').onclick = () => openMenu(); $('bDecor').onclick = () => (decor ? closeDecor() : openDecor()); $('bFarm').onclick = () => (farmEd ? closeFarm() : openFarm());
@@ -1313,7 +1317,10 @@ $('miniw').addEventListener('click', () => { if (!titleOn && !modalOpen()) openM
 
 /* =================== atualização =================== */
 function moveC(o, dx, dz, r = 0.28) { if (o === P && P.boat) { if (dx && boatOk(o.x + dx, o.z)) o.x += dx; if (dz && boatOk(o.x, o.z + dz)) o.z += dz; return; }
-  const ok = (nx, nz) => !(solidW(nx - r, nz - r) || solidW(nx + r, nz - r) || solidW(nx - r, nz + r) || solidW(nx + r, nz + r)) && !(o === P && regionBlocked(nx, nz));
+  /* v1.39: sólido redondo (árvore, poste, totem) colide círculo com círculo, então dá para escorregar em volta dele */
+  const hit = (px, pz, cx, cz) => { if (mode === 'out') { const tx = Math.floor(px), tz = Math.floor(pz), rr = roundAt139(tx, tz); if (rr) { const ex = cx - tx - 0.5, ez = cz - tz - 0.5, k = rr + r * 0.8; return ex * ex + ez * ez < k * k ? 1 : 0; } } return solidW(px, pz) ? 1 : 0; };
+  const bad = (nx, nz) => hit(nx - r, nz - r, nx, nz) + hit(nx + r, nz - r, nx, nz) + hit(nx - r, nz + r, nx, nz) + hit(nx + r, nz + r, nx, nz);
+  const ok = (nx, nz) => { if (o === P && regionBlocked(nx, nz)) return false; const b = bad(nx, nz); if (!b) return true; /* v1.39: presa encostada? pode andar se o centro continua livre e não afunda mais */ const b0 = bad(o.x, o.z); return b0 > 0 && b <= b0 && !solidW(nx, nz); };
   if (dx && ok(o.x + dx, o.z)) o.x += dx; if (dz && ok(o.x, o.z + dz)) o.z += dz;
 }
 const angLerp = (a, b, t) => { let d = b - a; d = Math.atan2(Math.sin(d), Math.cos(d)); return a + d * t; };
@@ -1332,7 +1339,7 @@ function update(dt) {
     if (dlg) { const l = dlg.lines[dlg.i]; if (dlg.ch < l.length) { const before = Math.floor(dlg.ch); dlg.ch = Math.min(l.length, dlg.ch + dt * 55); dlgShow135(l.slice(0, Math.floor(dlg.ch))); if (Math.floor(dlg.ch / 2) !== Math.floor(before / 2)) talkBlip(l[Math.floor(dlg.ch)]); $('dlg').classList.add('talking'); } else { dlgShow135(l); $('dlg').classList.remove('talking'); } }
     S.time += dt; if (S.time >= DAYLEN) newDay(false);
     P.useT = Math.max(0, P.useT - dt); P.hurt -= dt; shake = Math.max(0, shake - dt); if (P.boost > 0) { P.boost -= dt; if (P.boost <= 0) hud(); }
-    let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + stick.dx, iz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0) + stick.dy;
+    let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + stick.dx, iz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0) + stick.dy; [ix, iz] = camRel139(ix, iz);
     if (CUT) { const cv = cutMove(); ix = cv[0]; iz = cv[1]; }
     const len = Math.hypot(ix, iz); if (len > 1) { ix /= len; iz /= len; }
     P.moving = false; P.run = !P.boat && !!(keys.ShiftLeft || keys.ShiftRight);
@@ -1411,7 +1418,7 @@ function update(dt) {
     if (Math.floor(gtime * 2) !== Math.floor((gtime - dt) * 2)) hud();
   }
   // modelos
-  if (player) { player.obj.position.set(P.x, P.boat ? 0.74 + Math.sin(gtime * 2) * 0.05 : mode === 'out' && tAt(Math.floor(P.x), Math.floor(P.z)) === DK ? DECKY : 0, P.z); player.obj.rotation.y = angLerp(player.obj.rotation.y, P.ang, Math.min(1, dt * 14)); player.obj.visible = !(P.hurt > 0 && Math.floor(gtime * 16) % 2); player.update(paused ? 0 : dt, P.boat ? 'Sit_Floor_Idle' : P.bike ? 'Sit_Chair_Idle' : P.moving ? (P.run && !P.tired ? 'Running_A' : 'Walking_A') : 'Idle'); if (P.bike && bikeObj) { player.obj.position.y = 0.36; bikeObj.position.set(P.x, 0, P.z); bikeObj.rotation.y = player.obj.rotation.y; player.obj.position.x -= Math.sin(player.obj.rotation.y) * 0.12; player.obj.position.z -= Math.cos(player.obj.rotation.y) * 0.12; } }
+  if (player) { player.obj.position.set(P.x, P.boat ? 0.74 + Math.sin(gtime * 2) * 0.05 : P.sit139 ? P.sit139.y : mode === 'out' && tAt(Math.floor(P.x), Math.floor(P.z)) === DK ? DECKY : 0, P.z); player.obj.rotation.y = angLerp(player.obj.rotation.y, P.ang, Math.min(1, dt * 14)); player.obj.visible = !(P.hurt > 0 && Math.floor(gtime * 16) % 2); player.update(paused ? 0 : dt, P.boat ? 'Sit_Floor_Idle' : P.bike || P.sit139 ? 'Sit_Chair_Idle' : P.moving ? (P.run && !P.tired ? 'Running_A' : 'Walking_A') : 'Idle'); if (P.bike && bikeObj) { player.obj.position.y = 0.36; bikeObj.position.set(P.x, 0, P.z); bikeObj.rotation.y = player.obj.rotation.y; player.obj.position.x -= Math.sin(player.obj.rotation.y) * 0.12; player.obj.position.z -= Math.cos(player.obj.rotation.y) * 0.12; } }
   if (rosaC) { rosaC.obj.visible = mode === 'out'; rosaC.obj.position.set(rosa.x, 0, rosa.z); rosaC.obj.rotation.y = angLerp(rosaC.obj.rotation.y, dlg ? Math.atan2(P.x - rosa.x, P.z - rosa.z) : rosa.ang, Math.min(1, dt * 8)); rosaC.update(paused ? 0 : dt, rosa.moving ? 'Walking_A' : 'Idle'); }
   for (const n of npcs) { const vis = mode === 'out' && !npcAway(n) && Math.abs(n.x - P.x) < 34 && Math.abs(n.z - P.z) < 26; n.c.obj.visible = vis; const st = npcSt(n.d.id); n.emo.visible = vis && (st.d !== S.day || n.hidden || SQ.some((q) => q.giver === n.d.id && !S.sq[q.id] && q.need())) && !dlg; n.emo.position.set(n.x, 1.85 * (n.d.sc || 1) + 0.1 + Math.sin(gtime * 4 + n.x) * 0.05, n.z); if (!vis) continue; n.c.obj.position.set(n.x, 0, n.z); const talking = dlg && dlg.name === n.d.n; n.c.obj.rotation.y = angLerp(n.c.obj.rotation.y, talking ? Math.atan2(P.x - n.x, P.z - n.z) : n.ang, Math.min(1, dt * 8)); n.c.update(paused ? 0 : dt, n.moving ? (n.d.fast ? 'Running_A' : 'Walking_A') : n.evAnim || 'Idle'); }
   if (ticoC) { ticoC.obj.visible = mode === 'out' && !shopOpen(); ticoC.obj.rotation.y = angLerp(ticoC.obj.rotation.y, Math.hypot(P.x - ticoC.obj.position.x, P.z - ticoC.obj.position.z) < 5 ? Math.atan2(P.x - ticoC.obj.position.x, P.z - ticoC.obj.position.z) : 0, Math.min(1, dt * 5)); ticoC.update(paused ? 0 : dt, 'Idle'); }
@@ -1421,9 +1428,10 @@ function update(dt) {
   if (talkEmo) { const w = dlg && dlg.who; talkEmo.visible = !!w && mode === 'out'; if (w) talkEmo.position.set(w.obj.position.x + 0.35, 2.15 * w.obj.scale.y + Math.sin(gtime * 6) * 0.06, w.obj.position.z); }
   if (mode === 'shop' && SHOPS[curShop]) { const sh = SHOPS[curShop], lx = lerp(sh.x + sh.w / 2, P.x, 0.45), lz = lerp(sh.z + sh.h / 2, P.z, 0.4); camPos.set(lx, 7.4 * D, lz + 6.6 * D); camLook.lerp(new THREE.Vector3(lx, 0.6, lz), 1 - Math.pow(0.0006, dt)); }
   else if (mode === 'in') { const lx = lerp(RX + IW / 2, P.x, 0.45), lz = lerp(RZ + IH / 2, P.z, 0.4); camPos.set(lx, 7.4 * D, lz + 6.6 * D); camLook.lerp(new THREE.Vector3(lx, 0.6, lz), 1 - Math.pow(0.0006, dt)); }
-  else { const bf = boss && boss.awake && !boss.dead && Math.hypot(boss.x - P.x, boss.z - P.z) < 14; const kf = KR.on && P.boat; const D2 = kf ? D * 1.75 : farmEd ? Math.max(D, 1.3) : bf ? D * 1.18 : D; const lx = kf ? lerp(P.x, KR.x, 0.5) : bf ? lerp(P.x, boss.x, 0.35) : P.x, lz = kf ? lerp(P.z, KR.z, 0.45) : bf ? lerp(P.z, boss.z, 0.35) : P.z; camPos.set(lx, 9.5 * D2, lz + 8.6 * D2); camLook.lerp(new THREE.Vector3(lx, 0.6, lz), 1 - Math.pow(0.0006, dt)); }
+  else { const bf = boss && boss.awake && !boss.dead && Math.hypot(boss.x - P.x, boss.z - P.z) < 14; const kf = KR.on && P.boat; const D2 = kf ? D * 1.75 : farmEd ? Math.max(D, 1.3) : bf ? D * 1.18 : D; const lx = kf ? lerp(P.x, KR.x, 0.5) : bf ? lerp(P.x, boss.x, 0.35) : P.x, lz = kf ? lerp(P.z, KR.z, 0.45) : bf ? lerp(P.z, boss.z, 0.35) : P.z; camPos.set(lx, 9.5 * D2, lz + 8.6 * D2); CAM139.px = lx; CAM139.pz = lz; camLook.lerp(new THREE.Vector3(lx, 0.6, lz), 1 - Math.pow(0.0006, dt)); }
   if (FISH22.w > 0.005 && mode === 'out' && !P.boat && !CUT) { const w = FISH22.w, f = P.fishing, bx = f ? f.bx : P.x, bz = f ? f.bz : P.z, lx = lerp(P.x, bx, 0.5 * w), lz = lerp(P.z, bz, 0.5 * w), k = 1 - 0.45 * w; camPos.set(lx + 1.6 * w, 9.5 * D * k * (1 - 0.18 * w), lz + 8.6 * D * k); camLook.lerp(new THREE.Vector3(lx, 0.4, lz), 1 - Math.pow(0.0006, dt)); }
   if (ADM.fly && mode === 'out') { camPos.set(P.x, 44, P.z + 22); camLook.set(P.x, 0, P.z); }
+  if (typeof cam139 === 'function') try { cam139(dt); } catch (e) { console.error(e); } /* v1.39: câmera giratória */
   if (shake > 0) { const k = shake * shake * 2.4 + shake * 0.4, t = gtime * 38; camPos.x += (Math.sin(t) * 0.6 + Math.sin(t * 2.3 + 1.7) * 0.4) * k; camPos.y += (Math.sin(t * 1.7 + 0.4) * 0.6 + Math.sin(t * 3.1) * 0.4) * k * 0.6; camPos.z += Math.sin(t * 1.3 + 2.1) * k * 0.4; }
   if (camera.position.distanceTo(camPos) > 14) { camera.position.copy(camPos); camLook.copy(mode === 'in' ? new THREE.Vector3(camPos.x, 0.6, camPos.z - 6.6 * D) : new THREE.Vector3(P.x, 0.6, P.z)); }
   if (CUT) cutCamera(dt);
@@ -1754,7 +1762,7 @@ function dodge() {
   if (P.bike) return; if (P.dead || mode === 'in' || P.roll || P.fishing || modalOpen() || dlg || farmEd) return;
   if (P.st < 22) { floatText(P.x, 1.7, P.z, 'Sem fôlego!', C.pink); sfx('cancel'); return; }
   if (P.cds && P.cds.dodge > 0) return; if (P.cds) P.cds.dodge = 0.9;
-  let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + stick.dx, iz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0) + stick.dy; let l = Math.hypot(ix, iz);
+  let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + stick.dx, iz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0) + stick.dy; [ix, iz] = camRel139(ix, iz); let l = Math.hypot(ix, iz);
   if (l < 0.2) { ix = P.fx; iz = P.fz; l = Math.hypot(ix, iz) || 1; } ix /= l; iz /= l;
   P.fx = ix; P.fz = iz; P.ang = Math.atan2(ix, iz); P.st -= 22; P.stT = 0.6; P.roll = { t: 0, dx: ix, dz: iz }; P.inv = 0.42; P.useT = 0; P.combo = 0; P.charging = false;
   anim('Dodge_Forward', 1.6); sfx('cloth2'); vfx('dust_poof_sheet_5x1_126x116', P.x, 0.35, P.z, { size: 1.4, life: 0.35 }); burst(P.x, 0.1, P.z, ['#e8c99a', '#ffffff'], 8, 1.5);
@@ -5358,7 +5366,7 @@ function kmGeo(v, which, cols) { const key = v + which + JSON.stringify(cols); i
 // ---------- rosto pintado ----------
 const KM_EYES = { redondo: 'Redondinhos', brilho: 'Brilhantes', feliz: 'Felizes', sono: 'Sonolentos', cilios: 'Com cílios', ponto: 'Pontinhos', estrela: 'Estrelas', coracao: 'Corações', pisca: 'Piscadinha', gato: 'De gatinho' };
 const KM_ECOL = { preto: { n: 'Preto', c: '#2a2230' }, castanho: { n: 'Castanho', c: '#6b4428' }, azul: { n: 'Azul', c: '#3f7fd6' }, verde: { n: 'Verde', c: '#3e9a5a' }, lilas: { n: 'Lilás', c: '#8a5cd8' }, rosa: { n: 'Rosa', c: '#e0608f' }, mel: { n: 'Mel', c: '#c98a2e' } };
-const KM_BROWS = { normal: 'Normais', grossa: 'Grossas', fina: 'Finas', brava: 'Bravinhas', triste: 'Preocupadas', nenhuma: 'Sem' };
+const KM_BROWS = { normal: 'Normais', grossa: 'Grossas', fina: 'Finas', brava: 'Bravinhas', triste: 'Preocupadas', arqueada: 'Arqueadas', reta: 'Retas', curta: 'Curtinhas', pontinho: 'Pontinhos', fofa: 'Fofas', nenhuma: 'Sem' };
 const KM_MOUTH = { sorriso: 'Sorriso', sorrisao: 'Sorrisão', gato: 'Gatinho', bico: 'Biquinho', linha: 'Tranquila', dente: 'Dentinho', lingua: 'Linguinha', surpresa: 'Surpresa' };
 const KM_CHEEK = { none: 'Nada', blush: 'Bochechas', sardas: 'Sardas', ambos: 'Bochechas e sardas', rubor: 'Rubor forte', bigodes: 'Bigodinhos', estrela: 'Estrelinha', coracao: 'Coraçãozinho' };
 const KM_DEF = { kb: 'fb', kh: 'fb', sk: 's2', hc: 'castanho', ct: 'amarelo', cb: 'lilas', cs: 'branco', ey: 'redondo', ec: 'preto', br: 'normal', mo: 'sorriso', fc: 'blush', acc: 'none', trail: 'none', sz: 'n', hd: 'n' };
@@ -5372,6 +5380,13 @@ function kmFaceTex(lk) { const key = [lk.ey, lk.ec, lk.br, lk.mo, lk.fc, lk.hc].
       case 'sono': x.lineWidth = 8; x.beginPath(); x.arc(0, -6, 17, Math.PI * 0.15, Math.PI * 0.85); x.stroke(); break;
       case 'cilios': x.fillStyle = ec === '#2a2230' ? ink : ec; x.beginPath(); x.ellipse(0, 2, 14, 19, 0, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-4, -6, 5, 0, 7); x.fill(); x.lineWidth = 5; for (const a of [-0.5, 0, 0.5]) { x.beginPath(); x.moveTo(Math.sin(a) * 14 * mir, -16); x.lineTo(Math.sin(a) * 24 * mir + 6 * mir, -27); x.stroke(); } break;
       case 'ponto': x.beginPath(); x.arc(0, 2, 9, 0, 7); x.fill(); break;
+      case 'nenhum': break;
+      case 'anime': x.fillStyle = ink; x.beginPath(); x.ellipse(0, 2, 20, 28, 0, 0, 7); x.fill(); x.fillStyle = ec === '#2a2230' ? '#5a4a8a' : ec; x.beginPath(); x.ellipse(0, 8, 14, 18, 0, 0, 7); x.fill(); x.fillStyle = 'rgba(255,255,255,.35)'; x.beginPath(); x.ellipse(0, 16, 9, 7, 0, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.ellipse(-7 * mir, -9, 7, 9, 0.3, 0, 7); x.fill(); x.beginPath(); x.arc(7 * mir, 10, 3.5, 0, 7); x.fill(); x.lineWidth = 6; x.beginPath(); x.moveTo(-22, -22); x.quadraticCurveTo(0, -34, 23 * mir * mir, -24); x.stroke(); break;
+      case 'meialua': x.fillStyle = ec === '#2a2230' ? ink : ec; x.beginPath(); x.ellipse(0, 4, 15, 15, 0, 0, Math.PI); x.fill(); x.lineWidth = 7; x.strokeStyle = ink; x.beginPath(); x.moveTo(-18, 2); x.lineTo(18, 2); x.stroke(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-5, 9, 3.5, 0, 7); x.fill(); break;
+      case 'bolinha': x.fillStyle = ec === '#2a2230' ? ink : ec; x.beginPath(); x.arc(0, 0, 17, 0, 7); x.fill(); x.lineWidth = 4; x.strokeStyle = ink; x.stroke(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-6, -6, 6, 0, 7); x.fill(); x.beginPath(); x.arc(6, 6, 2.5, 0, 7); x.fill(); break;
+      case 'brilhinho': x.fillStyle = ink; x.beginPath(); x.ellipse(0, 0, 16, 22, 0, 0, 7); x.fill(); x.fillStyle = '#fff'; for (const [px, py, rr] of [[-6, -9, 6], [6, 3, 3], [-2, 10, 2]]) { x.beginPath(); x.arc(px, py, rr, 0, 7); x.fill(); } x.fillStyle = '#ffd45a'; x.beginPath(); for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2, rr = i % 2 ? 2 : 5; x.lineTo(5 + Math.cos(a) * rr, -2 + Math.sin(a) * rr); } x.fill(); break;
+      case 'traco': x.lineWidth = 8; x.beginPath(); x.moveTo(-15, 2); x.lineTo(15, 2); x.stroke(); break;
+      case 'chorao': x.fillStyle = ink; x.beginPath(); x.ellipse(0, 0, 16, 21, 0, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-5, -7, 6, 0, 7); x.fill(); x.fillStyle = 'rgba(120,200,255,.85)'; x.beginPath(); x.ellipse(0, 20, 13, 5, 0, 0, 7); x.fill(); break;
       case 'estrela': x.fillStyle = ec === '#2a2230' ? '#ffb83c' : ec; x.beginPath(); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 - Math.PI / 2, r = i % 2 ? 9 : 22; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); } x.closePath(); x.fill(); x.lineWidth = 3; x.strokeStyle = ink; x.stroke(); break;
       case 'coracao': x.fillStyle = '#ff5c8a'; x.beginPath(); x.moveTo(0, 16); x.bezierCurveTo(-26, -2, -14, -24, 0, -9); x.bezierCurveTo(14, -24, 26, -2, 0, 16); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-7, -8, 4, 0, 7); x.fill(); break;
       case 'pisca': if (mir > 0) { x.lineWidth = 9; x.beginPath(); x.moveTo(-15, -6); x.lineTo(10, 2); x.lineTo(-15, 10); x.stroke(); } else { x.beginPath(); x.ellipse(0, 0, 14, 19, 0, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-4, -7, 5, 0, 7); x.fill(); } break;
@@ -5380,7 +5395,9 @@ function kmFaceTex(lk) { const key = [lk.ey, lk.ec, lk.br, lk.mo, lk.fc, lk.hc].
     x.restore(); };
   eye(L, EY, -1); eye(R, EY, 1);
   // sobrancelhas
-  if (lk.br !== 'nenhuma') { x.strokeStyle = brow; x.lineWidth = lk.br === 'grossa' ? 12 : lk.br === 'fina' ? 4 : 7; for (const [cx, m] of [[L, -1], [R, 1]]) { x.beginPath(); if (lk.br === 'brava') { x.moveTo(cx - 18 * m, 74); x.lineTo(cx + 16 * m, 84); } else if (lk.br === 'triste') { x.moveTo(cx - 18 * m, 84); x.lineTo(cx + 16 * m, 74); } else { x.moveTo(cx - 18, 82); x.quadraticCurveTo(cx, 70, cx + 18, 82); } x.stroke(); } }
+  if (lk.br !== 'nenhuma') { x.strokeStyle = brow; x.lineWidth = lk.br === 'grossa' ? 12 : lk.br === 'fina' ? 4 : lk.br === 'curta' ? 9 : 7; for (const [cx, m] of [[L, -1], [R, 1]]) { x.beginPath(); if (lk.br === 'brava') { x.moveTo(cx - 18 * m, 74); x.lineTo(cx + 16 * m, 84); } else if (lk.br === 'triste') { x.moveTo(cx - 18 * m, 84); x.lineTo(cx + 16 * m, 74); }
+      else if (lk.br === 'arqueada') { x.moveTo(cx - 20, 84); x.quadraticCurveTo(cx - 4 * m, 62, cx + 20, 80); } else if (lk.br === 'reta') { x.moveTo(cx - 17, 78); x.lineTo(cx + 17, 78); } else if (lk.br === 'curta') { x.moveTo(cx - 8, 80); x.lineTo(cx + 8, 78); }
+      else if (lk.br === 'pontinho') { x.fillStyle = brow; x.ellipse(cx + 2 * m, 78, 8, 6, 0, 0, 7); x.fill(); continue; } else if (lk.br === 'fofa') { x.lineWidth = 9; x.moveTo(cx - 14, 82); x.quadraticCurveTo(cx, 66, cx + 14, 82); } else { x.moveTo(cx - 18, 82); x.quadraticCurveTo(cx, 70, cx + 18, 82); } x.stroke(); } }
   // bochechas e enfeites
   const fc = lk.fc || 'none';
   if (fc === 'blush' || fc === 'ambos' || fc === 'rubor') { x.fillStyle = fc === 'rubor' ? 'rgba(255,90,120,.62)' : 'rgba(255,120,150,.42)'; for (const cx of [56, 200]) { x.beginPath(); x.ellipse(cx, 160, 22, 13, 0, 0, 7); x.fill(); } }
@@ -5398,6 +5415,12 @@ function kmFaceTex(lk) { const key = [lk.ey, lk.ec, lk.br, lk.mo, lk.fc, lk.hc].
     case 'dente': x.beginPath(); x.moveTo(104, MY - 6); x.quadraticCurveTo(128, MY + 22, 152, MY - 6); x.stroke(); x.fillStyle = '#fff'; x.fillRect(120, MY - 1, 10, 9); x.strokeStyle = ink; x.lineWidth = 2; x.strokeRect(120, MY - 1, 10, 9); break;
     case 'lingua': x.beginPath(); x.moveTo(104, MY - 6); x.quadraticCurveTo(128, MY + 18, 152, MY - 6); x.stroke(); x.fillStyle = '#ff7f8f'; x.beginPath(); x.ellipse(136, MY + 8, 9, 10, 0, 0, 7); x.fill(); break;
     case 'surpresa': x.beginPath(); x.ellipse(128, MY + 2, 10, 13, 0, 0, 7); x.fill(); break;
+    case 'nenhuma': break;
+    case 'ooo': x.lineWidth = 6; x.beginPath(); x.arc(128, MY + 2, 8, 0, 7); x.stroke(); break;
+    case 'torto': x.beginPath(); x.moveTo(108, MY); x.quadraticCurveTo(132, MY + 10, 150, MY - 8); x.stroke(); break;
+    case 'dentinhos': x.beginPath(); x.moveTo(104, MY - 6); x.quadraticCurveTo(128, MY + 22, 152, MY - 6); x.closePath(); x.fill(); x.fillStyle = '#fff'; x.fillRect(116, MY - 4, 10, 8); x.fillRect(130, MY - 4, 10, 8); break;
+    case 'gatinho2': x.lineWidth = 5; x.beginPath(); x.moveTo(110, MY - 2); x.quadraticCurveTo(119, MY + 9, 128, MY); x.quadraticCurveTo(137, MY + 9, 146, MY - 2); x.stroke(); x.fillStyle = '#ff7f8f'; x.beginPath(); x.moveTo(122, MY - 8); x.lineTo(134, MY - 8); x.lineTo(128, MY - 2); x.fill(); break;
+    case 'risada': x.beginPath(); x.moveTo(100, MY - 8); x.lineTo(156, MY - 8); x.quadraticCurveTo(156, MY + 30, 128, MY + 30); x.quadraticCurveTo(100, MY + 30, 100, MY - 8); x.fill(); x.fillStyle = '#ff7f8f'; x.beginPath(); x.ellipse(128, MY + 19, 15, 8, 0, 0, 7); x.fill(); break;
     default: x.beginPath(); x.moveTo(106, MY - 6); x.quadraticCurveTo(128, MY + 16, 150, MY - 6); x.stroke(); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return (KM.face[key] = t); }
 // placa do rosto: na frente da pele da cabeça, no espaço do osso da cabeça
@@ -5731,7 +5754,7 @@ function fishHeld() { return !!(keys.Space || FISH22.hold); }
   if (f.phase === 'reel') return; // no minigame novo, o que conta é segurar
   base(); const g = P.fishing; if (!g || g.phase !== 'mini') return;
   // troca o ponteiro antigo pela barra
-  const r = g.rar; g.phase = 'reel'; g.t = 0; g.item = ['peixe', 'palhaco', 'baiacu'][r];
+  const r = g.rar; g.phase = 'reel'; g.t = 0; g.item = g.sp139 || ['peixe', 'palhaco', 'baiacu'][r];
   g.zb = Math.min(0.5, [0.3, 0.24, 0.18][r] + PERK.zone() * 0.8); g.by = 0; g.bv = 0; g.fy = 0.35; g.ft = 0.5; g.fv = 0; g.tt = 0; g.pr = 0.28;
   g.tr = r && rand() < 0.4 ? { y: 0.15 + rand() * 0.7, t: 0, got: false, show: 1.2 + rand() * 2 } : null;
   sfx('alert'); shake = Math.max(shake, 0.12); burst(g.bx, 0, g.bz, ['#71ddee', '#ffffff'], 14, 2.2); fxRing(g.bx, -0.05, g.bz, '#ffffff', 1.2, 0.4); anim('Throw', 0.6);
@@ -6418,7 +6441,7 @@ kmLook = function (obj, look) { const lk = Object.assign({}, KM_DEF, look || {})
   obj.userData.kmKey = lk.kb + lk.kh; const parts = fofaBuild(lk), bones = {};
   obj.traverse((o) => { if (o.isSkinnedMesh && (o.name === 'km_Body' || o.name === 'km_Head')) { o.visible = false; o.castShadow = false; } if (o.isBone) bones[o.name] = o; });
   for (const m of obj.userData.fofa || []) m.parent && m.parent.remove(m); obj.userData.fofa = [];
-  for (const [b, g] of Object.entries(parts)) { const bone = bones[b]; if (!bone) continue; const m = new THREE.Mesh(g, VCMAT); m.castShadow = true; m.receiveShadow = false; m.userData.fofa = 1; bone.add(m); obj.userData.fofa.push(m); }
+  for (const [b0, g] of Object.entries(parts)) { const [b, pk] = b0.split('#'), bone = bones[b]; if (!bone) continue; const m = new THREE.Mesh(g, pk && parts._pat && typeof patMat139 === 'function' ? patMat139(parts._pat) : VCMAT); m.castShadow = true; m.receiveShadow = false; m.userData.fofa = 1; bone.add(m); obj.userData.fofa.push(m); }
   try { fofaFace(obj, lk); } catch (e) { console.error(e); }
   ACC_TINT.hex = accCol(lk.acc_c); ACC_TINT.pat = lk.acc_p || 'lisa'; try { attachHead(obj, null, lk.acc); } finally { ACC_TINT.hex = null; ACC_TINT.pat = 'lisa'; }
   try { equipSlots(obj, lk); } catch (e) { console.error(e); } };
@@ -6438,7 +6461,7 @@ residentHome = function (D) { const h = hourNow(); if (D.type === 'rosa') return
 const NPC_HOUSE = {}; let npcHouseDone = false;
 function npcHouses() { if (npcHouseDone) return; npcHouseDone = true; for (const D of doorList()) { const r = residentOf(D); if (r && r.lid) NPC_HOUSE[r.lid] = D; } }
 function npcAway(n) { const id = n.d.id; if (KEEPER_SHOP[id] && shopOpen()) return 'shop'; npcHouses(); const D = NPC_HOUSE[id]; if (D && residentHome(D)) return 'home'; return null; }
-{ const base = enterShop; enterShop = function (id) { if (!shopOpen() && SHOPS[id] && !SHOPS[id].home) { sfx('cancel'); const who = SHOPS[id].who || 'A lojista'; toast(`🔒 <b>${SHOPS[id].n || 'A loja'}</b> está fechada. Abre às ${SHOP_H[0]}h. ${who} está passeando pelo vale.`); return; } return base(id); }; }
+{ const base = enterShop; enterShop = function (id) { if (!shopOpen() && SHOPS[id] && !SHOPS[id].home && !(id === 'tico' && TUT[S.tstep] && TUT[S.tstep].ev === 'shop')) { sfx('cancel'); const who = SHOPS[id].who || 'A lojista'; toast(`🔒 <b>${SHOPS[id].n || 'A loja'}</b> está fechada. Abre às ${SHOP_H[0]}h. ${who} está passeando pelo vale.`); return; } return base(id); }; }
 // dentro da loja, de um lado do balcão dá para conversar com a lojista (pedidos e missões dela continuam valendo)
 { const base = shopSpecials; shopSpecials = function (list) { base(list); const sh = SHOPS[curShop]; if (!sh || sh.home) return; const id = SHOP_WHO[curShop], n = npcs.find((q) => q.d.id === id); if (!n) return;
   list.push({ d: Math.hypot(P.x - (sh.x + sh.w / 2 + 2.2), P.z - (sh.z + 3.4)) - 0.7, label: `💬 Conversar com ${n.d.n}`, act: () => talkNpc(n) }); }; }
@@ -7145,18 +7168,17 @@ function patColor(pt, base, lp, out) { const v = (lp.y + 1) / 2, a = Math.atan2(
     case 'degrade': out.lerp(PAT31, Math.min(1, Math.max(0, 1 - v))); break;
     case 'losango': { const u = a * 10, w = v * 4, du = Math.abs(u - Math.floor(u) - 0.5), dw = Math.abs(w - Math.floor(w) - 0.5); if (du + dw < 0.32) out.copy(PAT31); else if (Math.abs(du - dw) < 0.035) out.copy(base).lerp(PAT31, 0.6); break; } }
   return out; }
-{ const base = fofaG; fofaG = function () { const G = base(); if (!G.ballP) { const mk = (g) => { const n = g.index ? g.toNonIndexed() : g; n.deleteAttribute('uv'); return n; }; G.ballP = mk(new THREE.SphereGeometry(1, 48, 32)); G.skirtP = mk(new THREE.CylinderGeometry(0.72, 1, 1, 48, 12, true)); } return G; }; }
+{ const base = fofaG; fofaG = function () { const G = base(); if (!G.ballP) { const mk = (g) => { const n = g.index ? g.toNonIndexed() : g; return n; }; /* v1.39: mantém o uv (a estampa virou textura) */ G.ballP = mk(new THREE.SphereGeometry(1, 48, 32)); G.skirtP = mk(new THREE.CylinderGeometry(0.72, 1, 1, 48, 12, true)); } return G; }; }
 fofaBuild = function (lk) { // v31: como a da v24, mais estampa por triângulo e as chaves novas no cache
   const key = [lk.kb, lk.kh, lk.sk, lk.hc, lk.ct, lk.cb, lk.cs, lk.kp, lk.kpc, lk.ksh].join('|'); if (FOFA.geo[key]) return FOFA.geo[key];
-  const R = fofaRef(), G = fofaG(), by = {}, c = new THREE.Color(), cc = new THREE.Color(), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), lp = new THREE.Vector3();
+  const R = fofaRef(), G = fofaG(), by = {}, c = new THREE.Color(); let pat = null; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), lp = new THREE.Vector3();
   for (const [b, gk0, col, x, y, z, sx, sy, sz, rx, ry, rz, pt] of fofaParts(lk)) { const r = R[b]; if (!r) continue; const gk = pt ? (gk0 === 'skirt' ? 'skirtP' : gk0 === 'ball' ? 'ballP' : gk0) : gk0, src = G[gk], g = src.clone(), s = 1 / (r.s || 1);
     m4.compose(new THREE.Vector3((x - r.p.x) * s, (y - r.p.y) * s, (z - r.p.z) * s), q.setFromEuler(e.set(rx, ry, rz)), new THREE.Vector3(sx * s, sy * s, sz * s)); g.applyMatrix4(m4);
     c.set(col); const n = g.attributes.position.count, ca = new Float32Array(n * 3), sp = src.attributes.position;
     if (!pt) { for (let i = 0; i < n; i++) { ca[i * 3] = c.r; ca[i * 3 + 1] = c.g; ca[i * 3 + 2] = c.b; } }
-    else { const smooth = pt.t === 'degrade'; for (let t = 0; t < n; t += 3) { if (smooth) { for (let k = 0; k < 3; k++) { lp.fromBufferAttribute(sp, t + k); if (gk === 'skirtP') lp.y *= 2; patColor(pt, c, lp, cc); ca.set([cc.r, cc.g, cc.b], (t + k) * 3); } continue; }
-        lp.set(0, 0, 0); for (let k = 0; k < 3; k++) { lp.x += sp.getX(t + k) / 3; lp.y += sp.getY(t + k) / 3; lp.z += sp.getZ(t + k) / 3; } if (gk === 'skirtP') lp.y *= 2; patColor(pt, c, lp, cc); for (let k = 0; k < 3; k++) ca.set([cc.r, cc.g, cc.b], (t + k) * 3); } }
-    g.setAttribute('color', new THREE.BufferAttribute(ca, 3)); (by[b] = by[b] || []).push(g); }
-  const out = {}; for (const [b, list] of Object.entries(by)) out[b] = mergeGeometries(list, false); return (FOFA.geo[key] = out); };
+    else { ca.fill(1); pat = { t: pt.t, c2: pt.c2, base: col }; } /* v1.39: peça estampada vai numa malha à parte, com textura (patTex139) no uv da esfera/cilindro */
+    g.setAttribute('color', new THREE.BufferAttribute(ca, 3)); const bk = pt ? b + '#p' : b; (by[bk] = by[bk] || []).push(g); }
+  const out = {}; for (const [b, list] of Object.entries(by)) out[b] = mergeGeometries(list, false); if (pat) Object.defineProperty(out, '_pat', { value: pat, enumerable: false }); return (FOFA.geo[key] = out); };
 // moradores com roupas novas
 for (const [id, lk] of Object.entries({ lia: { kb: 'g3', kp: 'bolinhas', kpc: 'branco' }, bento: { kb: 'g2', ct: 'bege' }, otto: { kb: 'g12' }, tome: { kb: 'g8', kp: 'listras', kpc: 'creme' }, fifi: { kb: 'g4', kp: 'xadrez', kpc: 'branco' }, marina: { kb: 'g6', ksh: 'sapatilha' } })) if (NPCLOOK[id]) Object.assign(NPCLOOK[id], lk);
 
@@ -7169,7 +7191,7 @@ addEventListener('keyup', (e) => { if (e.code === 'KeyC') { const ev = new Keybo
 // mira suave (vira para o inimigo mais próximo à frente), golpe guardado durante o dash, movimento procedural por cima das animações
 // (giro do tronco alternado, inclinação, squash e stretch, pulinho no 3º golpe, giro completo no golpe carregado, susto ao levar dano) e dash longo e suave.
 const CB131 = { t: -1, step: 0, hurt: -1 }, DASH131 = { dur: 0.55, v: 13 };
-function softAim131() { const ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + stick.dx, iz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0) + stick.dy;
+function softAim131() { let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + stick.dx, iz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0) + stick.dy; [ix, iz] = camRel139(ix, iz);
   let fx = P.fx, fz = P.fz; if (Math.hypot(ix, iz) > 0.3) { fx = ix; fz = iz; } const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
   let best = null, bd = 2.8; for (const s of slimes) { if (s.dead) continue; const dx = s.x - P.x, dz = s.z - P.z, d = Math.hypot(dx, dz); if (d > bd || d < 0.05) continue; if ((dx * fx + dz * fz) / d < 0.26) continue; /* ~75° */ best = s; bd = d; }
   if (best) { fx = best.x - P.x; fz = best.z - P.z; const l = Math.hypot(fx, fz) || 1; fx /= l; fz /= l; }
@@ -7186,7 +7208,7 @@ dodge = function () {
   if (P.bike) return; if (P.dead || mode === 'in' || P.roll || P.fishing || modalOpen() || dlg || farmEd) return;
   if (P.st < 22) { floatText(P.x, 1.7, P.z, 'Sem fôlego!', C.pink); sfx('cancel'); return; }
   if (P.cds && P.cds.dodge > 0) return; if (P.cds) P.cds.dodge = 0.75;
-  let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + stick.dx, iz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0) + stick.dy; let l = Math.hypot(ix, iz);
+  let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + stick.dx, iz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0) + stick.dy; [ix, iz] = camRel139(ix, iz); let l = Math.hypot(ix, iz);
   if (l < 0.2) { ix = P.fx; iz = P.fz; l = Math.hypot(ix, iz) || 1; } ix /= l; iz /= l;
   P.fx = ix; P.fz = iz; P.ang = Math.atan2(ix, iz); if (player) player.obj.rotation.y = P.ang; P.st -= 22; P.stT = 0.6; P.roll = { t: 0, dx: ix, dz: iz }; P.inv = 0.5; P.useT = 0; P.combo = 0; P.charging = false; CB131.t = -1;
   anim('Running_A', 1.8); sfx('cloth2'); sfxP('swing', 0.35, 0.8); /* sem a "explosão" de poeira: só o rastro suave */ };
@@ -8425,7 +8447,7 @@ function navPath137(sx, sz, tx, tz, maxN = 5000) { const N = NAV137, st = ++N.st
   N.mark[s] = st; N.g[s] = 0; N.f[s] = hh(s0x, s0y); N.from[s] = -1; push(s); let n = 0, found = false;
   while (heap.length && n++ < maxN) { const c = pop(); if (N.closed[c] === st) continue; N.closed[c] = st; if (c === goal) { found = true; break; } const cx = c % W, cy = (c / W) | 0;
     for (const [dx, dy, cost] of H8) { const nx = cx + dx, ny = cy + dy; if (!navFree137(nx, ny)) continue; if (dx && dy && (!navFree137(cx + dx, cy) || !navFree137(cx, cy + dy))) continue; const j = I(nx, ny); if (N.closed[j] === st) continue;
-      const g = N.g[c] + cost + (tile[j] === PA ? -0.12 : 0); if (N.mark[j] === st && g >= N.g[j]) continue; N.mark[j] = st; N.g[j] = g; N.f[j] = g + hh(nx, ny); N.from[j] = c; push(j); } }
+      const g = N.g[c] + cost + (tile[j] === PA ? -0.12 : 0) + ((!navFree137(nx + 1, ny)) + (!navFree137(nx - 1, ny)) + (!navFree137(nx, ny + 1)) + (!navFree137(nx, ny - 1))) * 0.3; /* v1.39: longe das paredes */ if (N.mark[j] === st && g >= N.g[j]) continue; N.mark[j] = st; N.g[j] = g; N.f[j] = g + hh(nx, ny); N.from[j] = c; push(j); } }
   if (!found) { N.fails++; return null; } const raw = []; for (let c = goal; c !== -1 && c !== s; c = N.from[c]) raw.push([(c % W) + 0.5, ((c / W) | 0) + 0.5]); raw.reverse(); raw[raw.length - 1] = [tx, tz];
   const out = []; let ax = sx, az = sz, i = 0; while (i < raw.length) { let j = raw.length - 1; while (j > i && !navLos137(ax, az, raw[j][0], raw[j][1])) j--; out.push(raw[j]); ax = raw[j][0]; az = raw[j][1]; i = j + 1; } return out; }
 function navGo137(n, tx, tz) { const pts = navPath137(n.x, n.z, tx, tz); n.nav = pts ? { pts, i: 0, tx, tz, stuck: 0, re: 0 } : null; return !!pts; }
@@ -8638,6 +8660,322 @@ function arenaUpdate138(dt) { const A = ARN138;
 { const base = spawnSlimes; spawnSlimes = function () { if (ARN138.on) arenaEnd138('quit'); return base(); }; }
 { const base = resetTransient; resetTransient = function (...a) { try { if (ARN138.on) arenaEnd138('quit'); } catch (e) {} return base(...a); }; }
 { const base = snapshot; snapshot = function () { if (!ARN138.on) return base(); const x = P.x, z = P.z, G = ARN138.gate || { dx: 0, dz: -1 }; P.x = ARENA26.cx + G.dx * (ARN138.Rw + 2.2); P.z = ARENA26.cz + G.dz * (ARN138.Rw + 2.2); try { return base(); } finally { P.x = x; P.z = z; } }; }
+/* =================== v1.39: colisões sem enroscar, câmera livre, pesca nova com enciclopédia, rosto ajustável, píer iluminado e amigos direto pelo navegador =================== */
+// ---------- colisões: ninguém fica preso ----------
+// tile livre mais perto (anel por anel), testando os 4 cantos como o moveC
+function freeSpot139(x, z, r = 0.3, maxR = 8, sol = solidW, npc = false) { const tx = Math.floor(x), tz = Math.floor(z);
+  const okAt = (cx, cz) => !sol(cx - r, cz - r) && !sol(cx + r, cz - r) && !sol(cx - r, cz + r) && !sol(cx + r, cz + r) && !sol(cx, cz) && (npc || !regionBlocked(cx, cz));
+  if (okAt(x, z)) return [x, z];
+  for (let R = 0; R <= maxR; R++) { let best = null, bd = 1e9; for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== R) continue; const gx = tx + dx, gy = tz + dy; if (!inb(gx, gy) || tAt(gx, gy) === WA) continue; const cx = gx + 0.5, cz = gy + 0.5; if (!okAt(cx, cz)) continue; const d = Math.hypot(cx - x, cz - z); if (d < bd) { bd = d; best = [cx, cz]; } } if (best) return best; }
+  return null; }
+// enroscou num sólido redondo (árvore, poste, Pedra do Vento)? desliza em volta, como nos jogos de ação
+{ const base = moveC; moveC = function (o, dx, dz, r) { if (o !== P || P.boat || mode !== 'out' || (!dx && !dz)) return base(o, dx, dz, r);
+  const x0 = o.x, z0 = o.z, want = Math.hypot(dx, dz); base(o, dx, dz, r); const got = Math.hypot(o.x - x0, o.z - z0); if (got > want * 0.3 || want < 1e-4) return;
+  let bg = got, bd = null; const a0 = Math.atan2(dx, dz);
+  /* sólido redondo na frente: anda pela tangente (e um tiquinho para fora), contornando como quem desvia de uma árvore */
+  { let c = null, cd = 9; const fx = Math.floor(x0 + dx * 4), fz = Math.floor(z0 + dz * 4); for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const tx = fx + i, tz = fz + j; if (!roundAt139(tx, tz)) continue; const d = Math.hypot(tx + 0.5 - x0, tz + 0.5 - z0); if (d < cd) { cd = d; c = [tx + 0.5, tz + 0.5]; } }
+    if (c) { const nx = (x0 - c[0]) / (cd || 1), nz = (z0 - c[1]) / (cd || 1); let tx = -nz, tz = nx; if (tx * dx + tz * dz < 0) { tx = -tx; tz = -tz; } if (Math.abs(tx * dx + tz * dz) < want * 0.05) { tx = Math.sign(Math.sin(a0 * 7 + 1)) * tx || tx; }
+      const m = [tx * want * 0.9 + nx * want * 0.3, tz * want * 0.9 + nz * want * 0.3]; o.x = x0; o.z = z0; base(o, m[0], m[1], r); const g = Math.hypot(o.x - x0, o.z - z0); if (g > bg + 1e-4) { bg = g; bd = m; } } }
+  for (const da of [0.55, -0.55, 1.05, -1.05, 1.7, -1.7]) { o.x = x0; o.z = z0; const a = a0 + da, k = Math.cos(da) * 0.95; base(o, Math.sin(a) * want * k, Math.cos(a) * want * k, r); const g = Math.hypot(o.x - x0, o.z - z0); if (g > bg + 1e-4) { bg = g; bd = [Math.sin(a) * want * k, Math.cos(a) * want * k]; } }
+  o.x = x0; o.z = z0; if (bd) base(o, bd[0], bd[1], r); else base(o, dx, dz, r); }; }
+// vigia: se a personagem ficar com o centro dentro de um sólido (troca de área, pouso torto, objeto que nasceu em cima), ela é solta no tile livre mais perto
+const STUCK139 = { t: 0, n: 0 };
+function stuck139(dt) { if (mode !== 'out' || P.boat || P.dead || P.sit139 || CUT || titleOn || (typeof A132 !== 'undefined' && A132.on) || (P.jy || 0) > 0.05) { STUCK139.t = 0; return; }
+  const r = 0.28, b = solidW(P.x - r, P.z - r) + solidW(P.x + r, P.z - r) + solidW(P.x - r, P.z + r) + solidW(P.x + r, P.z + r);
+  if (solidW(P.x, P.z) || b >= 3) STUCK139.t += dt; else STUCK139.t = 0;
+  if (STUCK139.t > 0.5) { STUCK139.t = 0; const f = freeSpot139(P.x, P.z, 0.3, 10); if (f) { P.x = f[0]; P.z = f[1]; STUCK139.n++; burst(P.x, 0.4, P.z, ['#ffffff', '#9fe8ff'], 10, 1.5); } } }
+// moradores: quem nasceu encostado (o Pipo na borda do Poço, a Iris na cerca) é posto num tile livre
+{ const base = wander; wander = function (n, h, sp, dt) { n.u139 = (n.u139 || 0) - dt; if (n.u139 <= 0) { n.u139 = 0.8; const r = 0.28, s = solidOut139, b = s(n.x - r, n.z - r) + s(n.x + r, n.z - r) + s(n.x - r, n.z + r) + s(n.x + r, n.z + r);
+    if (b >= 2 || s(n.x, n.z)) { const f = freeSpot139(n.x, n.z, 0.3, 6, s, true); if (f) { n.x = f[0]; n.z = f[1]; n.nav = null; NAV137.fixed139 = (NAV137.fixed139 || 0) + 1; } } }
+  return base(n, h, sp, dt); }; }
+
+// ---------- missão da Lojinha do Tico ----------
+// depois da explicação o catálogo abre sozinho (aba Móveis); à noite a loja abre para quem está nesse passo; e quem só comprou lanche ganha um banquinho
+TEACH132.shop.lines = ['Bem-vinda à Lojinha do Tico!', 'Aqui tem móveis, pisos, papéis de parede, sementes e lanchinhos.', 'Vou abrir o catálogo para você: escolha um móvel e clique no preço para comprar!'];
+{ const base = teachTick132; teachTick132 = function (dt) { const st = TUT[S.tstep], before = !!(st && st.ev === 'shop' && !(S.taught132 || {}).shop); base(dt);
+  if (before && (S.taught132 || {}).shop && dlg) { const end = dlg.onEnd; dlg.onEnd = () => { try { end && end(); } catch (e) { console.error(e); } setTimeout(() => { if (mode === 'shop' && curShop === 'tico' && !modalOpen() && !dlg) { shopTab = 'moveis'; openShop(); } }, 260); }; } }; }
+const furnCount139 = () => Object.values(S.furn || {}).reduce((a, b) => a + (b || 0), 0);
+function decorGift139() { const st = TUT[S.tstep]; if (!st || st.ev !== 'decor' || S.gift139 || furnCount139() > 0) return; S.gift139 = 1; S.furn = S.furn || {}; S.furn.stool = (S.furn.stool || 0) + 1; setTimeout(() => toast('🎁 O Tico mandou um <b>Banquinho</b> de presente: entre em casa e aperte <span class="key">V</span> para colocar!'), 900); }
+{ const base = ev; ev = function (name, ...a) { const r = base(name, ...a); try { decorGift139(); } catch (e) {} return r; }; }
+
+// ---------- save automático que guarda a personagem ----------
+// salva logo depois de criar a personagem, quando o visual muda, ao trocar de aba e a cada 15 s; uma cópia de segurança fica em ve3d-auto-b
+const SAVE139 = { lk: '', t: 0, bk: 0, n: 0 };
+function autoSave139(force) { if (titleOn || !ready || (CUT && !force)) return false; try { const prev = localStorage.getItem('ve3d-auto'); if (prev && Date.now() - SAVE139.bk > 120000) { localStorage.setItem('ve3d-auto-b', prev); SAVE139.bk = Date.now(); } } catch (e) {} const ok = writeSlot('ve3d-auto'); if (ok) SAVE139.n++; return ok; }
+setInterval(() => { try { autoSave139(); } catch (e) {} }, 15000);
+addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') try { autoSave139(); } catch (e) {} });
+addEventListener('beforeunload', () => { try { autoSave139(); } catch (e) {} });
+function saveWatch139(dt) { SAVE139.t -= dt; if (SAVE139.t > 0) return; SAVE139.t = 1; const k = JSON.stringify(S.look || {}) + '|' + (S.name || '') + '|' + (S.pwSel || '') + '|' + (S.gender || ''); if (k !== SAVE139.lk) { const first = !SAVE139.lk; SAVE139.lk = k; if (!first) autoSave139(); } }
+{ const base = startFrom; startFrom = function (d) { const r = base(d); SAVE139.lk = ''; let n = 0; const tryS = () => { n++; let ok = false; try { ok = autoSave139(n === 1); decorGift139(); } catch (e) {} if (!ok && n < 40) setTimeout(tryS, 1500); }; setTimeout(tryS, 1500); return r; }; } /* durante a abertura (CUT) espera e tenta de novo */
+{ const base = readSlot; readSlot = function (k) { const r = base(k); if (!r && k === 've3d-auto') return base('ve3d-auto-b'); return r; }; }
+
+// ---------- luz da porta da sua casa (foto 2) ----------
+// a porta da casa da jogadora fica entre dois batentes; o raio na altura do batente acha o vão e centraliza o brilho nele
+const HOMEGLOW139 = { x: null };
+function homeGlow139() { let e = null, bd = 9; for (const q of DOORGLOW.list) { if (q.ref) continue; const d = Math.hypot(q.g.position.x - HOME.x, q.g.position.z - HOME.z); if (d < bd) { bd = d; e = q; } } if (!e || bd > 2.5) return;
+  const x0 = H1.x + 2, z0 = e.g.position.z + 2.4, rc = new THREE.Raycaster(), meshes = []; let big = null, bv = 0; const bb = new THREE.Box3(), sz = new THREE.Vector3();
+  for (const c of world.children) { if (c === e.g || c.isInstancedMesh || c.isSprite || !c.children || !c.children.length || Math.hypot(c.position.x - x0, c.position.z - (z0 - 3)) > 5) continue; bb.setFromObject(c); if (bb.isEmpty()) continue; bb.getSize(sz); const v = sz.x * sz.y * sz.z; if (sz.y > 1.5 && v > bv) { bv = v; big = c; } }
+  if (big) big.traverse((n) => { if (n.isMesh && n.visible) meshes.push(n); });
+  let cx = null; if (meshes.length) { const xs = []; for (let x = x0 - 1.4; x <= x0 + 1.41; x += 0.0625) { rc.set(new THREE.Vector3(x, 0.9, z0), new THREE.Vector3(0, 0, -1)); rc.far = 6; const h = rc.intersectObjects(meshes, false)[0]; xs.push([x, h ? h.point.z : null]); }
+    // vão: trecho mais fundo (z menor) entre dois batentes mais à frente
+    for (let i = 1; i < xs.length - 1; i++) { if (xs[i][1] === null || xs[i - 1][1] === null || xs[i - 1][1] - xs[i][1] < 0.08) continue; let j = i; while (j + 1 < xs.length && xs[j + 1][1] !== null && Math.abs(xs[j + 1][1] - xs[i][1]) < 0.05) j++; if (j + 1 < xs.length && xs[j + 1][1] !== null && xs[j + 1][1] - xs[j][1] > 0.08) { const w = xs[j][0] - xs[i][0], c = (xs[i][0] + xs[j][0]) / 2; if (w > 0.4 && w < 1.5 && (cx === null || Math.abs(c - x0) < Math.abs(cx - x0))) cx = c; } i = j; } }
+  if (cx === null) cx = H1.x + 2; e.g.position.x = cx; e.x = cx; HOMEGLOW139.x = cx; }
+{ const base = precompileAll; precompileAll = function (...a) { const r = base(...a); try { homeGlow139(); } catch (e) { console.error(e); } return r; }; }
+
+// ---------- câmera livre: girar, inclinar e zoom ----------
+// Ao ar livre: arraste com o botão direito, use , e . (ou o analógico direito), e a rodinha / + e − / pinça no celular para o zoom.
+// O movimento passa a ser relativo à câmera (camRel139), então "para cima" é sempre para a frente da tela.
+const CAM139 = { yaw: 0, yawT: 0, pit: 0, pitT: 0, px: 0, pz: 0, drag: null, touch: null, told: false };
+function camOn139() { return mode === 'out' && !CUT && !titleOn && !(typeof ADM !== 'undefined' && ADM.fly); }
+function camRel139(ix, iz) { const a = camOn139() ? CAM139.yaw : 0; if (Math.abs(a) < 1e-4 || (!ix && !iz)) return [ix, iz]; const c = Math.cos(a), s = Math.sin(a); return [ix * c + iz * s, -ix * s + iz * c]; }
+function camZoom139(d) { camDist = clamp(camDist + d, 0.5, 1.7); camHint139(); }
+function camHint139() { if (CAM139.told || S.camTold139) return; CAM139.told = true; S.camTold139 = 1; toast('🎥 Câmera livre: arraste com o <b>botão direito</b> ou use <span class="key">,</span> <span class="key">.</span> para girar, a rodinha para o zoom e <span class="key">Home</span> para voltar.'); }
+function cam139(dt) { const C = CAM139, k = 1 - Math.exp(-dt * 9);
+  if (camOn139() && !modalOpen()) { if (keys.Comma) C.yawT -= dt * 1.9; if (keys.Period) C.yawT += dt * 1.9; }
+  C.yaw = angLerp(C.yaw, C.yawT, k); C.pit = lerp(C.pit, C.pitT, k); if (!camOn139()) return;
+  if (Math.abs(C.yaw) < 1e-4 && Math.abs(C.pit) < 1e-4) return;
+  const px = C.px, pz = C.pz, ox = camPos.x - px, oz = camPos.z - pz, oy = camPos.y - 0.6, hz = Math.hypot(ox, oz), L = Math.hypot(hz, oy);
+  const el = clamp(Math.atan2(oy, hz) + C.pit, 0.42, 1.38), b = Math.atan2(ox, oz) + C.yaw, hl = L * Math.cos(el);
+  camPos.set(px + Math.sin(b) * hl, 0.6 + L * Math.sin(el), pz + Math.cos(b) * hl); }
+addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (e.code === 'Home' && camOn139()) { CAM139.yawT = 0; CAM139.pitT = 0; } if ((e.code === 'Comma' || e.code === 'Period') && camOn139()) camHint139(); });
+// botão direito: arrastar gira; clique sem arrastar continua sendo "interagir"
+addEventListener('pointerdown', (e) => { if (e.button !== 2 || e.target !== canvas || e.pointerType === 'touch' || titleOn || CUT || dlg || modalOpen() || decor || farmEd || !camOn139()) return;
+  e.stopImmediatePropagation(); CAM139.drag = { x: e.clientX, y: e.clientY, moved: false }; }, { capture: true });
+addEventListener('pointermove', (e) => { const d = CAM139.drag; if (!d) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if (!d.moved && Math.hypot(dx, dy) > 6) { d.moved = true; camHint139(); } if (d.moved) { CAM139.yawT -= dx * 0.0085; CAM139.pitT = clamp(CAM139.pitT + dy * 0.004, -0.55, 0.45); d.x = e.clientX; d.y = e.clientY; } });
+addEventListener('pointerup', (e) => { const d = CAM139.drag; if (!d || e.button !== 2) return; CAM139.drag = null; if (!d.moved && camOn139() && !dlg && !modalOpen()) { try { mouse.x = e.clientX; mouse.y = e.clientY; interact(); } catch (er) { console.error(er); } } });
+// celular: dois dedos na tela giram (torção) e aproximam (pinça)
+canvas.addEventListener('touchstart', (e) => { if (e.targetTouches.length === 2 && camOn139()) { const [a, b] = e.targetTouches; CAM139.touch = { ang: Math.atan2(b.clientY - a.clientY, b.clientX - a.clientX), dist: Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY) }; } }, { passive: true });
+canvas.addEventListener('touchmove', (e) => { const T = CAM139.touch; if (!T || e.targetTouches.length !== 2) return; const [a, b] = e.targetTouches, ang = Math.atan2(b.clientY - a.clientY, b.clientX - a.clientX), dist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+  let da = ang - T.ang; da = Math.atan2(Math.sin(da), Math.cos(da)); CAM139.yawT -= da; camDist = clamp(camDist * (T.dist / Math.max(20, dist)), 0.5, 1.7); T.ang = ang; T.dist = dist; }, { passive: true });
+canvas.addEventListener('touchend', (e) => { if (e.targetTouches.length < 2) CAM139.touch = null; }, { passive: true });
+// controle: analógico direito gira (horizontal) e inclina (vertical)
+setInterval(() => { try { if (!camOn139() || modalOpen()) return; const pads = navigator.getGamepads ? navigator.getGamepads() : []; for (const g of pads) { if (!g || !g.axes || g.axes.length < 4) continue; const ax = g.axes[2], ay = g.axes[3]; if (Math.abs(ax) > 0.22) CAM139.yawT += ax * 0.045; if (Math.abs(ay) > 0.3) CAM139.pitT = clamp(CAM139.pitT + ay * 0.012, -0.55, 0.45); break; } } catch (e) {} }, 16);
+
+// ---------- pesca: espécies por lugar e hora, minigame mais tranquilo, peixes nadando e enciclopédia ----------
+// r = raridade (0 comum, 1 raro, 2 lendário), hab = onde vive, h = hora (dia, noite, manha, tarde ou qualquer), cm = tamanho, cor = [corpo, barriga, nadadeira], f = forma
+const FISH139 = [
+  { k: 'peixe', n: 'Peixinho Dourado', r: 0, hab: ['lago', 'oasis', 'rio'], h: 'any', cm: [8, 18], cor: ['#ffb43c', '#ffe08a', '#ff8a3c'], f: 'redondo' },
+  { k: 'lambari', n: 'Lambari Prateado', r: 0, hab: ['lago', 'rio'], h: 'dia', cm: [6, 14], price: 18, cor: ['#c9d6e8', '#f4f8ff', '#8fa6c8'], f: 'longo' },
+  { k: 'tilapia', n: 'Tilápia Rosada', r: 0, hab: ['lago', 'oasis'], h: 'any', cm: [15, 35], price: 30, cor: ['#e8a0a8', '#ffe0e0', '#b86a80'], f: 'redondo' },
+  { k: 'bagre', n: 'Bagre Bigodudo', r: 0, hab: ['lago', 'rio'], h: 'noite', cm: [20, 60], price: 45, cor: ['#8a7a5a', '#d8c8a0', '#5a4a38'], f: 'bagre' },
+  { k: 'sardinha', n: 'Sardinha Azul', r: 0, hab: ['mar'], h: 'any', cm: [10, 20], price: 22, cor: ['#5a9ad8', '#e8f4ff', '#3a6aa8'], f: 'longo' },
+  { k: 'linguado', n: 'Linguado da Areia', r: 0, hab: ['mar'], h: 'dia', cm: [20, 45], price: 40, cor: ['#d8b88a', '#f4e4c8', '#a88a5a'], f: 'chato' },
+  { k: 'palhaco', n: 'Peixe-Palhaço', r: 1, hab: ['mar', 'lago'], h: 'any', cm: [6, 12], cor: ['#ff7a3c', '#ffffff', '#2a1d2e'], f: 'palhaco' },
+  { k: 'carpa', n: 'Carpa Koi', r: 1, hab: ['lago'], h: 'dia', cm: [30, 70], price: 120, cor: ['#fff4ec', '#ffffff', '#ff5a3c'], f: 'koi' },
+  { k: 'truta', n: 'Truta Arco-Íris', r: 1, hab: ['rio', 'lago'], h: 'manha', cm: [25, 55], price: 110, cor: ['#9fb88a', '#ffe8f0', '#ff8fbd'], f: 'truta' },
+  { k: 'agulha', n: 'Peixe-Agulha', r: 1, hab: ['mar'], h: 'tarde', cm: [30, 80], price: 95, cor: ['#7ad8c8', '#e8fff8', '#3a8a8a'], f: 'agulha' },
+  { k: 'enguia', n: 'Enguia Faísca', r: 1, hab: ['lago', 'rio'], h: 'noite', chuva: 1, cm: [40, 90], price: 140, cor: ['#5a6aa8', '#c8d8ff', '#ffe14a'], f: 'enguia' },
+  { k: 'dourado', n: 'Dourado do Oásis', r: 1, hab: ['oasis'], h: 'any', cm: [25, 60], price: 150, cor: ['#ffd23c', '#fff4b0', '#e89a2a'], f: 'longo' },
+  { k: 'baiacu', n: 'Baiacu Raro', r: 2, hab: ['mar', 'lago'], h: 'any', cm: [15, 30], cor: ['#e8c87a', '#fff4d8', '#b8904a'], f: 'baiacu' },
+  { k: 'lua', n: 'Peixe-Lua', r: 2, hab: ['mar'], h: 'noite', cm: [60, 150], price: 320, cor: ['#c8c8e0', '#f4f4ff', '#8a8ab8'], f: 'lua' },
+  { k: 'estelar', n: 'Peixe Estelar', r: 2, hab: ['lago', 'oasis'], h: 'noite', cm: [20, 40], price: 380, cor: ['#3a2a6a', '#8a7ae8', '#ffe18d'], f: 'estelar' },
+];
+const FISHD139 = Object.fromEntries(FISH139.map((f) => [f.k, f]));
+const HAB139 = { lago: 'Lagos', mar: 'Mar e píer da praia', oasis: 'Oásis do deserto', rio: 'Riachos das montanhas' }, HORA139 = { any: 'Qualquer hora', dia: 'De dia', noite: 'À noite', manha: 'De manhã', tarde: 'No fim da tarde' };
+for (const f of FISH139) if (!ITEMS[f.k]) ITEMS[f.k] = { n: f.n, price: f.price || 30, fish139: 1 }; /* o modelo (m) entra depois do buildThumbs: o ícone é desenhado à mão */
+// ícone desenhado à mão para cada espécie (as antigas também ganham o desenho, para a enciclopédia ficar igual)
+function fishIcon139(f, sz = 96, sil = false) { const c = document.createElement('canvas'); c.width = c.height = sz; const x = c.getContext('2d'), s = sz / 96; x.scale(s, s); x.translate(48, 50); x.lineJoin = 'round'; x.lineCap = 'round';
+  const [b0, b1, b2] = sil ? ['#3a3550', '#3a3550', '#3a3550'] : f.cor, ink = sil ? '#3a3550' : '#2a1d2e', long = f.f === 'longo' || f.f === 'truta' ? 1.25 : f.f === 'agulha' ? 1.6 : f.f === 'enguia' ? 1.8 : 1, tall = f.f === 'redondo' || f.f === 'koi' ? 1.05 : f.f === 'chato' ? 0.62 : f.f === 'lua' ? 1.25 : f.f === 'baiacu' ? 1.2 : f.f === 'agulha' || f.f === 'enguia' ? 0.42 : 0.85;
+  const W2 = 26 * long, H2 = 20 * tall; x.lineWidth = 3.2; x.strokeStyle = ink;
+  // cauda
+  x.fillStyle = b2; x.beginPath(); if (f.f === 'enguia') { x.moveTo(-W2 + 4, 0); x.quadraticCurveTo(-W2 - 14, -8, -W2 - 18, 4); x.quadraticCurveTo(-W2 - 10, 6, -W2 + 4, 4); } else { x.moveTo(-W2 + 6, 0); x.lineTo(-W2 - 14, -14 * Math.min(1.2, tall + 0.2)); x.quadraticCurveTo(-W2 - 8, 0, -W2 - 14, 14 * Math.min(1.2, tall + 0.2)); x.closePath(); } x.fill(); x.stroke();
+  // nadadeira de cima
+  if (f.f !== 'enguia' && f.f !== 'baiacu') { x.beginPath(); x.moveTo(-8, -H2 + 2); x.quadraticCurveTo(2, -H2 - 12, 12, -H2 + 3); x.closePath(); x.fill(); x.stroke(); }
+  // corpo
+  const g = x.createLinearGradient(0, -H2, 0, H2); g.addColorStop(0, b0); g.addColorStop(0.62, b0); g.addColorStop(1, b1); x.fillStyle = g; x.beginPath(); x.ellipse(0, 0, W2, H2, 0, 0, 7); x.fill();
+  if (!sil) { x.save(); x.clip();
+    if (f.f === 'palhaco') { x.fillStyle = '#fff'; for (const px of [-12, 6]) { x.fillRect(px - 4, -H2, 8, H2 * 2); } x.fillStyle = ink; for (const px of [-12, 6]) { x.fillRect(px - 5.5, -H2, 1.6, H2 * 2); x.fillRect(px + 4, -H2, 1.6, H2 * 2); } }
+    if (f.f === 'koi') { x.fillStyle = b2; for (const [px, py, r] of [[-6, -6, 9], [10, 4, 7], [-16, 6, 5]]) { x.beginPath(); x.ellipse(px, py, r, r * 0.8, 0.3, 0, 7); x.fill(); } }
+    if (f.f === 'truta') { x.fillStyle = 'rgba(255,143,189,.6)'; x.fillRect(-W2, -3, W2 * 2, 6); x.fillStyle = 'rgba(60,60,40,.45)'; for (let i = 0; i < 9; i++) { x.beginPath(); x.arc(-20 + i * 5, -9 + (i % 3) * 3, 1.4, 0, 7); x.fill(); } }
+    if (f.f === 'estelar') { x.fillStyle = '#ffe18d'; for (const [px, py, r] of [[-10, -6, 3], [4, 6, 2.4], [12, -8, 2], [-2, -12, 1.6], [-16, 6, 1.8]]) { x.beginPath(); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 - Math.PI / 2, rr = i % 2 ? r * 0.45 : r; x.lineTo(px + Math.cos(a) * rr, py + Math.sin(a) * rr); } x.fill(); } }
+    if (f.f === 'enguia') { x.fillStyle = '#ffe14a'; for (let i = 0; i < 6; i++) { x.beginPath(); x.moveTo(-34 + i * 12, -2); x.lineTo(-30 + i * 12, -6); x.lineTo(-28 + i * 12, -1); x.fill(); } }
+    if (f.f === 'baiacu') { x.strokeStyle = b2; x.lineWidth = 2; for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; x.beginPath(); x.moveTo(Math.cos(a) * W2 * 0.75, Math.sin(a) * H2 * 0.75); x.lineTo(Math.cos(a) * W2 * 0.95, Math.sin(a) * H2 * 0.95); x.stroke(); } }
+    x.fillStyle = 'rgba(255,255,255,.35)'; x.beginPath(); x.ellipse(-4, -H2 * 0.45, W2 * 0.55, H2 * 0.22, -0.1, 0, 7); x.fill(); x.restore(); }
+  x.strokeStyle = ink; x.lineWidth = 3.2; x.beginPath(); x.ellipse(0, 0, W2, H2, 0, 0, 7); x.stroke();
+  if (f.f === 'bagre') { x.lineWidth = 2; for (const dy of [-2, 3]) { x.beginPath(); x.moveTo(W2 - 4, 4 + dy); x.quadraticCurveTo(W2 + 8, 8 + dy * 2, W2 + 12, 14 + dy * 2); x.stroke(); } }
+  if (f.f === 'agulha') { x.fillStyle = b2; x.beginPath(); x.moveTo(W2 - 2, -2); x.lineTo(W2 + 16, 0); x.lineTo(W2 - 2, 3); x.fill(); x.stroke(); }
+  if (f.f === 'baiacu' && !sil) { x.fillStyle = b2; x.beginPath(); x.arc(4, 4, 2, 0, 7); x.fill(); }
+  // olho e boquinha
+  if (!sil) { const ex = W2 * 0.55, ey = -H2 * 0.18; x.fillStyle = '#fff'; x.beginPath(); x.arc(ex, ey, 5.5, 0, 7); x.fill(); x.fillStyle = ink; x.beginPath(); x.arc(ex + 1, ey + 0.5, 3.2, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(ex - 0.2, ey - 1.2, 1.2, 0, 7); x.fill();
+    x.fillStyle = 'rgba(255,120,150,.5)'; x.beginPath(); x.ellipse(ex - 6, ey + 7, 3.5, 2, 0, 0, 7); x.fill(); x.strokeStyle = ink; x.lineWidth = 2; x.beginPath(); x.arc(W2 - 3, 3, 2.4, Math.PI * 0.6, Math.PI * 1.3); x.stroke(); }
+  return c.toDataURL(); }
+const FICON139 = {};
+function fishIcons139() { for (const f of FISH139) { if (ITEMS[f.k] && ITEMS[f.k].fish139 && !ITEMS[f.k].m) ITEMS[f.k].m = f.r === 2 ? 'q_fish3' : f.r === 1 ? 'q_fish2' : 'q_fish1'; FICON139[f.k] = fishIcon139(f, 96); FICON139[f.k + ':s'] = fishIcon139(f, 96, true); THUMB['i_' + f.k] = FICON139[f.k]; } }
+{ const base = precompileAll; precompileAll = function (...a) { const r = base(...a); try { fishIcons139(); } catch (e) { console.error(e); } return r; }; }
+// onde está pescando
+function fishHab139(x, z) { const tx = Math.floor(x), tz = Math.floor(z); if (P.boat || tz >= BEACHY - 3) return 'mar'; const b = bioId(tx, tz); if (b === 'deserto') return 'oasis'; if (b === 'montanha') return 'rio'; return 'lago'; }
+function fishHourOk139(f) { const h = hourNow(), night = h >= 19 || h < 6; if (f.h === 'any') return true; if (f.h === 'noite') return night; if (f.h === 'dia') return !night; if (f.h === 'manha') return h < 11.5; if (f.h === 'tarde') return h >= 15 && h < 20.5; return true; }
+function fishPick139(x, z) { const hab = fishHab139(x, z), rain = !!(S.wx && S.wx.rain), r = rand(), leg = 0.05 + (has('bigode') ? 0.04 : 0);
+  let tier = r < leg ? 2 : r < leg + 0.26 ? 1 : 0;
+  for (; tier >= 0; tier--) { const list = FISH139.filter((f) => f.r === tier && f.hab.includes(hab) && fishHourOk139(f)); if (!list.length) continue;
+    // peixe de chuva fica 3× mais fácil de aparecer quando chove; peixe que você ainda não tem ganha um empurrãozinho
+    const w = list.map((f) => (f.chuva ? (rain ? 3 : 0.25) : 1) * ((S.fish139 && S.fish139[f.k]) ? 1 : 1.6)), tot = w.reduce((a, b) => a + b, 0); let q = rand() * tot; for (let i = 0; i < list.length; i++) { q -= w[i]; if (q <= 0) return list[i]; } return list[list.length - 1]; }
+  return FISHD139.peixe; }
+// ao fisgar: a espécie decide a raridade e o tamanho da barrinha (mais larga que antes)
+{ const base = fishPress; fishPress = function () { const f = P.fishing; if (f && f.phase === 'bite') { const sp = fishPick139(f.bx, f.bz); f.sp139 = sp.k; }
+  base(); const g = P.fishing; if (g && g.phase === 'reel' && g.sp139) { const sp = FISHD139[g.sp139]; g.rar = sp.r; g.item = sp.k; g.zb = Math.min(0.56, [0.38, 0.31, 0.25][sp.r] + PERK.zone() * 0.8); g.pr = 0.36; g.ease139 = 1; if (FSH139.hook) FSH139.hook.hide = 1; } }; }
+// minigame mais calmo: o peixe nada 25% mais devagar, o medidor enche mais rápido e esvazia mais devagar, e o ❗ espera 1,7 s
+{ const base = updateFishing; updateFishing = function (dt) { const f = P.fishing; if (!f) return base(dt);
+  if (f.phase === 'bite') { f.bt139 = (f.bt139 || 0) + dt; if (f.bt139 < 1.7 && f.t > 0.95) f.t = 0.95; }
+  const fy0 = f.fy, pr0 = f.pr; base(dt); const g = P.fishing; if (!g || g !== f || f.phase !== 'reel' || !f.ease139 || fy0 === undefined) return;
+  f.fy = lerp(fy0, f.fy, 0.75); const d = f.pr - pr0; if (d > 0) f.pr = Math.min(1, f.pr + d * 0.2); else if (d < 0) f.pr = Math.max(0.001, pr0 + d * 0.62); }; }
+// tamanho e registro de cada peixe pescado
+{ const base = fishFinish; fishFinish = function (ok) { const f = P.fishing, sp = ok && f && FISHD139[f.item]; let cm = 0; if (sp) { const q = Math.pow(rand(), 1.7); cm = Math.round((sp.cm[0] + (sp.cm[1] - sp.cm[0]) * q) * 10) / 10; }
+  base(ok); if (!sp) return; S.fish139 = S.fish139 || {}; const rec = S.fish139[sp.k], first = !rec, best = !first && cm > rec.max; S.fish139[sp.k] = { n: (rec ? rec.n : 0) + 1, max: Math.max(rec ? rec.max : 0, cm), d: rec ? rec.d : S.day };
+  setTimeout(() => { floatText(P.x, 2.5, P.z, `${cm.toFixed(1).replace('.', ',')} cm`, '#e8f6ff', true); if (first) { S.stars += 3; toast(`📘 Nova espécie na <b>Enciclopédia dos Peixes</b>: ${sp.n}! <b>+3⭐</b>`); fishDexDone139(); } else if (best) toast(`🏆 Recorde de ${sp.n}: <b>${cm.toFixed(1).replace('.', ',')} cm</b>!`); }, 700); }; }
+function fishDexDone139() { const n = FISH139.filter((f) => S.fish139 && S.fish139[f.k]).length; if (n >= FISH139.length && !S.fishAll139) { S.fishAll139 = 1; S.stars += 100; setTimeout(() => toast('🌟 Você pescou <b>todas as espécies</b> do vale! <b>+100⭐</b> e o título de Mestre da Pesca.'), 2400); } }
+// peixes nadando: sombras escuras na água que passeiam e vêm até a boia
+const FSH139 = { N: 18, list: [], mesh: null, hook: null, t: 0 };
+{ const sh = new THREE.Shape(); sh.moveTo(0.5, 0); sh.quadraticCurveTo(0.42, 0.2, 0.05, 0.2); sh.quadraticCurveTo(-0.3, 0.18, -0.36, 0.05); sh.lineTo(-0.55, 0.16); sh.lineTo(-0.5, 0); sh.lineTo(-0.55, -0.16); sh.lineTo(-0.36, -0.05); sh.quadraticCurveTo(-0.3, -0.18, 0.05, -0.2); sh.quadraticCurveTo(0.42, -0.2, 0.5, 0);
+  const g = new THREE.ShapeGeometry(sh, 6).rotateX(-Math.PI / 2).rotateY(Math.PI / 2); /* nariz para +z */
+  const m = new THREE.MeshBasicMaterial({ color: '#173a55', transparent: true, opacity: 0.42, depthWrite: false });
+  const im = new THREE.InstancedMesh(g, m, FSH139.N); im.frustumCulled = false; im.renderOrder = 3; im.userData.keep = 1; im.userData.noGH = 1; im.castShadow = false; im.receiveShadow = false;
+  const M4 = new THREE.Matrix4(); for (let i = 0; i < FSH139.N; i++) { M4.makeTranslation(LAKE.x + (i % 6), -0.08, LAKE.y + Math.floor(i / 6)); im.setMatrixAt(i, M4); } scene.add(im); FSH139.mesh = im;
+  for (let i = 0; i < FSH139.N; i++) FSH139.list.push({ x: 0, z: 0, a: 0, v: 0.6, tx: 0, tz: 0, s: 1, alive: false, ph: rand() * 6, hide: 0 }); }
+const isWater139 = (x, z) => inb(Math.floor(x), Math.floor(z)) && tAt(Math.floor(x), Math.floor(z)) === WA;
+function fishSpawn139(f) { for (let k = 0; k < 24; k++) { const a = rand() * Math.PI * 2, d = 4 + rand() * 12, x = P.x + Math.cos(a) * d, z = P.z + Math.sin(a) * d; if (isWater139(x, z) && isWater139(x + 0.6, z) && isWater139(x - 0.6, z) && isWater139(x, z + 0.6) && isWater139(x, z - 0.6)) { Object.assign(f, { x, z, tx: x, tz: z, a: rand() * 6.28, v: 0.4 + rand() * 0.5, s: 0.55 + rand() * 0.55, alive: true, hide: 0, fade: 0 }); return true; } } f.alive = false; return false; }
+const FSHM139 = new THREE.Matrix4(), FSHQ139 = new THREE.Quaternion(), FSHE139 = new THREE.Euler(), FSHV139 = new THREE.Vector3(), FSHS139 = new THREE.Vector3();
+function fishSwim139(dt) { const im = FSH139.mesh; if (!im) return; const on = mode === 'out' && !titleOn; im.visible = on; if (!on) return; const fsh = P.fishing, bob = fsh && (fsh.phase === 'wait' || fsh.phase === 'bite' || fsh.phase === 'reel') ? fsh : null;
+  if (bob && !FSH139.hook) { let best = null, bd = 7; for (const f of FSH139.list) { if (!f.alive) continue; const d = Math.hypot(f.x - bob.bx, f.z - bob.bz); if (d < bd) { bd = d; best = f; } } if (!best) { const f = FSH139.list.find((q) => !q.alive) || FSH139.list[0]; for (let k = 0; k < 12; k++) { const a = rand() * 6.28, d = 2.5 + rand() * 2, x = bob.bx + Math.cos(a) * d, z = bob.bz + Math.sin(a) * d; if (isWater139(x, z)) { Object.assign(f, { x, z, tx: x, tz: z, a, v: 0.5, s: 0.8, alive: true, hide: 0, fade: 0 }); best = f; break; } } } FSH139.hook = best; }
+  if (!bob) { if (FSH139.hook) { FSH139.hook.hide = 0; FSH139.hook.tx = FSH139.hook.x + (rand() - 0.5) * 4; FSH139.hook.tz = FSH139.hook.z + (rand() - 0.5) * 4; } FSH139.hook = null; }
+  for (let i = 0; i < FSH139.N; i++) { const f = FSH139.list[i]; if (!f.alive || Math.abs(f.x - P.x) > 22 || Math.abs(f.z - P.z) > 18) { if (!fishSpawn139(f)) { FSHM139.makeScale(0, 0, 0); im.setMatrixAt(i, FSHM139); continue; } }
+    f.fade = Math.min(1, (f.fade || 0) + dt * 0.8); let tx = f.tx, tz = f.tz, v = f.v;
+    if (f === FSH139.hook && bob) { const d = Math.hypot(bob.bx - f.x, bob.bz - f.z); tx = bob.bx - Math.sin(f.a) * 0.35; tz = bob.bz - Math.cos(f.a) * 0.35; v = d > 1 ? 0.7 : 0.25; if (bob.phase === 'wait' && d < 0.6 && bob.t < bob.wait - 0.6) bob.wait = Math.max(bob.t + 0.5, 0.8); /* chegou na boia: belisca logo */ if (bob.phase === 'bite' && d < 1) { tx = bob.bx + Math.sin(gtime * 9) * 0.15; tz = bob.bz; } }
+    else if (Math.hypot(tx - f.x, tz - f.z) < 0.3 || rand() < dt * 0.15) { for (let k = 0; k < 6; k++) { const a = f.a + (rand() - 0.5) * 2.4, d = 1.5 + rand() * 3, x = f.x + Math.sin(a) * d, z = f.z + Math.cos(a) * d; if (isWater139(x, z) && isWater139((x + f.x) / 2, (z + f.z) / 2)) { f.tx = x; f.tz = z; break; } } }
+    const want = Math.atan2(tx - f.x, tz - f.z); f.a = angLerp(f.a, want, Math.min(1, dt * 2.5)); const sp = v * (0.75 + Math.sin(gtime * 2 + f.ph) * 0.25), nx = f.x + Math.sin(f.a) * sp * dt, nz = f.z + Math.cos(f.a) * sp * dt; if (isWater139(nx, nz)) { f.x = nx; f.z = nz; } else { f.tx = f.x - Math.sin(f.a) * 2; f.tz = f.z - Math.cos(f.a) * 2; }
+    const hide = f.hide ? 0 : 1, sc = f.s * f.fade * hide, wig = Math.sin(gtime * 7 + f.ph) * 0.12; FSHQ139.setFromEuler(FSHE139.set(0, f.a + wig, 0)); FSHM139.compose(FSHV139.set(f.x, -0.075, f.z), FSHQ139, FSHS139.set(sc, 1, sc * (1 + Math.abs(wig) * 0.3))); im.setMatrixAt(i, FSHM139); }
+  im.instanceMatrix.needsUpdate = true; }
+// enciclopédia dos peixes (Estrelofone → Peixes)
+function openFishDex139() { S.fish139 = S.fish139 || {}; const got = FISH139.filter((f) => S.fish139[f.k]).length, here = fishHab139(P.x, P.z);
+  const card = (f) => { const r = S.fish139[f.k], st = ['★', '★★', '★★★'][f.r], col = ['#8fd16a', '#ff8fbd', '#ffcb5a'][f.r], now = f.hab.includes(here) && fishHourOk139(f);
+    return `<div class="fx139 ${r ? '' : 'no'}"><img src="${FICON139[f.k + (r ? '' : ':s')] || ''}"><b>${r ? f.n : '???'}</b><span class="st" style="color:${col}">${st}</span><span>${f.hab.map((h) => HAB139[h]).join(' · ')}</span><span>${HORA139[f.h]}${f.chuva ? ' · 🌧️ chuva' : ''}</span>${r ? `<span>Pescados: <b>${r.n}</b> · Recorde: <b>${(r.max || 0).toFixed(1).replace('.', ',')} cm</b></span><span>Vende por ${ITEMS[f.k].price}🪙</span>` : `<span>${f.cm[0]}–${f.cm[1]} cm</span>`}${now ? '<i class="now">aqui agora</i>' : ''}</div>`; };
+  openModal(`<h2>📘 Enciclopédia dos Peixes</h2><p class="lead">Você já conhece <b>${got}</b> de <b>${FISH139.length}</b> espécies. Cada lugar e cada hora têm peixes diferentes: <b>${HAB139[here]}</b> é onde você está agora.</p>
+    <div class="fbar139"><i style="width:${(got / FISH139.length * 100).toFixed(0)}%"></i></div><div class="fdex139">${FISH139.map(card).join('')}</div>
+    <p class="note">★ comum · ★★ raro · ★★★ lendário. Espécie nova vale <b>+3⭐</b>; completar a enciclopédia vale <b>+100⭐</b>. Dica: as sombras na água mostram onde há peixe, e o peixe vem até a boia.</p>`, 'wide'); }
+{ const i = APPS.findIndex((a) => a.k === 'save'); APPS.splice(i < 0 ? APPS.length : i, 0, { k: 'fishdex', n: 'Peixes', ic: 'fish', c: '#7cd4f0', d: 'Enciclopédia da pesca' }); }
+{ const base = phoneAct; phoneAct = function (k) { if (k === 'fishdex') { sfx('accept'); return openFishDex139(); } return base(k); }; }
+
+// ---------- paleta única para os modelos de cenário (KayKit, Kenney e Quaternius com as mesmas cores) ----------
+// Depois do vib131, cada cor puxa o matiz para o tom mais perto da paleta do vale, e a saturação e o brilho ficam numa faixa comum.
+// ?nopal=1 mostra as cores sem a paleta.
+const PAL139 = { hues: [6, 22, 38, 50, 62, 92, 128, 158, 188, 208, 232, 262, 292, 326], pull: 0.6, on: !/[?&]nopal/.test(location.search) };
+function pal139(r, g, b) { const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn; let h = 0, s = 0;
+  if (d > 1e-5) { s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; }
+  let L = 0.52 + (l - 0.52) * 0.86; L = L < 0.1 ? 0.1 : L > 0.94 ? 0.94 : L;
+  if (s < 0.08) { /* neutros puxam para um cinza quentinho */ const w = 0.035; return hsl139(32, 0.1 * (1 - Math.abs(L - 0.5) * 1.6) + s, L, w); }
+  let best = h, bd = 999; for (const q of PAL139.hues) { let dd = Math.abs(q - h); if (dd > 180) dd = 360 - dd; if (dd < bd) { bd = dd; best = q; } }
+  let dh = best - h; if (dh > 180) dh -= 360; if (dh < -180) dh += 360; const H2 = (h + dh * PAL139.pull + 360) % 360;
+  let S2 = 0.3 + (s - 0.3) * 0.72; S2 = S2 < 0.2 ? 0.2 : S2 > 0.74 ? 0.74 : S2; return hsl139(H2, S2, L, 0); }
+function hsl139(h, s, l) { const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q, f = (t) => { t = (t % 1 + 1) % 1; return t < 1 / 6 ? p + (q - p) * 6 * t : t < 0.5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; }; const H = h / 360; return [f(H + 1 / 3), f(H), f(H - 1 / 3)]; }
+{ const base = vib131; vib131 = function (r, g, b) { const v = base(r, g, b); return PAL139.on ? pal139(v[0], v[1], v[2]) : v; }; }
+
+// ---------- píer do lago iluminado (foto 5): postes com lanterna, correntes de corrimão e banco para sentar ----------
+const PIER139 = { lamps: [], bench: null, mats: [] };
+function pierBuild139() { if (PIER139.done) return; PIER139.done = 1; const x0 = dockStart, x1 = dockStart + 4.75, zs = [44.06, 45.94], g = new THREE.Group(), wood = '#8a5a3b', dark = '#5a3a2b', iron = '#3a3550';
+  const add = (geo, c, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, lam(c)); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); g.add(m); return m; };
+  const post = new THREE.CylinderGeometry(0.05, 0.06, 0.62, 8), cap = new THREE.SphereGeometry(0.075, 10, 8), link = new THREE.TorusGeometry(0.035, 0.009, 4, 8);
+  const posts = []; for (const z of zs) for (let i = 0; i <= 4; i++) { const x = x0 + 0.35 + (i / 4) * (x1 - x0 - 0.5); posts.push([x, z]); add(post, wood, x, DECKY + 0.31, z); add(cap, dark, x, DECKY + 0.64, z); }
+  // correntes: elos em catenária entre os postes
+  for (const z of zs) for (let i = 0; i < 4; i++) { const xa = x0 + 0.35 + (i / 4) * (x1 - x0 - 0.5), xb = x0 + 0.35 + ((i + 1) / 4) * (x1 - x0 - 0.5), n = 9; for (let k = 1; k < n; k++) { const t = k / n, x = lerp(xa, xb, t), y = DECKY + 0.56 - Math.sin(t * Math.PI) * 0.16; add(link, iron, x, y, z, 0, k % 2 ? Math.PI / 2 : 0, 0); } }
+  g.traverse((n) => { if (n.isMesh) { n.castShadow = false; n.receiveShadow = true; } }); bakeVC(g); g.userData.dress = 1; world.add(g);
+  // postes altos com lanterna nas duas pontas do píer
+  for (const [x, z] of [[x0 + 0.3, zs[0] - 0.02], [x0 + 0.3, zs[1] + 0.02], [x1 - 0.1, zs[0] - 0.02], [x1 - 0.1, zs[1] + 0.02]]) { const L = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.07, 1.9, 8), lam(iron)); pole.position.y = DECKY + 0.95; L.add(pole);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.04, 0.04), lam(iron)); arm.position.set(0, DECKY + 1.86, 0); L.add(arm);
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.26, 0.2), lam(iron)); box.position.set(0.15, DECKY + 1.7, 0); L.add(box);
+    const glowM = new THREE.MeshBasicMaterial({ color: '#e8c48a' }), glass = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.15), glowM); glass.position.copy(box.position); L.add(glass); lanterns.push(glowM); PIER139.mats.push(glowM);
+    const top = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.12, 4), lam(dark)); top.position.set(0.15, DECKY + 1.9, 0); top.rotation.y = Math.PI / 4; L.add(top);
+    L.position.set(x, 0, z); L.traverse((n) => { if (n.isMesh) { n.castShadow = n !== glass; n.receiveShadow = false; } }); L.userData.dress = 1; world.add(L);
+    const l = new THREE.PointLight(0xffc477, 0, 7, 1.6); l.position.set(x + 0.15, DECKY + 1.6, z); world.add(l); lampLights.push(l); PIER139.lamps.push(l); }
+  // banco de frente para o lago, na margem ao lado do píer
+  let spot = null; for (const [bx, by] of [[x0 - 2, 43], [x0 - 2, 46], [x0 - 3, 43], [x0 - 3, 46], [x0 - 1, 43], [x0 - 1, 46]]) { if (inb(bx, by) && !obj[I(bx, by)] && tile[I(bx, by)] === GR) { spot = [bx, by]; break; } }
+  if (spot) { const [bx, by] = spot, B = new THREE.Group(), face = by < 44 ? 0 : Math.PI; const seat = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.07, 0.36), lam(wood)); seat.position.y = 0.42; B.add(seat);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.3, 0.06), lam(wood)); back.position.set(0, 0.68, -0.17); back.rotation.x = -0.12; B.add(back);
+    for (const sx of [-0.4, 0.4]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.42, 0.32), lam(iron)); leg.position.set(sx, 0.21, 0); B.add(leg); const ar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.34), lam(iron)); ar.position.set(sx + Math.sign(sx) * 0.04, 0.58, 0); B.add(ar); }
+    B.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } }); bakeVC(B); B.position.set(bx + 0.5, 0, by + 0.5); B.rotation.y = face; B.userData.dress = 1; world.add(B); obj[I(bx, by)] = { t: 'part', b: 'banco139' };
+    PIER139.bench = { x: bx + 0.5, z: by + 0.5, ang: face, y: 0.19, fx: bx + 0.5 + Math.sin(face) * 0.55, fz: by + 0.5 + Math.cos(face) * 0.55 }; } }
+{ const base = buildWorld; buildWorld = function (...a) { const r = base(...a); try { pierBuild139(); } catch (e) { console.error(e); } return r; }; }
+// sentar no banco: E perto dele; qualquer direção levanta
+{ const base = nearestSpecial; nearestSpecial = function () { const sp = base(); const B = PIER139.bench; if (mode !== 'out' || !B || P.sit139 || P.boat) return sp; const d = Math.hypot(P.x - B.fx, P.z - B.fz) - 0.9; if (d < 0 && (!sp || d < sp.d)) return { d, label: '🪑 Sentar no banco', act: () => sit139(B) }; return sp; }; }
+function sit139(B) { P.sit139 = B; P.sx139 = P.x; P.sz139 = P.z; P.x = B.x; P.z = B.z; P.ang = B.ang; P.fx = Math.sin(B.ang); P.fz = Math.cos(B.ang); sfx('pop'); toast('🌙 Que vista bonita do lago... (ande para levantar)'); }
+function sitUpdate139(dt) { const B = P.sit139; if (!B) return; const mv = keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD || keys.ArrowUp || keys.ArrowDown || keys.ArrowLeft || keys.ArrowRight || Math.hypot(stick.dx, stick.dy) > 0.3;
+  if (mv || mode !== 'out' || P.dead || P.boat) { P.sit139 = null; P.x = B.fx; P.z = B.fz; return; } P.x = B.x; P.z = B.z; P.ang = B.ang; P.moving = false; P.st = Math.min(maxSt(), P.st + dt * 6); }
+
+// ---------- multiplayer direto entre navegadores (fora do claude.ai) ----------
+// No GitHub Pages não existe a capacidade `room`; então o jogo usa o Trystero (WebRTC, sinalização por relays Nostr públicos) com a mesma interface:
+// R.join(nome) → sala com presence(obj), onPeers(fn) e leave(). As amigas só precisam abrir o mesmo link e digitar o mesmo código.
+const P2P139 = { url: 'https://cdn.jsdelivr.net/npm/trystero@0.25.4/dist/nostr.mjs/+esm', mod: null, err: null, on: false };
+function p2pRoomApi139() { return { p2p: true, join: async (name) => { const mod = P2P139.mod || (P2P139.mod = await import(/* @vite-ignore */ P2P139.url)); const room = mod.joinRoom({ appId: 'estrelume-vale-v1' }, name), me = mod.selfId; const peers = {}; let cb = null, mine = null, alive = true;
+    let send = null; const act = room.makeAction('pres'); const recv = (data, id) => { if (!data || typeof data !== 'object') return; peers[id] = { p: data, t: Date.now() }; emit(); };
+    if (Array.isArray(act)) { send = (d) => act[0](d); act[1]((d, id) => recv(d, id)); } else { send = (d) => act.send(d); act.onMessage = (d, meta) => recv(d, meta && (meta.peerId || meta)); }
+    const emit = () => { if (!cb) return; const list = [{ peer: me, isMe: true, sameTab: true, kind: 'user', presence: mine }]; for (const [id, q] of Object.entries(peers)) list.push({ peer: id, isMe: false, kind: 'user', presence: q.p }); try { cb({ peers: list }); } catch (e) { console.error(e); } };
+    const onLeave = (id) => { delete peers[id]; emit(); }; if (Array.isArray(act)) room.onPeerLeave(onLeave); /* API antiga */ else room.onPeerLeave = onLeave; /* API nova (0.25) */
+    const gc = setInterval(() => { if (!alive) return clearInterval(gc); const now = Date.now(); let ch = false; for (const [id, q] of Object.entries(peers)) if (now - q.t > 6000) { delete peers[id]; ch = true; } if (ch) emit(); }, 1500);
+    P2P139.on = true; return { presence: async (o) => { mine = o; try { send(o); } catch (e) {} }, onPeers: (fn) => { cb = fn; }, leave: async () => { alive = false; clearInterval(gc); try { room.leave(); } catch (e) {} P2P139.on = false; } }; } }; }
+setTimeout(() => { if (!MP.R) MP.R = p2pRoomApi139(); }, 4000); /* dentro do claude.ai a `room` chega antes e tem prioridade */
+{ const base = mpJoin; mpJoin = async function (code) { if (MP.R && MP.R.p2p && !MP.onPeersFn) MP.onPeersFn = (ch) => { const list = (ch && ch.peers) || []; const seen = {}; for (const p of list) { if (p && p.isMe) { MP.me = p.peer; continue; } if (!p) continue; const id = p.peer, st = p.presence; if (!id || !st || typeof st.x !== 'number' || typeof st.z !== 'number') continue; seen[id] = 1; MP.peers[id] = Object.assign({}, st, { t: performance.now() }); } for (const id of Object.keys(MP.peers)) if (!seen[id]) removePeer(id); };
+  if (MP.R && MP.R.p2p) toast('🔗 Conectando direto com as amigas (sem servidor)... pode levar alguns segundos.'); return base(code); }; }
+
+// ---------- rosto ajustável (como no criador de personagens de Tomodachi): posição, tamanho, distância e giro de olhos, sobrancelhas e boca ----------
+Object.assign(KM_EYES, { anime: 'De anime', meialua: 'Meia-lua', bolinha: 'Bolinhas grandes', brilhinho: 'Com brilhinho', traco: 'Tracinho', chorao: 'Chorões' });
+Object.assign(KM_MOUTH, { ooo: 'Ó', torto: 'Sorriso torto', dentinhos: 'Dentinhos', gatinho2: 'Gatinho fofo', risada: 'Risada', nenhuma: 'Sem boca' });
+// chaves novas do visual: ey_y ey_s ey_d ey_r (olhos), br_y br_s br_r (sobrancelhas), mo_y mo_s (boca); 0 = padrão
+const FACE139 = [['ey_y', 'Altura dos olhos', -20, 20], ['ey_s', 'Tamanho dos olhos', -30, 40], ['ey_d', 'Distância dos olhos', -20, 24], ['ey_r', 'Giro dos olhos', -25, 25], ['br_y', 'Altura das sobrancelhas', -16, 16], ['br_s', 'Tamanho das sobrancelhas', -30, 40], ['br_r', 'Giro das sobrancelhas', -30, 30], ['mo_y', 'Altura da boca', -18, 18], ['mo_s', 'Tamanho da boca', -35, 45]];
+const FACEK139 = FACE139.map((q) => q[0]);
+const FACEC139 = { keys: [], max: 28 };
+{ const base = kmFaceTex; kmFaceTex = function (lk) { const adj = FACEK139.some((k) => +lk[k]); if (!adj) return base(lk); const key = 'adj|' + [lk.ey, lk.ec, lk.br, lk.mo, lk.fc, lk.hc, ...FACEK139.map((k) => Math.round(+lk[k] || 0))].join('|'); if (KM.face[key]) return KM.face[key];
+  const v = (k) => (+lk[k] || 0) / 100, lay = (o) => base(Object.assign({}, lk, o)).image, eyes = lay({ br: 'nenhuma', mo: 'nenhuma', fc: 'none' }), brows = lk.br === 'nenhuma' ? null : lay({ ey: 'nenhum', mo: 'nenhuma', fc: 'none' }), mouth = lay({ ey: 'nenhum', br: 'nenhuma', fc: 'none' }), cheek = (lk.fc || 'none') === 'none' ? null : lay({ ey: 'nenhum', br: 'nenhuma', mo: 'nenhuma' });
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); if (cheek) x.drawImage(cheek, 0, 0);
+  // cada metade (olho ou sobrancelha esquerda/direita) é recortada e redesenhada com o ajuste, espelhando o giro
+  const part = (img, cx, cy, w, h, dx, dy, s, rot, mir) => { x.save(); x.translate(cx + dx * mir, cy + dy); x.rotate(rot * mir); x.scale(s, s); x.drawImage(img, cx - w / 2, cy - h / 2, w, h, -w / 2, -h / 2, w, h); x.restore(); };
+  const EYL = [76.5, 132.8], EYR = [179.5, 132.8], BRY = 86, ed = v('ey_d') * 60, ey = -v('ey_y') * 60, es = 1 + v('ey_s'), er = v('ey_r') * 0.9;
+  part(eyes, EYL[0], EYL[1], 104, 96, -ed, ey, es, er, 1); part(eyes, EYR[0], EYR[1], 104, 96, ed, ey, es, -er, 1);
+  if (brows) { const by = -v('br_y') * 50 + ey * 0.5, bs = 1 + v('br_s'), br = v('br_r') * 0.9; part(brows, EYL[0], BRY, 100, 44, -ed, by, bs, br, 1); part(brows, EYR[0], BRY, 100, 44, ed, by, bs, -br, 1); }
+  { const my = -v('mo_y') * 50, ms = 1 + v('mo_s'); x.save(); x.translate(128, 205 + my); x.scale(ms, ms); x.drawImage(mouth, 0, 158, 256, 98, -128, -47, 256, 98); x.restore(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; KM.face[key] = t; FACEC139.keys.push(key);
+  // libera rostos antigos dos ajustes (arrastar o controle cria vários), menos os que estão em uso
+  while (FACEC139.keys.length > FACEC139.max) { const old = FACEC139.keys.shift(), tx = KM.face[old]; if (!tx) continue; if (FACEC139.inUse && FACEC139.inUse(tx)) { FACEC139.keys.push(old); break; } delete KM.face[old]; const m = KM.faceMat && KM.faceMat[tx.uuid]; if (m) { m.dispose(); delete KM.faceMat[tx.uuid]; } tx.dispose(); }
+  return t; }; }
+FACEC139.inUse = (tx) => { let used = false; for (const o of [player && player.obj, SC && SC.obj]) if (o && o.userData && o.userData.kmFace && o.userData.kmFace.material && o.userData.kmFace.material.map === tx) used = true; return used; };
+{ const base = kmTabBody; kmTabBody = function (tab, lk, fromTitle) { const h = base(tab, lk, fromTitle); if (tab !== 'rosto' || !h) return h;
+  return h + `<div class="crl">Ajuste fino do rosto</div><div class="fsl139">${FACE139.map(([k, n, a, b]) => `<label><span>${n}</span><input type="range" min="${a}" max="${b}" step="1" value="${+lk[k] || 0}" data-fs139="${k}"></label>`).join('')}<button class="btn sm" data-fs139r="1">Rosto padrão</button></div>`; }; }
+document.addEventListener('input', (e) => { const el = e.target; if (!el || !el.dataset || !el.dataset.fs139 || !crLook) return; crLook[el.dataset.fs139] = +el.value; FACE139.t = (FACE139.t || 0) + 1; const n = FACE139.t;
+  requestAnimationFrame(() => { if (n !== FACE139.t) return; try { if (SC.obj) fofaFace(SC.obj, Object.assign({}, KM_DEF, crLook)); } catch (er) { console.error(er); } }); });
+document.addEventListener('change', (e) => { const el = e.target; if (el && el.dataset && el.dataset.fs139) { try { sfx('sel_face'); } catch (er) {} } });
+document.addEventListener('click', (e) => { const el = e.target && e.target.closest && e.target.closest('[data-fs139r]'); if (!el || !crLook) return; for (const k of FACEK139) crLook[k] = 0; document.querySelectorAll('[data-fs139]').forEach((q) => (q.value = 0)); try { if (SC.obj) fofaFace(SC.obj, Object.assign({}, KM_DEF, crLook)); sfx('sel_pop'); } catch (er) {} });
+
+// ---------- cabelos novos (inspirados em listas de penteados de jogos de vida) ----------
+const NEWKH139 = { h28: { b: 'h5', n: 'Chanel com franja reta' }, h29: { b: 'fe', n: 'Longo com franja cortina' }, h30: { b: 'ff', n: 'Maria-chiquinha baixa' }, h31: { b: 'ma', n: 'Curtinho bagunçado' }, h32: { b: 'fa', n: 'Coque alto com mechas' }, h33: { b: 'fb', n: 'Rabo de lado com laço' } };
+for (const [k, v] of Object.entries(NEWKH139)) KM_HEADS[k] = v.n; WARD_FREE.kh.push('h28', 'h31'); Object.assign(WARD_PRICE.kh, { h29: 180, h30: 160, h32: 200, h33: 190 });
+{ const base = fofaParts; fofaParts = function (lk) { const nh = NEWKH139[lk.kh]; if (!nh) return base(lk); const P2 = base(Object.assign({}, lk, { kh: nh.b }));
+  const A = (b, g, c, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) => P2.push([b, g, c, x, y, z, sx, sy, sz, rx, ry, rz, null]);
+  const hc = kmHex(HAIRC, lk.hc, KM_HAIRC[lk.hc] || null) || KM_HAIRC.castanho, hl = hairHi(hc, 1), HC = [0, 0.83, -0.01], SH = (el, az, k = 1.06) => [HC[0] + Math.sin(el) * Math.sin(az) * 0.335 * k, HC[1] + Math.cos(el) * 0.31 * k, HC[2] + Math.sin(el) * Math.cos(az) * 0.31 * k];
+  const QL = new THREE.Quaternion(), QT = new THREE.Quaternion(), EL = new THREE.Euler(), DN = new THREE.Vector3(0, -1, 0), UPY = new THREE.Vector3(0, 1, 0);
+  const L = (gk, col, p, d, len, w, tw = 0, th = 1) => { const v = new THREE.Vector3(d[0], d[1], d[2]).normalize(); QL.setFromUnitVectors(DN, v); QT.setFromAxisAngle(UPY, tw); QL.multiply(QT); EL.setFromQuaternion(QL); A('head', gk, col, p[0], p[1], p[2], w, len, w * th, EL.x, EL.y, EL.z); };
+  const bow = (x, y, z, col, s2 = 1) => { for (const m of [-1, 1]) A('head', 'ball', col, x + m * 0.07 * s2, y, z, 0.075 * s2, 0.05 * s2, 0.035 * s2, 0, 0, m * 0.5); A('head', 'ball', '#' + new THREE.Color(col).multiplyScalar(0.85).getHexString(), x, y, z, 0.03 * s2, 0.03 * s2, 0.03 * s2); };
+  switch (lk.kh) {
+    case 'h28': for (let i = -3; i <= 3; i++) { const az = i * 0.2; L('lock', i % 2 ? hl : hc, SH(0.5, az, 1.05), [Math.sin(az) * 0.05, -1, 0.35], 0.16, 0.085, 0, 0.6); } break; /* franja reta de chanel */
+    case 'h29': for (const m of [-1, 1]) for (let i = 0; i < 3; i++) { const az = m * (0.3 + i * 0.16); L('lock', i ? hc : hl, SH(0.55, az, 1.05), [m * 0.45, -1, 0.3], 0.2 + i * 0.03, 0.08, m * 0.3, 0.6); } break; /* franja cortina, aberta no meio */
+    case 'h30': for (const m of [-1, 1]) { L('wave', hc, SH(1.75, m * 1.55, 1.0), [m * 0.15, -1, -0.1], 0.32, 0.09, 0, 0.8); bow(m * 0.33, 0.68, -0.05, '#ff8fbd', 0.75); } break; /* chiquinhas baixas com lacinhos */
+    case 'h31': for (let i = 0; i < 9; i++) { const az = (i / 9) * Math.PI * 2, el = 0.35 + (i % 3) * 0.15; L('tip', i % 2 ? hl : hc, SH(el, az, 1.04), [Math.sin(az) * 0.8, 0.5, Math.cos(az) * 0.8], 0.11, 0.07, i, 0.6); } break; /* pontinhas bagunçadas */
+    case 'h32': A('head', 'ball', hc, 0, 1.2, -0.06, 0.13, 0.12, 0.13); for (let i = 0; i < 5; i++) { const az = (i / 5) * Math.PI * 2; L('lock', i % 2 ? hl : hc, [Math.sin(az) * 0.08, 1.24, -0.06 + Math.cos(az) * 0.08], [Math.sin(az), -0.6, Math.cos(az)], 0.16, 0.06, 0, 0.6); } A('head', 'ring', '#ffd45a', 0, 1.13, -0.06, 0.1, 0.1, 0.1, Math.PI / 2, 0, 0); break; /* coque alto com mechas */
+    case 'h33': L('wave', hc, SH(1.55, -1.5, 1.0), [-0.2, -1, -0.05], 0.5, 0.11, 0, 0.8); bow(-0.32, 0.95, 0.02, '#c9a2ff', 0.9); break; /* rabo de lado com laço */
+  }
+  return P2; }; }
+// estampa como textura (nítida, sem serrilhado): uma textura por estampa+cores, pintada pelo patColor numa grade fina e aplicada pelo uv da peça
+const PATX139 = { tex: {}, mat: {}, warm: null };
+function patTex139(p) { const key = [p.t, p.base, p.c2].join('|'); if (PATX139.tex[key]) return PATX139.tex[key]; const Wd = 512, Ht = 256, c = document.createElement('canvas'); c.width = Wd; c.height = Ht; const x = c.getContext('2d'), im = x.createImageData(Wd, Ht), d = im.data;
+  const base = new THREE.Color(p.base), out = new THREE.Color(), lp = new THREE.Vector3(), pt = { t: p.t, c2: new THREE.Color(p.c2) }, cs = new THREE.Color();
+  for (let j = 0; j < Ht; j++) { const v = 1 - (j + 0.5) / Ht; for (let i = 0; i < Wd; i++) { const a = (i + 0.5) / Wd, ang = (a - 0.5) * Math.PI * 2; lp.set(Math.cos(ang), v * 2 - 1, Math.sin(ang)); patColor(pt, base, lp, out); cs.copy(out).convertLinearToSRGB(); const o = (j * Wd + i) * 4; d[o] = Math.round(cs.r * 255); d[o + 1] = Math.round(cs.g * 255); d[o + 2] = Math.round(cs.b * 255); d[o + 3] = 255; } }
+  x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.ClampToEdgeWrapping; t.anisotropy = 4; t.userData.keep = 1; return (PATX139.tex[key] = t); }
+/* o patColor trabalha com cores lineares (Color.set converte de sRGB): cada texel volta para sRGB antes de ir para a textura */
+function patMat139(p) { const t = patTex139(p), k = t.uuid; return PATX139.mat[k] || (PATX139.mat[k] = new THREE.MeshLambertMaterial({ map: t })); }
+// uma malha escondida com estampa deixa o shader pronto desde o carregamento
+{ const m = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), patMat139({ t: 'listras', base: '#ff8fbd', c2: '#ffffff' })); m.position.set(-60, -30, -60); m.castShadow = true; m.userData.keep = 1; scene.add(m); PATX139.warm = m; }
+// o banco e as lanternas do píer, a sombra dos peixes e o cartão da enciclopédia são criados no carregamento (shaders prontos)
+{ const base = v14Update; v14Update = function (dt) { base(dt); try { stuck139(dt); saveWatch139(dt); fishSwim139(dt); sitUpdate139(dt); FSH139.t -= dt; if (FSH139.t <= 0) { FSH139.t = 2; decorGift139(); } } catch (e) { console.error(e); } }; }
+{ const base = resetTransient; resetTransient = function (...a) { const r = base(...a); try { P.sit139 = null; CAM139.drag = null; CAM139.touch = null; FSH139.hook = null; } catch (e) {} return r; }; }
+
 /* =================== início, título e carregamento =================== */
 let ready = false;
 function resetWorldState() {
@@ -8681,4 +9019,4 @@ const iconsP = loadIcons(); loadAll((p) => { $('loadbar').style.width = Math.rou
   try { lightPoolInit(); precompileAll(); } catch (e) { console.error(e); } $('loading').classList.add('off'); ready = true; renderTitle();
 });
 requestAnimationFrame(frame);
-window.__g = { ARN138, arenaStart138, arenaEnd138, openArena138, __camLook: camLook, set camDist(v) { camDist = v; }, get camDist() { return camDist; }, BIO137, BIOT, MT137, BLK137, LOCK137, BOW137, NAV137, navPath137, lockToggle137, SIGN137, HIVE137, FP137, CTR137, get arrows132() { return arrows132; }, get regionName() { return regionName; }, get wander() { return wander; }, get enemyFor() { return enemyFor; }, SKUI136, skLearn136, skTab136, skSelect136, get say() { return say; }, get closeDecor() { return closeDecor; }, FURNo: FURN, get canPlace() { return canPlace; }, get decorAction() { return decorAction; }, BACK133, WSK133, SKX133, get SKILLSo() { return SKILLS; }, get useSkill() { return useSkill; }, get glowAlign133() { return glowAlign133; }, NEWKH132, NEWKB132, ANIM132, WPN132, wpnSet132, get pwSel() { return pwSel; }, LESM132, LES132, TEACH132, get lesAvail132() { return lesAvail132; }, get ev() { return ev; }, get goalUI() { return goalUI; }, A132, TUT132, get rosaStart() { return rosaStart; }, get rosaCleanup() { return rosaCleanup; }, get RBo() { return RB; }, get regionAt() { return regionAt; }, PROP132, GRIP132, OUT132, DISH131, COOK131, openCook131, startCook131, cookSpot131, get nearestSpecial() { return nearestSpecial; }, get eatItem() { return eatItem; }, WISH131, VIB131, get rebuildFurniture() { return rebuildFurniture; }, HOME_LV, get IW() { return IW; }, get IH() { return IH; }, RX, RZ, STEP131, stepAt131, STEPH131, get heldObj() { return heldObj; }, get fofaRef() { return fofaRef; }, KM_PAT, KM_SHOE, get KM_BODIESo() { return KM_BODIES; }, EMOTEX30, NPCLOOK, EMO30, EXPR30, npcExpress, CR30, get crLook() { return crLook; }, get GCVo() { return GCV; }, kmFaceTex, SKINS, HAIRC, KCOL, KM_ECOL, KM_DEF, get KM_HEADSo() { return KM_HEADS; }, LPo: LP, composerX: composer, bloomX: bloom, gradeX: grade, PERF29, get CULLo() { return CULL; }, get sfx() { return sfx; }, get tone() { return tone; }, get moveC() { return moveC; }, LOW26, resetTransient, PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };
+window.__g = { roundAt139: (x, z) => roundAt139(x, z), openCreatorX: (t) => openCreator(t), mpJoinX: (c) => mpJoin(c), get dockStart() { return dockStart; }, CAM139, STUCK139, SAVE139, FISH139, FSH139, PIER139, PATX139, P2P139, NEWKH139, FACE139, HOMEGLOW139, ROUND139, freeSpot139, solidOut139, fishPick139, fishHab139, openFishDex139, patTex139, autoSave139, decorGift139, camRel139, get camYaw() { return CAM139.yaw; }, ARN138, arenaStart138, arenaEnd138, openArena138, __camLook: camLook, set camDist(v) { camDist = v; }, get camDist() { return camDist; }, BIO137, BIOT, MT137, BLK137, LOCK137, BOW137, NAV137, navPath137, lockToggle137, SIGN137, HIVE137, FP137, CTR137, get arrows132() { return arrows132; }, get regionName() { return regionName; }, get wander() { return wander; }, get enemyFor() { return enemyFor; }, SKUI136, skLearn136, skTab136, skSelect136, get say() { return say; }, get closeDecor() { return closeDecor; }, FURNo: FURN, get canPlace() { return canPlace; }, get decorAction() { return decorAction; }, BACK133, WSK133, SKX133, get SKILLSo() { return SKILLS; }, get useSkill() { return useSkill; }, get glowAlign133() { return glowAlign133; }, NEWKH132, NEWKB132, ANIM132, WPN132, wpnSet132, get pwSel() { return pwSel; }, LESM132, LES132, TEACH132, get lesAvail132() { return lesAvail132; }, get ev() { return ev; }, get goalUI() { return goalUI; }, A132, TUT132, get rosaStart() { return rosaStart; }, get rosaCleanup() { return rosaCleanup; }, get RBo() { return RB; }, get regionAt() { return regionAt; }, PROP132, GRIP132, OUT132, DISH131, COOK131, openCook131, startCook131, cookSpot131, get nearestSpecial() { return nearestSpecial; }, get eatItem() { return eatItem; }, WISH131, VIB131, get rebuildFurniture() { return rebuildFurniture; }, HOME_LV, get IW() { return IW; }, get IH() { return IH; }, RX, RZ, STEP131, stepAt131, STEPH131, get heldObj() { return heldObj; }, get fofaRef() { return fofaRef; }, KM_PAT, KM_SHOE, get KM_BODIESo() { return KM_BODIES; }, EMOTEX30, NPCLOOK, EMO30, EXPR30, npcExpress, CR30, get crLook() { return crLook; }, get GCVo() { return GCV; }, kmFaceTex, SKINS, HAIRC, KCOL, KM_ECOL, KM_DEF, get KM_HEADSo() { return KM_HEADS; }, LPo: LP, composerX: composer, bloomX: bloom, gradeX: grade, PERF29, get CULLo() { return CULL; }, get sfx() { return sfx; }, get tone() { return tone; }, get moveC() { return moveC; }, LOW26, resetTransient, PERF27, INTRO, introAdvance, FOG27, ARENA26, PK26, doJump, JUMP, DIAL, houseModel, TSH, playIntro: () => playIntro(), get CUT() { return CUT; }, openMenuX: (t) => openMenu(t), PARTY, partyUpdate, get MPo() { return MP; }, openPhone, RING, ringOpen, ringClose, uiApply, INPUT, lookKM, FOFA, DOORGLOW, npcAway, shopOpen, fofaBuild, kmOrder, VIEWS, viewEnjoy, CAMPS, campOpen, makeElite, get EN() { return EN; }, mkEnemy, GH23, GH, LOTS22, FARM22, AREAS22, openLot, lotGrant, clearDebris, debrisAt, get FARMU() { return FARM.U; }, GSPLAT, FISH22, BENCH22, HOME22, homeCycle, benchBuild, openBenchBuild, startFishing: (x, y) => startFishing(x, y), fishPress: () => fishPress(), get tAt() { return tAt; }, rollG, WR, heldObj, thumb, kmClips, kmThumb, THUMB, KM_HEADS, KM_BODIES, KM, kmPart, kmLook, KM_VAR, get setOutfit() { return setOutfit; }, BUNT, PATHCLEAR, SIGNFIX, FUNSIGNS, fixSigns, NPCLOOK, get rosaC() { return rosaC; }, get ticoC() { return ticoC; }, SHOPS, OVL, openArms, DUEL, duelAsk, weaponAttack, TOOLS, openCraft, openReform, HOMESIZE: () => [IW, IH, S.homeLv], RECIPES, AE, ambTargets, get titleOn() { return titleOn; }, get AC() { return AC; }, GCV, FACES, MP, get OPENED_POCKETS() { return OPENED_POCKETS; }, ANCH: ACC_ANCH, equipSlots, BSHOT, get boatCd() { return boatCd; }, setBoatRot: (r) => { BOAT_ROT = r; if (SEA.boat) SEA.boat.children[0].rotation.y = r; }, KR, SEA, boardBoat, leaveBoat, krakenStart, boatFire, NLORE, pickChoice, seaDockSpot, SC, PVP, pvpEnter, pvpLeave, decor14, rosa, RB, ADM, WX, ROOMS, doorList, enterRoom, openAdmin, openMP, rosaStart, eatBest, refreshBanners, moonOf, AUD2, resolveOverlaps, TCO, AUDIT, openFacade, applyFacade, NEV, FOGR, regionOpen, hourNow, DAYLEN, recolorRoof, CHARMAP, REMAP, enterShop, exitShop, grantTools, openFeedback, npcMenu, drop, openSkills, __spawnSlimes: () => spawnSlimes(), __setOutfit: () => setOutfit(true), __refreshForage: () => refreshForage(), __spawnDailyStars: () => spawnDailyStars(), __resetWorldState: () => resetWorldState(), RTEX, HEADCOL, get slimes2() { return slimes; }, LM, TOTEMS, get player() { return player; }, get handProp() { return handProp; }, THREE, renderer, S, P, SET, enterCave, exitCave, cave, openAtelie, openForge, openDiary, showStory, critters, expandFarm, questTalk, SQ, LORE, tryDoor, mineAt, CXo, CZo, ZONES, applyLook, lookFull, HELD_ROT, updateHand, toggleBike, gear, MODELS, get boss() { return boss; }, spawnBoss, wishApproach, BOSSPOS, world, solidAt, obj, I, W, H, die, respawn, dodge, swordAttack, releaseCharge, gainXp, npcs, openCreator, openFarm, closeFarm, farmAction, get farmEd() { return farmEd; }, scPower, wishAdvance, get wishQ() { return wishQ; }, deliverNpc, talkNpc, npcReq, BEACHY, FARM, startFrom, doWish, openWish, openAlbum, openBag, openHelp, openShop, openMap, openMenu, enterHouse, exitHouse, openDecor, useTool, interact, setSlot, keys, get slimes() { return slimes; }, newDay, closeModal, advDlg, get dlg() { return dlg; }, roll, BANNERS, talkRosa, TUT, get ready() { return ready; }, get mode() { return mode; }, camera, scene, applyQuality, writeSlot, readSlot, setPet, damageSlime, get decor() { return decor; } };

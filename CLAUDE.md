@@ -275,3 +275,29 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
   - Os bichos levam `e.arena138`. O embrulho de `die` encerra o desafio sem morte, e `spawnSlimes`, `resetTransient` e `snapshot` também tratam o desafio.
   - O recorde fica em `S.arn138` (`best`, `bestT`, `wins`, `hardWins`) e o painel é o `#arena138`.
   - Onda nova: uma entrada em `WAVES138`.
+
+## Colisão redonda, câmera livre, pesca, rosto ajustável e P2P (v1.39)
+
+- Colisão ao ar livre: o `solidW` passa por `solidOut139`. Tile sólido isolado (sem vizinho sólido) de um tipo em `ROUND139` (árvore, pedra, poste, `part`...) vira círculo; `roundAt139(tx, tz)` dá o raio (0 = quadrado).
+  - O `moveC` base testa círculo com círculo nesses tiles (`hit`) e deixa sair quem já está encostada (não afunda mais e o centro fica livre). Vale para moradores e bichos.
+  - O embrulho de `moveC` da v1.39 (só a personagem) desliza pela tangente quando trava num sólido redondo e tenta desvios.
+  - `stuck139` solta a personagem no tile livre mais perto (`freeSpot139`) se o centro cair num sólido. O embrulho de `wander` faz o mesmo com moradores; o A* (`navPath137`) cobra mais perto de paredes.
+- Câmera (`CAM139`): `yaw`/`pit` com alvo (`yawT`/`pitT`). O ramo de fora do `cam` guarda o pivô (`CAM139.px/pz`) e `cam139(dt)` gira o `camPos` em volta dele. Só ao ar livre (`camOn139`).
+  - Entrada: botão direito arrastando (captura no `window`; clique sem arrastar chama `interact`), `,`/`.`, `Home`, analógico direito, dois dedos. Zoom: rodinha (`camZoom139`), `+`/`−`, pinça.
+  - O movimento usa `camRel139(ix, iz)` em todo lugar que lê WASD/analógico (andar, esquiva, dash, `softAim131`). Código novo que leia direção da tela deve passar por ele.
+- Pesca: espécies em `FISH139` (`r` raridade, `hab` lago/mar/oasis/rio, `h` hora, `chuva`, `cm`, `cor`, `f` forma do ícone). `fishHab139` decide o lugar e `fishPick139` sorteia.
+  - O embrulho de `fishPress` grava a espécie em `f.sp139`/`f.item`; o minigame mais calmo está no embrulho de `updateFishing` (`ease139`). O registro fica em `S.fish139[k] = { n, max, d }`.
+  - Ícones dos peixes são desenhados em canvas (`fishIcon139`, também a silhueta); o `m` dos itens novos entra depois do `buildThumbs`.
+  - Sombras nadando: `FSH139` (uma `InstancedMesh` na `scene`, fora do `world`, com `noGH`). Um peixe (`FSH139.hook`) vem até a boia e adianta a mordida.
+  - Enciclopédia: `openFishDex139` (app `fishdex` no Estrelofone).
+- Estampas: o `fofaBuild` da v31 manda as peças estampadas para uma malha à parte (`osso#p`, propriedade `_pat`) com uv. O `kmLook` usa `patMat139(_pat)`, com textura de `patTex139` (o `patColor` pintado numa grade 512×256, cache por estampa e cores).
+- Rosto ajustável: chaves `ey_y`, `ey_s`, `ey_d`, `ey_r`, `br_y`, `br_s`, `br_r`, `mo_y`, `mo_s` (`FACE139`, 0 = padrão). Com algum ajuste, o embrulho de `kmFaceTex` desenha olhos, sobrancelhas, boca e bochechas em camadas (olho `nenhum`, boca `nenhuma`) e recompõe com o ajuste.
+  - Os controles ficam no fim da aba Rosto (`data-fs139`) e atualizam só o rosto da prévia (`fofaFace`).
+  - Rostos compostos antigos são liberados (`FACEC139`).
+- Penteados novos `h28`–`h33` em `NEWKH139`, do mesmo jeito que os da v1.32.
+- Paleta: o embrulho de `vib131` passa cada cor por `pal139`, que puxa o matiz para `PAL139.hues` e comprime saturação e brilho. `?nopal=1` desliga.
+- Píer do lago: `pierBuild139` (num embrulho do `buildWorld`) monta postes, correntes, 4 lanternas com luz do pool (`lampLights`) e o banco (`PIER139.bench`, `obj` `part` `banco139`). Sentar: `sit139`/`sitUpdate139` (`P.sit139` usa a pose `Sit_Chair_Idle`).
+- Loja do Tico no tutorial: a loja abre à noite nesse passo (condição no embrulho de `enterShop` da v24), o catálogo abre depois da fala (embrulho de `teachTick132`) e `decorGift139` dá um banquinho a quem chega ao passo de decorar sem móvel.
+- Save: `autoSave139` (a cada 15 s, `visibilitychange`, `beforeunload`, mudança de visual via `saveWatch139` e logo depois do `startFrom`). Cópia de segurança em `ve3d-auto-b`, usada pelo `readSlot` se o principal falhar.
+- Luz da porta da casa da jogadora: `homeGlow139` acha o vão entre os batentes por raios (cai em `H1.x + 2` se não achar).
+- Multiplayer fora do claude.ai: `p2pRoomApi139` imita a `room` (`join` → `presence`, `onPeers`, `leave`) com o Trystero 0.25.4 (`P2P139.url`, Nostr). Só entra se a `room` do claude.ai não aparecer em 4 s. Teste com duas abas: `__g.mpJoinX('codigo')` nas duas.
