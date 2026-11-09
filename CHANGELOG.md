@@ -2,6 +2,42 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.39: nada de ficar presa, câmera livre, pesca nova e rosto ajustável
+**Colisões e caminhos**
+- Árvores, pedras, postes, Pedras do Vento e outros sólidos soltos colidem como círculo: dá para contornar sem enroscar na quina, e andando de frente para eles a personagem escorrega para o lado.
+- Quem fica encostada num sólido sempre consegue sair andando (vale para você, os moradores e os bichos). Se o centro da personagem cair dentro de um sólido, ela é solta no lugar livre mais perto.
+- Moradores que nasciam encostados (o Pipo na borda do Poço, a Iris perto da cerca) são postos num lugar livre, e o caminho deles evita passar colado em paredes.
+
+**Câmera**
+- Ao ar livre a câmera gira e inclina: arraste com o botão direito (clique sem arrastar continua interagindo), use `,` e `.`, o analógico direito ou dois dedos no celular. `Home` volta ao ângulo padrão.
+- Zoom pela rodinha do mouse, por `+` e `−` e por pinça no celular. Shift + rodinha troca a ferramenta.
+- O movimento acompanha a câmera: "para cima" é sempre para a frente da tela.
+
+**Pesca**
+- 15 espécies (12 novas), cada uma com lugar (lago, mar, oásis, riachos das montanhas), hora e raridade. A Enguia Faísca aparece mais na chuva, e espécie que você ainda não tem aparece um pouco mais.
+- Minigame mais tranquilo: barrinha mais larga, peixe 25% mais lento, medidor que enche mais rápido e esvazia mais devagar, e o ❗ espera 1,7 s.
+- Sombras de peixes nadam na água, e um deles vem até a boia antes de morder.
+- Cada peixe tem tamanho em centímetros, com recorde por espécie.
+- **Enciclopédia dos Peixes** (Estrelofone → Peixes): silhuetas das espécies que faltam, onde e quando cada uma aparece, quantos você pescou e o recorde. Espécie nova vale +3⭐ e completar vale +100⭐.
+
+**Personagem**
+- Estampas da blusa e do vestido viraram textura: bolinhas, corações, estrelas e flores saem nítidos, sem serrilhado.
+- Ajuste fino do rosto no criador: altura, tamanho, distância e giro dos olhos, altura, tamanho e giro das sobrancelhas, e altura e tamanho da boca.
+- Formatos novos: 6 de olhos, 5 de sobrancelhas e 6 de boca (com "sem boca").
+- 6 penteados novos: chanel com franja reta, longo com franja cortina, maria-chiquinha baixa, curtinho bagunçado, coque alto com mechas e rabo de lado com laço.
+
+**Vale**
+- Píer do lago iluminado: postes com lanterna nas pontas, corrimão de correntes e um banco na margem para sentar e ver o lago.
+- Paleta única nos modelos de cenário: KayKit, Kenney e Quaternius puxam o matiz para as mesmas cores do vale e ficam com saturação e brilho parecidos (`?nopal=1` mostra as cores antigas).
+- A luz da porta da sua casa fica no centro do vão da porta.
+
+**Correções**
+- Missão da Lojinha do Tico: durante esse passo a loja abre também à noite, o catálogo abre sozinho depois da explicação, e quem só comprou lanche ganha um banquinho para o passo de decorar.
+- Save automático: salva logo depois de criar a personagem, quando o visual muda, ao trocar de aba ou fechar a página e a cada 15 s, com uma cópia de segurança.
+
+**Amigos**
+- No GitHub Pages (fora do claude.ai) o Estrelofone mostra **Amigos** e a conexão é direta entre os navegadores (WebRTC pelo Trystero). As amigas abrem o mesmo link e digitam o mesmo código.
+
 ## v1.38: Arena dos Campos de verdade
 - **Quadro na entrada** (tecla E) explicando a arena, com o Desafio das Ondas, os duelos com amigas e dicas de combate. Na primeira visita aparece um aviso.
 - **Desafio das Ondas:** um modo para quem joga sozinha.
