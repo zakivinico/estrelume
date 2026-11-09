@@ -301,3 +301,13 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Save: `autoSave139` (a cada 15 s, `visibilitychange`, `beforeunload`, mudança de visual via `saveWatch139` e logo depois do `startFrom`). Cópia de segurança em `ve3d-auto-b`, usada pelo `readSlot` se o principal falhar.
 - Luz da porta da casa da jogadora: `homeGlow139` acha o vão entre os batentes por raios (cai em `H1.x + 2` se não achar).
 - Multiplayer fora do claude.ai: `p2pRoomApi139` imita a `room` (`join` → `presence`, `onPeers`, `leave`) com o Trystero 0.25.4 (`P2P139.url`, Nostr). Só entra se a `room` do claude.ai não aparecer em 4 s. Teste com duas abas: `__g.mpJoinX('codigo')` nas duas.
+
+## Criador visual com prévia (v1.40)
+
+- O embrulho de `kmChips` troca os chips de texto por cartões com miniatura (`.thg140`/`.th140`) nas chaves de `TH139.keys` (`kh`, `kb`, `ey`, `br`, `mo`, `kp`). As outras chaves (cores, sapato) continuam como antes.
+- Miniaturas: `thSrc140(key, k)` com cache em `TH139.cache`, por opção e cores da personagem (`thKey140`).
+  - Rosto (`faceIcon140`, recorte das camadas do `kmFaceTex`) e estampa (`patIcon140`) saem na hora.
+  - Penteado e roupa usam `kmThumb` numa fila (`thPump140`, um por vez) que para quando o criador fecha. A `img[data-th140]` é trocada quando fica pronta.
+- Prévia: `pvShow140(el)` aplica `kmLook` no `SC.obj` com a opção do cartão (só se for o criador com a base `km`) e mostra o rótulo `.pv140`. `pvHide140` volta ao `crLook`.
+  - Disparada por `pointerover` (não no toque) e `focusin`; o clique em item trancado prova por 3 s.
+- A `.cr3d` do criador é `sticky` para continuar visível ao rolar as opções.
