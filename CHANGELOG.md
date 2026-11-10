@@ -2,6 +2,53 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.41: vendinha de verdade, fazenda por dias, projetos da vila e consertos
+**Vila e economia**
+- **Vendinha da Dona Mel:**
+  - modelo novo da barraca: toldo listrado com babado, balcão de tábuas, caixotes de verdura, balança, placa e lanternas;
+  - a Dona Mel fica atrás do balcão, olha para você e acena;
+  - você escolhe o que vender (quantidade por item, "Todos", "Vender selecionados" ou "Vender tudo");
+  - as **sementes são compradas ali** e plantar gasta semente, não moedas. O jogo novo começa com algumas.
+- **Pasto Feliz desbloqueável:** compra-se na Vendinha (ou na placa do pasto) a partir do nível 3. Ovelhas, porquinhos e vaquinhas são comprados um a um. Saves antigos ficam com o pasto e os bichos que já tinham.
+- **Projetos da Vila** (Estrelofone → Vila): canteiros de flores, postes de luz, bancos à sombra, chafariz, coreto e estátua.
+  - Cada projeto pede materiais e moedas e tem um nível mínimo.
+  - Construir dá XP e Desejos, e o enfeite aparece em volta da praça para sempre.
+- Bancos novos (ripas, encosto curvo, pés de ferro) na praça, na Vila Girassol e no píer.
+
+**Fazenda**
+- As plantas crescem **por dias**: cenoura 2, tomate 3 (rebrota) e abóbora 4.
+- Cada dia só conta se a planta foi regada (a chuva também rega).
+- A cenoura do tutorial continua crescendo na hora, para o tutorial não travar.
+
+**Inimigos e progressão**
+- Os bichos voltam depois de 4 a 7 minutos (antes era menos de 1).
+- Bichos de fora não entram mais na arena; só os do Desafio das Ondas.
+- Cada nível do bicho dá mais vida, dano e XP. Ao entrar numa área muito acima do seu nível, aparece um aviso.
+- Todo bicho mostra um **"!"** enquanto prepara um ataque. Os que não são gelatina também ganharam animações: respiram parados, gingam andando, encolhem antes de atacar e tremem ao apanhar.
+- Subir de nível mostra o que melhorou e o que vem no próximo nível (pasto, projetos maiores).
+
+**Pesca**
+- Minigame refeito:
+  - o peixe nada em curvas largas e muda de faixa com calma, sem arrancadas;
+  - a barra responde de forma suave;
+  - o medidor enche rápido e esvazia devagar.
+- Os peixinhos que pulavam no lago às vezes ficavam boiando parados: agora sobra só a marola.
+- Item que cai na água vai para a mochila.
+
+**Personagem e interface**
+- Óculos encaixados nos olhos da Fofinha.
+- Os ajustes do rosto agora são desenhados em vetor, nítidos e proporcionais. A sobrancelha sobe quando o olho cresce.
+- O visual criado é o que fica: um conjunto do Álbum não passa mais por cima dele, e o retrato da HUD acompanha.
+- A qualidade gráfica escolhida fica fixa (o ajuste automático é desligado).
+- Barras da HUD mais altas, com o número dentro, e o nível ao lado do XP.
+- Ícones em pixel mais fofos: contorno colorido, cantos redondos, brilho e sombra.
+- Câmera com giro mais macio e uma bússola perto do mapa enquanto está girada (clique para voltar).
+- Sons iguais tocados ao mesmo tempo viram um só.
+
+**Amigos**
+- A arma de cada amiga aparece nas costas dela.
+- A partida fica aberta enquanto houver alguém nela e você volta para ela se recarregar a página. Quando a última sai, ela é encerrada.
+
 ## v1.40: criador visual com prévia na personagem
 - Penteados, roupas, olhos, sobrancelhas, bocas e estampas viraram cartões com miniatura, nas cores da sua personagem. As miniaturas 3D (penteado e roupa) aparecem aos poucos, sem travar a janela.
 - Passar o mouse (ou o foco do teclado e do controle) num cartão veste a opção na prévia 3D, com o nome e "clique para escolher"; ao sair, volta o que estava escolhido.
