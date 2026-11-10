@@ -340,3 +340,24 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Câmera: giro mais macio no `cam139`; a bússola `#cam141` (`camUi141`) aparece quando a câmera está girada.
 - HUD: o `hudHearts` novo põe o número dentro das barras (`.v141`); os IDs `#stbar`/`#sttxt` continuam.
 - Multiplayer: a presença leva `wm` (modelo da espada). `mpWeapon141` põe a arma nas costas das amigas. A partida fica em `localStorage['estrelume-mp141']` e é retomada no `startFrom` se tiver menos de 10 min.
+
+## PvP refeito (v1.42)
+
+- Estado em `PV142` (`on`, `mode`: `duel` | `arena` | `treino`, `hp`/`max` = 100 só da luta, `inv`, `lock`, `shield`, `speed`, `st` com as estatísticas, `du` duelo, `ar` arena). A vida do jogo (`P.hp`) não é usada na luta.
+  - O `PVP`/`DUEL` antigos ficaram desligados: `pvpEnter`, `pvpLeave`, `duelAsk`, `duelUpdate`, `pvpUpdate` e `pvpBars` foram trocados.
+- Rede: tudo vai na presença em `pv2` (`sid`, `m` modo, `hp`, `ko`, `de`, `ev` eventos, `du` estado do duelo de quem desafiou, `pu` poderes da anfitriã, `q`/`a` pedido e resposta, `r` pontuação).
+  - Eventos com número crescente (`pvEmit142`) ficam 1,6 s na lista. `pvNet142` processa só os novos por amiga e reinicia a contagem se o `sid` mudar.
+  - Tipos de evento: `sw` (golpe, só visual), `ar` (flecha, só visual), `h` (acerto: `to`/`tp`, `d`, `kx`, `kz`), `dg` (esquivou), `ko` (`by`), `pk` (pegou poder), `win`, `ff` (desistiu).
+- Acerto: o embrulho de `bossHit` chama `pvHitArea142`, então todo golpe que já testava o chefe vale contra as adversárias de `pvFoes142()` (amigas no mesmo modo e a boneca).
+  - Dano em `pvDamage142` (`PVW142` por arma, +12% por nível de `PVPW`, multiplicador do golpe).
+  - Quem apanha roda `pvReceive142`: esquiva (`P.roll`/`P.inv`/`PV142.inv`), bloqueio do escudo e escudo estelar; zerou, chama `pvKO142`.
+- Duelo: quem desafia conduz (`du.host`), em `duelTick142`. Fases: `cd` (contagem), `go`, `ko` e `end`.
+  - A convidada copia a fase, o tempo e o placar da anfitriã.
+  - Os pontos saem do evento `ko` (o próprio ou o da outra). Tempo esgotado: vence quem tem mais vida.
+- Arena: a anfitriã é quem tem o menor `j` entre quem está no modo `arena` e cuida dos poderes (`PU142`). 5 nocautes emitem `win` e reiniciam a rodada.
+- Treino: `BOT142` (Char `km` na `scene`), com estados `chase`, `wind` (o "!" usa o último sprite de `FOE141.pool`), `evade` e `stop`. Usa as mesmas fases do duelo, com `du.opp = 'bot'`.
+- Presença a 20×/s na luta (o `MP.t` é limitado a 0,05). Previsão das amigas: `PV142.pred` (velocidade dos pacotes, até 0,12 s à frente).
+- O embrulho de `regionOpen` abre a região da arena durante a luta. O embrulho de `moveC` trava durante contagem e nocaute e aplica o poder de velocidade.
+- HUD: `#pv142` (faixa ou placar), `#pvb142` (avisos grandes), `#pvf142` (borda vermelha), `#pvk142` (nocautes) e `#duinv142` (convite).
+- Shaders: o `precompileAll` da v1.42 aquece o anel e as armas com sombra. A torcida da arena e as pedras `rocks-sand*` não projetam sombra.
+- Teste: `__g.pvTreino142()` (treino sozinha), ou duas abas com `__g.mpJoinX(código)` e `PV142.req = { to: idDaAmiga, id, t: 0 }`.

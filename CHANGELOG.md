@@ -2,6 +2,37 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.42: PvP refeito do zero
+**Resposta na hora**
+- Quem ataca decide se acertou, olhando a amiga como ela aparece na tela. Faísca, número de dano, tremida e uma pausa curtinha saem no mesmo instante.
+- Quem apanha aplica o dano. Se estiver esquivando, mostra "Esquivou!" para as duas. A Espada com escudo bloqueia metade do golpe de frente.
+- Durante a luta a presença sobe para 20 vezes por segundo, e as amigas são desenhadas com previsão de movimento, sem tranco.
+- Todo golpe conta: combo de espada, giro carregado, machado, flechas e habilidades.
+- A mira vira sozinha para a adversária mais perto.
+
+**Modos** (todos na Arena dos Campos, com anel de pétalas no chão)
+- **Duelo 1×1:** clique numa amiga para chamar.
+  - Melhor de 3 rodadas de 60 s, com contagem "3, 2, 1, Lute!".
+  - Quem acaba o tempo com mais vida leva a rodada.
+  - No fim, uma tela de resultado mostra dano causado, golpes certos, esquivas e nocautes. A pontuação de duelo sobe 24 por vitória e cai 12 por derrota.
+- **Arena Estelar:** todas contra todas.
+  - Quem fizer 5 nocautes primeiro vence a rodada.
+  - Quem cai volta na borda com 2 s de proteção.
+  - Poderes aparecem no chão: +30 de vida, velocidade e escudo estelar.
+  - Cada nocaute vale +3⭐ (até 30 por dia).
+- **Treino com a Boneca Estelar:** sozinha, com as mesmas regras do duelo. A boneca avisa com "!" antes de atacar, esquiva quando apanha seguido e fica mais rápida a cada rodada. Fica no quadro da Arena dos Campos.
+
+**HUD de luta**
+- Faixa no topo com nome, vida (com rastro do dano), rodadas ganhas e tempo.
+- Avisos grandes no meio da tela: rodada, contagem, "Lute!", nocaute, vitória e contagem de combo.
+- Borda vermelha ao apanhar.
+- Barras de vida em cima das adversárias e lista de nocautes na Arena.
+
+**Consertos**
+- O pedido de duelo agora tem barra de tempo e some sozinho.
+- A região da arena fica sem névoa durante a luta, mesmo para quem ainda não tem o nível das Planícies.
+- A torcida da arena e as pedras de areia com textura não projetam mais sombra: o shader delas era compilado na primeira visita e causava uma travadinha.
+
 ## v1.41: vendinha de verdade, fazenda por dias, projetos da vila e consertos
 **Vila e economia**
 - **Vendinha da Dona Mel:**
