@@ -311,3 +311,32 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Prévia: `pvShow140(el)` aplica `kmLook` no `SC.obj` com a opção do cartão (só se for o criador com a base `km`) e mostra o rótulo `.pv140`. `pvHide140` volta ao `crLook`.
   - Disparada por `pointerover` (não no toque) e `focusin`; o clique em item trancado prova por 3 s.
 - A `.cr3d` do criador é `sticky` para continuar visível ao rolar as opções.
+
+## Vendinha, fazenda por dias, projetos, inimigos e consertos (v1.41)
+
+- Vendinha: o embrulho de `buildStall` troca a barraca do `BOX` por `stallModel141`, e `melBuild141` põe a Dona Mel (`STALL141.mel`, visual em `MEL141.look`) atrás do balcão.
+  - `sellAll` agora abre `openStall141(aba)` (abas `vender`, `sementes`, `pasto`). O desenho fica em `stallRender141`, sem chamar `openModal` de novo.
+  - A venda (`stallSell141`) dispara `qProg('sell')` e `ev('sell')` como antes.
+- Sementes: `S.seeds[cultura]` (`seedN141`). Plantar gasta semente (`useTool`, linhas editadas na base); a dica e a mochila mostram as sementes.
+- Fazenda por dias: `CROPD141.days` e `cropDays141`. O laço em tempo real só cresce plantas com `cr.tut` (a do tutorial); o resto cresce no embrulho de `newDay` (`cropDay141`), só se `cr.w`. `cr.g` conta os dias regados.
+- Pasto: `S.pasto141` (comprado) e `S.anim141[sheep|pig|cow]`. `pastoOwned141(c)` decide quais `critters` aparecem (embrulhos de `lifeUpdate` e `nearestCritter`). Preços em `STALLV141` e `PASTO141`.
+- Projetos da Vila: `VP141` (`need`, `coins`, `lv`, `xp`, `st`, `at`, `mk`). `vpSpot141` acha 3×3 livre perto de `at`, e `vpModel141` monta o enfeite com `bakeVC` e as luzes do pool.
+  - `S.vp141[id]` guarda o que já foi construído; o `applyState` remonta tudo.
+  - App `vila141` no Estrelofone. Cópias escondidas (`VPB141.warm`) aquecem os shaders no `precompileAll`.
+- Bancos: `benchModel141()` (usado pelo `bench` da praça e da Vila Girassol, pelo píer e pelo projeto dos bancos).
+- Inimigos: `foeScale141` aplica o nível uma vez (`s.lv141`). `foeUpdate141` faz três coisas:
+  - respawn lento: `s.rt` de 240 a 420 s, uma vez por morte (`s.rt141`);
+  - bichos de fora ficam fora do raio `ARN138.Rw` da arena;
+  - acende o "!" (`FOE141.pool`, sprites) em quem está em `WIND141`.
+  - A animação genérica dos bichos que não são gelatina fica num embrulho do `renderer.render` (desfeita depois do desenho).
+- Progressão: `LVUP141[nível]` diz o que libera; o embrulho de `gainXp` avisa. `dangerTick141` alerta em área com nível ≥ seu + 3.
+- Pesca: com `phase === 'reel'`, o `updateFishing` chama só `reel141` (barra, peixe em curvas, medidor, brilho, boia). `pickupWater141` leva para a sua posição o item que caiu na água. O efeito de peixinho pulando não usa mais modelo.
+- Rosto: `faceAdj141(lk)` dá deslocamento, escala e giro de olhos, sobrancelhas e boca, aplicados dentro do `kmFaceTex` (vetor). O composto da v1.39 ficou desligado.
+- Óculos: na base `km`, o embrulho de `accAnchors` põe a âncora `rosto` na frente da cabeça redonda (`GL141`: `y`, `z`, `s`).
+- Ícones em pixel: o `pixCanvas133` novo (contorno com a cor escura do vizinho, brilho em cima, sombra embaixo, grade 34).
+- Visual: o criador do jogo abre com `lookKM()` quando há conjunto vestido (`OUT_KM`). Salvar põe `S.outfit = 'km'`, então o visual salvo vale.
+- Qualidade: clicar num botão `[data-q]` grava `SET.qLock` e desliga `SET.autoq`.
+- Sons: `sndOk141` junta repetições do mesmo som (60 ms) e limita a 12 sons a cada 160 ms (embrulhos de `sfx` e `sfxP`).
+- Câmera: giro mais macio no `cam139`; a bússola `#cam141` (`camUi141`) aparece quando a câmera está girada.
+- HUD: o `hudHearts` novo põe o número dentro das barras (`.v141`); os IDs `#stbar`/`#sttxt` continuam.
+- Multiplayer: a presença leva `wm` (modelo da espada). `mpWeapon141` põe a arma nas costas das amigas. A partida fica em `localStorage['estrelume-mp141']` e é retomada no `startFrom` se tiver menos de 10 min.
