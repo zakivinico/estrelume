@@ -1223,6 +1223,24 @@ body.calm .sky136::before,body.calm .sn136,body.calm .pts.on,body.calm .skt136 .
 #hudTL .v141 .vt i{position:relative;box-shadow:inset 0 -3px 0 rgba(0,0,0,.12),inset 0 3px 0 rgba(255,255,255,.4)!important}
 #hudTL .v141 .vt span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 10.5px 'Pixelify Sans',monospace;color:#fff;text-shadow:0 1px 0 #2a1d2e,1px 0 0 #2a1d2e,-1px 0 0 #2a1d2e,0 -1px 0 #2a1d2e;pointer-events:none}
 #hudTL .v141 .vb{gap:6px;margin:2px 0}#hudTL .v141 .vb b img{width:20px;height:20px}#hudTL .v141 .vb.xp .vt{height:14px!important}#hudTL .v141 .xpb{min-width:30px;font-size:10px}
+/* v1.42: luta */
+#pv142{position:fixed;left:50%;top:calc(10px * var(--hs,1));transform:translate(-50%,-14px);z-index:26;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;font-family:'Pixelify Sans',monospace;color:#4a3048}
+#pv142.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#pv142 .vs142{display:grid;grid-template-columns:minmax(150px,240px) 70px minmax(150px,240px);gap:8px;align-items:center;padding:8px 12px;background:linear-gradient(180deg,#fff7fb,#ffe6f1);border:3px solid #5a3d68;border-radius:16px;box-shadow:0 4px 0 #5a3d68}
+#pv142 .side b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#pv142 .side.op{text-align:right}#pv142 .side.op .hb142{transform:scaleX(-1)}#pv142 .side.op .hb142 span{transform:scaleX(-1)}
+#pv142 .mid{text-align:center}#pv142 .mid em{display:block;font-style:normal;font-size:26px;font-weight:700;color:#d8507a;line-height:1}#pv142 .mid small{font-size:11px}
+#pv142 .pips{display:inline-flex;gap:3px;margin:2px 0}#pv142 .pips i{width:11px;height:11px;border-radius:50%;border:2px solid #5a3d68;background:#fff}#pv142 .pips i.on{background:#ffcb5a}
+.hb142{position:relative;height:18px;border:3px solid #5a3d68;border-radius:10px;background:#3a2a40;overflow:hidden}.hb142 i{position:absolute;left:0;top:0;bottom:0;border-radius:6px}.hb142 .tr{background:#fff3c4}.hb142 .v{background:linear-gradient(#9be36a,#5fbf4a);box-shadow:inset 0 3px 0 rgba(255,255,255,.4);transition:width .08s}
+.hb142.op .v{background:linear-gradient(#ff9fc8,#ff6f9f)}.hb142 span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 0 #2a1d2e,1px 0 0 #2a1d2e,-1px 0 0 #2a1d2e,0 -1px 0 #2a1d2e}
+#pv142 .q142{display:block;margin:6px auto 0}#pv142 .top142{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:6px 10px 4px;background:#fff7fb;border:3px solid #5a3d68;border-radius:14px 14px 0 0;border-bottom:none}
+#pv142 table{width:100%;background:#fff7fb;border:3px solid #5a3d68;border-top:none;border-radius:0 0 14px 14px;padding:4px 8px;font-size:12.5px}#pv142 table tr.me td{color:#d8507a;font-weight:700}#pv142 td:nth-child(2){color:#ffb700;letter-spacing:1px}#pv142 .top142+.hb142{border-radius:0}
+#pvb142{position:fixed;left:50%;top:34%;transform:translate(-50%,-50%) scale(.6);z-index:27;opacity:0;pointer-events:none;font:700 46px 'Pixelify Sans',monospace;color:#fff;text-shadow:0 4px 0 #5a3d68,3px 0 0 #5a3d68,-3px 0 0 #5a3d68,0 -3px 0 #5a3d68;white-space:nowrap}
+#pvb142.on{animation:pvb142 1.5s cubic-bezier(.2,1.4,.4,1) both}#pvb142.count{font-size:84px;color:#ffe18d}#pvb142.go{color:#9be36a;font-size:70px}#pvb142.ko{color:#ff8fa3}#pvb142.win{color:#ffcb5a}#pvb142.combo{top:58%;font-size:28px;color:#ffe18d;animation-duration:.7s}
+@keyframes pvb142{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}30%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-62%) scale(1)}}
+#pvf142{position:fixed;inset:0;pointer-events:none;z-index:24;box-shadow:inset 0 0 90px rgba(255,60,90,.55);opacity:0}#pvf142.on{animation:pvf142 .35s ease-out}@keyframes pvf142{0%{opacity:1}100%{opacity:0}}
+#pvk142{position:fixed;right:calc(14px * var(--hs,1));top:40%;z-index:26;display:flex;flex-direction:column;gap:4px;font:12px 'Pixelify Sans',monospace}#pvk142 div{background:rgba(255,247,251,.94);border:2px solid #5a3d68;border-radius:10px;padding:3px 8px;animation:pvb142 .01s}
+#duinv142{position:fixed;left:50%;top:20%;transform:translateX(-50%);z-index:60;padding:14px 18px;text-align:center;display:flex;flex-direction:column;gap:6px;min-width:280px}#duinv142 .tm142{display:block;height:4px;background:#ff8fbd;border-radius:3px;animation:tm142 20s linear forwards}@keyframes tm142{to{width:0}}
+.res142{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}.res142 div{background:#fff7fb;border:3px solid #e8d2dc;border-radius:14px;padding:8px;text-align:center}.res142 b{display:block;font-size:24px;color:#d8507a}.res142 span{font-size:11.5px}
 </style>
 </head>
 <body class="ttl">
@@ -1302,7 +1320,7 @@ body.calm .sky136::before,body.calm .sn136,body.calm .pts.on,body.calm .skt136 .
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v1.41</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v1.42</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script src="bundle.js"></script>
