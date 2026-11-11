@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#ffb7d5">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/app/icone-192.png">
+<link rel="apple-touch-icon" href="assets/app/icone-192.png">
 <title>Estrelume</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1241,6 +1245,19 @@ body.calm .sky136::before,body.calm .sn136,body.calm .pts.on,body.calm .skt136 .
 #pvk142{position:fixed;right:calc(14px * var(--hs,1));top:40%;z-index:26;display:flex;flex-direction:column;gap:4px;font:12px 'Pixelify Sans',monospace}#pvk142 div{background:rgba(255,247,251,.94);border:2px solid #5a3d68;border-radius:10px;padding:3px 8px;animation:pvb142 .01s}
 #duinv142{position:fixed;left:50%;top:20%;transform:translateX(-50%);z-index:60;padding:14px 18px;text-align:center;display:flex;flex-direction:column;gap:6px;min-width:280px}#duinv142 .tm142{display:block;height:4px;background:#ff8fbd;border-radius:3px;animation:tm142 20s linear forwards}@keyframes tm142{to{width:0}}
 .res142{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}.res142 div{background:#fff7fb;border:3px solid #e8d2dc;border-radius:14px;padding:8px;text-align:center}.res142 b{display:block;font-size:24px;color:#d8507a}.res142 span{font-size:11.5px}
+/* v1.43: Guia do Vale, dicas da primeira vez e versão para PC */
+.gnav143{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}.gnav143 .chip{font-size:14px;padding:5px 10px}
+.gtodo143{display:flex;flex-direction:column;gap:8px}
+.gt143{display:flex;align-items:center;gap:12px;background:var(--c-bg2);border:3px solid var(--c-line);border-radius:14px;padding:10px 12px;animation:cardIn .35s cubic-bezier(.2,1.3,.4,1) both}
+.gt143:nth-child(2){animation-delay:.04s}.gt143:nth-child(3){animation-delay:.08s}.gt143:nth-child(4){animation-delay:.12s}.gt143:nth-child(5){animation-delay:.16s}.gt143:nth-child(6){animation-delay:.2s}
+.gt143>i{font-style:normal;font-size:26px;width:40px;text-align:center;flex:none}.gt143>div{flex:1;display:flex;flex-direction:column;gap:2px}.gt143 b{font-size:16px}.gt143 span{font-size:14px;color:var(--c-mute)}
+.gpage143 h3{margin:4px 0 8px;font-size:20px}.gpage143 ul{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:7px;font-size:15px;line-height:1.35}
+.gst143{background:#fff8e6;border:3px dashed var(--c-gold-d);border-radius:12px;padding:8px 12px;font-size:15px}
+#tip143{position:fixed;right:calc(14px + var(--hs,1) * 4px);bottom:calc(var(--hs,1) * 170px);z-index:57;max-width:min(330px,86vw);background:var(--c-bg);border:3px solid var(--c-line);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:5px;box-shadow:0 6px 0 rgba(90,61,104,.25);transform:translateX(30px);opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.2,1.3,.4,1)}
+#tip143.on{transform:none;opacity:1;pointer-events:auto}#tip143 b{font-size:16px}#tip143 span{font-size:14px;line-height:1.3;color:var(--c-text)}#tip143>div{display:flex;gap:6px;justify-content:flex-end;margin-top:2px}
+body.ttl #tip143{display:none}
+.pcg143 .sitem span{font-size:13px;line-height:1.3}.pcg143 .sitem small{font-size:12px;color:var(--c-mute)}.pcg143 a.btn{text-decoration:none}.pcg143 a.btn.off{opacity:.45;pointer-events:none}
+.pcin143{margin-top:12px;display:flex;flex-direction:column;gap:5px;background:var(--c-bg2);border:3px solid var(--c-line);border-radius:14px;padding:10px 12px}.pcin143 span{font-size:14px;color:var(--c-mute)}.pcin143 .btn{align-self:flex-start}.pcbt143{display:flex;gap:8px;flex-wrap:wrap}
 </style>
 </head>
 <body class="ttl">
@@ -1320,7 +1337,7 @@ body.calm .sky136::before,body.calm .sn136,body.calm .pts.on,body.calm .skt136 .
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v1.42</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v1.43</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script src="bundle.js"></script>

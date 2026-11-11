@@ -2,6 +2,35 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.43: versão para PC, Guia do Vale, gráficos e desempenho
+**Versão para PC**
+- Downloads para **Windows** (Estrelume.exe), **macOS** (Estrelume.app, chip Apple e Intel) e **Linux**, no app **Baixar** do Estrelofone.
+- O lançador traz o jogo inteiro dentro dele e abre numa janela própria do Edge, Chrome, Chromium ou Brave, sem abas nem barra de endereço. Sem nenhum deles, abre no navegador padrão.
+- O save fica no computador e não se perde entre uma abertura e outra.
+- **Exportar e importar save** (arquivo .json) para levar o progresso do navegador para o PC e de volta. Na versão para PC o app se chama **Transferir**.
+- No Chrome e no Edge, o site também pode ser **instalado como app** (ícone novo de estrelinha, manifesto e service worker).
+
+**Guia do Vale** (app novo no Estrelofone)
+- Aba **O que fazer agora**: até 6 sugestões tiradas do seu save, por exemplo:
+  - plantas prontas ou sem água;
+  - pontos de habilidade livres;
+  - tarefas do dia e aula em andamento;
+  - desejo disponível e projeto da Vila que já dá para construir;
+  - vida baixa, mochila cheia ou hora de dormir.
+- Uma página por sistema, cada uma com "como funciona" e "como está o seu": primeiros passos, fazenda, pesca, combate e armas, casa, cozinha, vila e moradores, desejos e moedas, arena e duelos, jogar com amigas, versão para PC.
+- **Dicas da primeira vez**: um cartãozinho no canto (sem pausar o jogo) aparece na primeira pesca, casa, fazenda, Vendinha, cozinha, Arena, Poço, árvore de habilidades, barco, caverna e luta, com botão para a página do Guia.
+
+**Gráficos**
+- **Sombras de nuvens** passeando devagar pelo chão: mais fortes com chuva, quase nada à noite.
+- **Luz do céu** no alto da tela, mudando com a hora: pêssego de manhã, dourado e rosa no fim da tarde, azulada à noite.
+- Flores e samambaias dos biomas também balançam com o vento.
+- Tudo dentro dos passes que já existiam: nenhum pass de tela cheia novo e nenhum shader novo durante o jogo (113 programas, como antes).
+
+**Desempenho**
+- Grama, flores, cogumelos, moitas, trevos, samambaias e lavanda ficaram com metade dos triângulos, sem diferença visível (o meshoptimizer simplifica depois do carregamento). Nesses enfeites: 407 mil → 211 mil triângulos no mapa inteiro.
+- O campo de lavanda virou blocos de 16×16 e passa a ser recortado como o resto.
+- BENCH_PLACEHOLDER
+
 ## v1.42: PvP refeito do zero
 **Resposta na hora**
 - Quem ataca decide se acertou, olhando a amiga como ela aparece na tela. Faísca, número de dano, tremida e uma pausa curtinha saem no mesmo instante.

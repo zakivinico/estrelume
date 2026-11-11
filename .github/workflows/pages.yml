@@ -19,6 +19,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      # versão para PC: lançadores em Go com o jogo dentro, gerados em game/baixar/ (não vão para o git)
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/desktop/go.mod
+          cache: false
+      - name: Gerar downloads para PC
+        run: bash tools/desktop/build.sh
       - uses: actions/upload-pages-artifact@v3
         with:
           path: game

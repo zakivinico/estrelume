@@ -2,3 +2,7 @@ node_modules/
 .DS_Store
 *.log
 /tmp/
+# versão para PC: gerada no workflow do Pages
+/tools/desktop/jogo/
+/tools/desktop/*.syso
+/game/baixar/

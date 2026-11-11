@@ -1,0 +1,14 @@
+Estrelume para Windows
+======================
+
+1. Descompacte esta pasta onde quiser (por exemplo, em Documentos).
+2. Abra o Estrelume.exe.
+
+O jogo abre numa janela própria do Microsoft Edge (que já vem no Windows) ou do Chrome.
+O save fica guardado no seu computador, em %APPDATA%\Estrelume.
+
+Se o Windows mostrar "O Windows protegeu o computador", clique em "Mais informações"
+e depois em "Executar assim mesmo" (o programa não tem assinatura digital paga).
+
+Para trazer o save do navegador: lá, Estrelofone → Baixar → Exportar save;
+aqui, Estrelofone → Transferir → Importar save.

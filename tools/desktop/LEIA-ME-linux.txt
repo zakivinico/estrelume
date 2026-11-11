@@ -1,0 +1,13 @@
+Estrelume para Linux
+====================
+
+1. Descompacte: tar -xzf Estrelume-Linux.tar.gz
+2. Rode: ./Estrelume/estrelume
+
+O jogo abre numa janela própria do Chrome, Chromium, Edge ou Brave (se tiver um deles);
+senão, abre no navegador padrão. O save fica em ~/.config/Estrelume.
+Para ter um atalho no menu, copie o estrelume.desktop para ~/.local/share/applications
+e ajuste o caminho do Exec se precisar.
+
+Para trazer o save do navegador: lá, Estrelofone → Baixar → Exportar save;
+aqui, Estrelofone → Transferir → Importar save.
