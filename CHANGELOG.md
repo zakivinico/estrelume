@@ -29,7 +29,7 @@ Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js
 **Desempenho**
 - Grama, flores, cogumelos, moitas, trevos, samambaias e lavanda ficaram com metade dos triângulos, sem diferença visível (o meshoptimizer simplifica depois do carregamento). Nesses enfeites: 407 mil → 211 mil triângulos no mapa inteiro.
 - O campo de lavanda virou blocos de 16×16 e passa a ser recortado como o resto.
-- BENCH_PLACEHOLDER
+- Medido com `tools/teste/bench.js` (qualidade Alta, 9 áreas, SwiftShader): média de 593 ms para 550 ms por quadro desenhado (−7%). Na praça, 1,07 milhão para 0,6 milhão de triângulos; fazenda −14%, campos −11%. Casa e caverna ficaram iguais.
 
 ## v1.42: PvP refeito do zero
 **Resposta na hora**
