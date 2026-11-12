@@ -16,3 +16,10 @@ As vegetações `st_tree*`, `k_pine_b` e `q_flower_y` também foram simplificada
 ## v1.34: armas
 - **Escudo, machado, aljava e flecha** (`w_shield`, `w_shield2`, `w_axe`, `w_quiver`, `w_arrow`): KayKit Character Pack Adventurers 1.0, de Kay Lousberg (www.kaylousberg.com), CC0. Fonte: https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0. Licença em `LICENSE-KayKit-Adventurers-CC0.txt`.
 - **Arco** (`w_bow`, `w_bow2`): Medieval Weapons Pack (setembro de 2018), de Quaternius (https://quaternius.com), CC0. Convertido de FBX para GLB com o FBXLoader e o GLTFExporter do three.js. Licença em `LICENSE-Quaternius-CC0.txt`.
+
+## v1.44: masmorra, cozinha, madeira e armas
+Todos de Kay Lousberg (www.kaylousberg.com), CC0, baixados do GitHub (KayKit-Game-Assets) pelo jsDelivr e otimizados com `tools/opt.mjs`:
+- **Masmorra** (`dg_*`: paredes, colunas, pisos, escadas, grade, espinhos, barris, caixas, mesas, prateleiras, velas, tochas, estandartes, baús, moedas, entulho): KayKit Dungeon Remastered 1.0. Fonte: https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0. Licença em `LICENSE-KayKit-Dungeon-Remastered-CC0.txt`.
+- **Cozinha** (`kt_*`: fogão, forno, balcões, pia, geladeira, coifa, armário, mesa, panelas, frigideira, tábua, potes, caixotes de legumes): KayKit Restaurant Bits 1.0. Fonte: https://github.com/KayKit-Game-Assets/KayKit-Restaurant-Bits-1.0. Licença em `LICENSE-KayKit-Restaurant-Bits-CC0.txt`.
+- **Madeira** (`wd_*`: pilha de tábuas, tocos, caixotes, barril, palete, carrinho de mão, saco, balde, suporte de armas): KayKit Medieval Hexagon Pack 1.0. Licença em `LICENSE-KayKit-Medieval-Hexagon-CC0.txt`.
+- **Armas** (`wa_*`: machado de duas lâminas, espadas grandes, adaga, escudos coloridos, besta, feixe de flechas): KayKit Character Pack Adventurers 1.0. Licença em `LICENSE-KayKit-Adventurers-CC0.txt`.

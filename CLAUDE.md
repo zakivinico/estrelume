@@ -376,3 +376,24 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
   - O ícone sai de `tools/desktop/icone.py` (PNG, ICO e ICNS; o `game/assets/app/icone-*.png` também).
   - No jogo: `PC143` (`desk` com `?pc=1`, `pwa` instalado). O app `pc143` se chama **Baixar** no navegador (downloads, instalar como app, exportar e importar save) e **Transferir** na versão para PC (só exportar e importar). `saveExport143`/`saveImport143` usam o mesmo JSON do `snapshot`.
   - App instalável: `game/manifest.webmanifest` e `game/sw.js` (rede primeiro, cópia só sem internet; nunca registra no claude.ai nem no lançador).
+
+## Masmorra, cozinha, madeira e armas com modelos CC0 (v1.44)
+
+- Modelos novos em `V144M` (nome → `FIT`): `dg_` KayKit Dungeon Remastered (escala 0,5: uma peça de 4 m vira uma célula de 2×2 tiles), `kt_` KayKit Restaurant Bits, `wd_` KayKit Medieval Hexagon, `wa_` KayKit Adventurers. Baixados do jsDelivr (`cdn.jsdelivr.net/gh/KayKit-Game-Assets/<repo>@main`, a lista sai de `data.jsdelivr.com/v1/package/gh/...@main/flat`), juntados com `gltf-transform copy`, otimizados com `tools/opt.mjs` e empacotados com `glb2js`.
+- Masmorra (`DG`, temas em `DGT[1..5]`): fica em `DG.X0/DG.Z0` (640, 500), longe do 1º andar da caverna, dentro do `cave.group`. O `mode` continua `'cave'`.
+  - O `solidCave` virou `let`, e o embrulho decide pela posição (`dgIn144`).
+  - `dgGen144(f)` gera salas e corredores numa grade de células (seed: dia + andar) e acha o início (sala mais ao sul) e o fim (mais longe por caminho, ou o salão do chefe no 5º).
+  - `dgBuild144(f)` monta tudo:
+    - piso, paredes e colunas viram `InstancedMesh` por bloco de 16 tiles (`dgPut144` + `dgFlush144`, peças de `dgParts144`), fora do `CULL.list` (o recorte por distância de fora não vale na caverna);
+    - as paredes do sul ficam com 28% da altura;
+    - escadas, tochas (luzes do pool), estandartes, baús (`dgChest144`) e espinhos (`DG.traps`) são clones.
+  - `DG.tile` guarda os sólidos: 1 = rocha, 2 = enfeite. Todo enfeite só fica se o `dgReach144` (alcance a partir de `DG.st0`) não diminuir.
+  - Inimigos em `dgFoes144`: `e.dg144`, `e.lvl` do andar, `foeScale141` e elites. O Guardião é o `DG.boss` (`dgBoss`), e o prêmio sai no `dgUpdate144`.
+  - Trocar de andar: `dgGo144(f, deBaixo)` (0 volta ao 1º andar da caverna; as coisas caídas no chão vão junto). Entrada: `DG.entry` (no embrulho do `buildCave`) e `dgEnterMenu144` (atalhos até `S.dg144.best`).
+  - Estado salvo em `S.dg144` (`best`, `boss` = dia, `kills`, `ch` baús abertos do dia `cd`).
+  - `dgReset144` (no `exitCave`, `respawn`, `enterCave` e `resetTransient`) desmonta o andar.
+  - Mapa: o minimapa usa o `cave.base` trocado por `DG.mini` (mesmo deslocamento do `CXo`); o M abre `dgMap144`. Os dois só mostram células já vistas (`DG.seen`).
+  - Shaders: o embrulho do `precompileAll` monta o andar 1 escondido (sem luzes, para não compilar variantes com mais luzes), mais um clone de cada `kt_`/`wd_`/`wa_`, e desmonta depois.
+- Cozinha: o `fogao131` usa o `kt_stove_single`. Os móveis novos ficam no `FURN` (`forno144` também cozinha, pelo embrulho do `cookSpot131`). Os balcões entram no `SURF135` e os utensílios no `SMALL135`. As casas dos moradores ganham os móveis em `npcKitchen144`; a caixa sólida da v1.31 ficou invisível.
+- Madeira: `ITEMS.madeira.m = 'wd_resource_lumber'`. O `addStump` usa o `wd_tree_single_b_cut`. Enfeites novos no `FD` e receitas no `RECIPES`, e a pilha da obra sai no embrulho do `benchSpotBuild`.
+- Armas: no `heldObj`, `#axe` é o `wa_axe_2handed` e `#bow` fica maior (`FIT.w_bow`; troca para `w_bow2` no nível 2). O escudo segue a espada (`SHIELD144[S.gear.sword]`, no embrulho do `mkShield133`).

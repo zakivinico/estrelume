@@ -2,6 +2,49 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.44: Masmorra Cintilante, cozinhas, madeira e armas com modelos novos
+**Masmorra com 5 andares**
+- Na Caverna Cintilante, uma grade com anel azul (sala do leste) desce para a **Masmorra**: 5 andares embaixo da caverna, cada um maior que o anterior (de 44×44 a 60×60 tiles; a caverna tinha 44×40).
+  1. Salões de Pedra
+  2. Adega Esquecida
+  3. Biblioteca Afundada
+  4. Forja das Profundezas
+  5. Cripta do Guardião
+- Cada andar é gerado de novo a cada dia: salas ligadas por corredores, piso de lajotas (com quebradas, mato, terra e grades), paredes de tijolo com colunas nos cantos, tochas que tremulam, estandartes e prateleiras.
+- As paredes do lado da câmera ficam baixinhas, para nunca esconder a personagem.
+- Escada verde sobe, escada azul (com anel) desce. Os andares alcançados viram atalho na entrada.
+- Em cada andar há:
+  - 2 baús (moedas, minérios do andar e estrelas) e um baú dourado no fim a partir do 2º andar;
+  - espinhos que sobem do chão nos corredores (pule por cima);
+  - barris, caixotes, adegas, baús e mesas com velas encostados nas paredes, sem nunca fechar passagem;
+  - bichos com nível recomendado de 4 a 16, e elites a partir do 3º.
+- No 5º andar dorme o **Guardião da Cripta** (uma Armadura Oca gigante de elite, com dois fantasminhas). Vencer abre o baú dourado e dá +300🪙, +25⭐ e XP, uma vez por dia.
+- Mapa (M) e minimapa mostram só o que você já explorou, com escadas e baús fechados. O rótulo diz "Masmorra · Andar N".
+- Página nova no Guia do Vale, dica da primeira vez e sugestão em "O que fazer agora".
+
+**Cozinha**
+- O fogão de casa agora é um fogão de verdade (KayKit Restaurant).
+- Móveis novos na loja:
+  - forno (também cozinha), balcão liso e balcão com temperos, pia, geladeira e mesa da cozinha;
+  - caixotes de tomate e de cenoura;
+  - utensílios pequenos que sobem em balcões e mesas: panela, frigideira, tábua, pote e escorredor.
+- As cozinhas das casas dos moradores trocaram as caixinhas por fogão, balcão, pia, coifa, armário e panela no fogo.
+
+**Madeira**
+- A madeira que cai das árvores é uma pilha de tábuas 3D, e o toco que fica é um toco cortado de verdade.
+- Pilha de lenha, caixote, barril e saco com modelos novos.
+- Na bancada, novos enfeites de madeira: palete, caixote aberto, caixote comprido, carrinho de mão, balde e suporte de armas. Também dá para fazer o balcão e a mesa da cozinha.
+- A obra da bancada mostra tábuas e pedras de verdade.
+
+**Armas**
+- O machado virou um machado de duas lâminas.
+- O arco ficou maior; a partir do nível 2 do arco ele troca de modelo.
+- O escudo acompanha a espada: redondo, redondo colorido (Cristal), brasão (Dourada) e com espinhos (Estelar).
+
+**Técnico**
+- 91 modelos novos, todos CC0 de Kay Lousberg (Dungeon Remastered, Restaurant Bits, Medieval Hexagon e Adventurers), com 1,7 MB no total depois de otimizados.
+- Os shaders da masmorra são compilados no carregamento com um andar montado escondido. Visitar os 5 andares não cria nenhum programa novo (113).
+
 ## v1.43: versão para PC, Guia do Vale, gráficos e desempenho
 **Versão para PC**
 - Downloads para **Windows** (Estrelume.exe), **macOS** (Estrelume.app, chip Apple e Intel) e **Linux**, no app **Baixar** do Estrelofone.
