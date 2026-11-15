@@ -397,3 +397,21 @@ Jogo cozy 3D em three.js, todo em português do Brasil (textos, comentários, no
 - Cozinha: o `fogao131` usa o `kt_stove_single`. Os móveis novos ficam no `FURN` (`forno144` também cozinha, pelo embrulho do `cookSpot131`). Os balcões entram no `SURF135` e os utensílios no `SMALL135`. As casas dos moradores ganham os móveis em `npcKitchen144`; a caixa sólida da v1.31 ficou invisível.
 - Madeira: `ITEMS.madeira.m = 'wd_resource_lumber'`. O `addStump` usa o `wd_tree_single_b_cut`. Enfeites novos no `FD` e receitas no `RECIPES`, e a pilha da obra sai no embrulho do `benchSpotBuild`.
 - Armas: no `heldObj`, `#axe` é o `wa_axe_2handed` e `#bow` fica maior (`FIT.w_bow`; troca para `w_bow2` no nível 2). O escudo segue a espada (`SHIELD144[S.gear.sword]`, no embrulho do `mkShield133`).
+
+## Celular (v1.45)
+
+- `MOB145.on` liga com `pointer: coarse`, com o user agent de celular ou no primeiro `touchstart`, e põe a classe `html.mob145` (todo o CSS de celular depende dela). No computador nada muda.
+- Botões: `mobButtons145()` refaz os do `#touch` (`tA` ação, `tE` conversar, `tD` esquiva, `tJ` pulo, `tL` trava; `tR145`/`tX145` girar e guardar no modo decorar/fazenda) com ícones SVG de `ICO145`.
+  - `mobLayout145()` posiciona tudo em arco a partir do canto direito. Os tamanhos vêm de `--tb145`/`--ta145`.
+  - O cluster sobe acima do `#hotbar`/`#skills`, o `#rBR` (menu) vai para baixo do `#hudTL`, e o `#rTC` (objetivo) desce quando a tela é estreita.
+  - Roda no resize e no `orientationchange`. Use as bordas seguras `--sat/--sar/--sab/--sal`.
+- Estado: `mobState145()` (a cada 150 ms) põe `body.mdl145` (janela), `cut145` (cena), `dlg145` (fala) e `dec145` (decorar/fazenda), e troca o ícone do `tA` conforme a ferramenta. Os botões somem por CSS conforme essas classes.
+- Toque no mundo (`canvas` `touchstart`):
+  - metade esquerda = joystick flutuante (usa o objeto `stick`, que o movimento já lê);
+  - metade direita = arrastar gira a câmera (`CAM139.yawT/pitT`).
+  - Soltar sem mexer chama `mobTap145(x, y)`: passa a fala ou, no modo decorar/fazenda, põe `mouse` no ponto e chama `updateDecorGhost`+`decorAction` (ou os da fazenda).
+  - `onUI145` ignora toques que começam em botões e painéis.
+- `tA` com a espada liga `P.charging` (o `pointerup` global solta o golpe); no barco chama `boatFire`.
+- Áudio do iOS: `unlockAudio145` no `touchend`/`click` (`AC.resume()` e `play()` da música dentro do gesto).
+- Tela cheia: `mobFull145()` ao tocar em Começar, Continuar ou `#crOk`, se `SET.fs145`. Opções em Ajustes → Celular (`uiSettingsRows`). Vibração com `SET.vib145`, no embrulho de `hurtPlayer`.
+- Testes: `Input.dispatchTouchEvent` do CDP num contexto do Playwright com `devices['Pixel 7']` (deitado) e `devices['iPhone SE']` (em pé). No SwiftShader cada quadro demora, então "toque" é soltar sem mexer, sem limite de tempo.

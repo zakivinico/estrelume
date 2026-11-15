@@ -9939,7 +9939,7 @@ function mobLayout145() { const T = $('touch'); if (!T) return; const W = innerW
   // menu (≡) vai para baixo do cartão da personagem, longe dos botões
   const rb = $('rBR'), tl = $('hudTL'); if (rb && tl) { const r = tl.getBoundingClientRect(); rb.style.left = Math.round(Math.max(sl + 10, r.left)) + 'px'; rb.style.top = Math.round(r.bottom + 8) + 'px'; }
   // objetivo: em tela estreita desce para baixo dos cartões de cima
-  const g = $('goal'), mw = $('miniw'); if (g && tl && mw) { const a = tl.getBoundingClientRect(), b = mw.getBoundingClientRect(); const free = b.left - a.right; g.classList.toggle('low145', free < 300); if (free < 300) g.style.top = Math.round(Math.max(a.bottom, b.bottom + 22) + 6) + 'px'; else g.style.top = ''; }
+  const g = $('goal'), mw = $('miniw'), tc = $('rTC'); if (g && tl && mw && tc) { const a = tl.getBoundingClientRect(), b = mw.getBoundingClientRect(); const free = b.left - a.right; g.classList.toggle('low145', free < 300); tc.style.top = free < 300 ? Math.round(Math.max(a.bottom, b.bottom + 22) + 6) + 'px' : ''; }
 }
 addEventListener('resize', () => setTimeout(mobLayout145, 60)); addEventListener('orientationchange', () => setTimeout(mobLayout145, 300));
 // ---------- estado da tela: some o que não cabe (título, janela, cena, conversa) ----------
