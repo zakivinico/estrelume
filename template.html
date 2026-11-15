@@ -2,7 +2,10 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#ffb7d5">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/app/icone-192.png">
@@ -1258,6 +1261,39 @@ body.calm .sky136::before,body.calm .sn136,body.calm .pts.on,body.calm .skt136 .
 body.ttl #tip143{display:none}
 .pcg143 .sitem span{font-size:13px;line-height:1.3}.pcg143 .sitem small{font-size:12px;color:var(--c-mute)}.pcg143 a.btn{text-decoration:none}.pcg143 a.btn.off{opacity:.45;pointer-events:none}
 .pcin143{margin-top:12px;display:flex;flex-direction:column;gap:5px;background:var(--c-bg2);border:3px solid var(--c-line);border-radius:14px;padding:10px 12px}.pcin143 span{font-size:14px;color:var(--c-mute)}.pcin143 .btn{align-self:flex-start}.pcbt143{display:flex;gap:8px;flex-wrap:wrap}
+/* v1.45: celular — controles de toque, HUD e janelas que cabem, sem gestos do navegador */
+:root{--sat:env(safe-area-inset-top,0px);--sar:env(safe-area-inset-right,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px)}
+html.mob145,html.mob145 body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html.mob145 input,html.mob145 textarea{-webkit-user-select:text;user-select:text}
+html.mob145 canvas{touch-action:none}
+html.mob145 #touch{display:block}
+#touch .tbtn{position:fixed;width:var(--tb145,56px)!important;height:var(--tb145,56px)!important;min-width:0!important;padding:0!important;margin:0!important;display:flex;align-items:center;justify-content:center;border-radius:50%!important;z-index:9;opacity:.93;font-size:calc(var(--tb145,56px)*.36)!important;transition:transform .08s}
+#touch .tbtn:active{transform:scale(.9)}
+#touch .tbtn svg{width:56%;height:56%;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+#touch #tA{width:var(--ta145,74px)!important;height:var(--ta145,74px)!important}
+#touch #tA img{width:64%;height:64%;object-fit:contain;image-rendering:pixelated;pointer-events:none}
+#touch #tL{width:calc(var(--tb145,56px)*.82)!important;height:calc(var(--tb145,56px)*.82)!important}
+#touch .blue145{background:linear-gradient(180deg,#bfe4ff,#8fc6f2)!important;color:#2e3a66}
+#touch .lil145{background:linear-gradient(180deg,#e6d6ff,#c3a8f2)!important;color:#4a2e66}
+#touch .dec145{display:none!important;background:linear-gradient(180deg,#fff2c9,#ffd88a)!important;color:#5a3d22}
+body.dec145 #touch .dec145{display:flex!important}body.dec145 #touch #tA,body.dec145 #touch #tE,body.dec145 #touch #tJ,body.dec145 #touch #tL,body.dec145 #touch #tD{display:none!important}
+body.ttl #touch,body.mdl145 #touch,body.cut145 #touch{display:none!important}
+body.dlg145 #touch #tE,body.dlg145 #touch #tD,body.dlg145 #touch #tJ,body.dlg145 #touch #tL,body.dlg145 #stick{display:none!important}
+html.mob145 #stick{opacity:.45;transition:opacity .15s;z-index:8;pointer-events:none}html.mob145 #stick.on145{opacity:.95}
+html.mob145 #knob{transition:transform .04s linear}
+html.mob145 #rBR{bottom:auto!important;right:auto!important;transform-origin:top left!important}
+html.mob145 #hudBR .sidelist{left:0!important;right:auto!important}
+html.mob145 #goal.low145{max-width:min(92vw,420px);padding:4px 12px 6px}html.mob145 #goal.low145 .gtxt{font-size:14px}html.mob145 #goal.low145 .gstep{font-size:10px}
+html.mob145 #tip143{bottom:auto;top:calc(var(--sat) + 70px);right:calc(var(--sar) + 8px);max-width:min(300px,70vw)}
+html.mob145 #modal .mp{max-height:calc(100dvh - 10px - var(--sat) - var(--sab))!important;max-width:calc(100vw - 10px - var(--sal) - var(--sar))!important;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+@media (max-height:520px){html.mob145 #modal .mp{padding:10px 14px!important}html.mob145 #modal .mp h2{font-size:20px!important;margin:0 0 6px!important}html.mob145 #modal .mp .lead{font-size:13px;margin-bottom:6px}
+  html.mob145 .cr{grid-template-columns:minmax(180px,36vw) 1fr!important;gap:10px!important}html.mob145 .cr>.cr3d{height:calc(100dvh - 96px - var(--sat) - var(--sab))!important;min-height:0!important;top:0}
+  html.mob145 #dlg{bottom:calc(6px + var(--sab))!important}html.mob145 .dlgbox,html.mob145 #dlg .dbox{max-height:40vh}}
+@media (max-width:520px){html.mob145 .cr{grid-template-columns:1fr!important}html.mob145 .cr>.cr3d{height:min(42vh,300px)!important;min-height:0!important}html.mob145 #modal .mp{padding:10px 12px!important}html.mob145 #modal .mp h2{font-size:20px!important}}
+html.mob145 .fsnow145{display:inline-flex;align-items:center;gap:6px;margin-top:8px}html.mob145 .fsnow145 svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4}
+html.mob145 #decor{max-height:34vh;overflow:auto;padding:6px 10px!important;bottom:calc(4px + var(--sab))!important}html.mob145 #decor .dhead{gap:8px}html.mob145 #decor .dhead span{font-size:11px;line-height:1.25}html.mob145 #decor .dhead b{font-size:14px}
+html.mob145 #title .tkeys{display:none}
+html.mob145 #toast{top:calc(var(--sat) + 8px)!important;bottom:auto!important;transform:translate(-50%,-30px)}html.mob145 #toast.on{transform:translate(-50%,0)}
 </style>
 </head>
 <body class="ttl">
@@ -1337,7 +1373,7 @@ body.ttl #tip143{display:none}
     <div class="tsub">uma história do Vale Estrelinha</div>
     <nav class="tmenu" id="tbtns"><button class="tmi" disabled><span class="tt"><b>Carregando o vale...</b></span></button></nav>
   </div>
-  <div class="tfoot"><span>Estrelume · v1.44</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
+  <div class="tfoot"><span>Estrelume · v1.45</span><span class="tkeys"><span class="key">↑</span><span class="key">↓</span> escolher &nbsp; <span class="key">Enter</span> confirmar</span></div>
   <div id="tpets" hidden></div>
 </div>
 <script>/*GAME*/</script>

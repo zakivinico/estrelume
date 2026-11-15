@@ -2,6 +2,40 @@
 
 Cada versão corresponde a uma seção `/* ==== vN: ... ==== */` em `src/main.js`.
 
+## v1.45: jogar no celular
+**Controles de toque refeitos**
+- O joystick aparece onde o dedo encosta, na metade esquerda da tela. Parado, ele fica quase transparente no canto.
+- Arrastar na metade direita gira a câmera.
+- Botões em arco no canto direito, com ícones desenhados (aparecem em qualquer celular, sem depender de emoji):
+  - botão de ação grande, com o ícone da ferramenta ou arma da mão;
+  - em volta: conversar, esquiva, pulo e trava no alvo.
+- Segurar o botão de ação com a espada carrega o golpe giratório; no barco, o mesmo botão atira.
+- Os botões se ajustam ao tamanho da tela e sobem quando a barra de ferramentas está embaixo deles.
+- Somem na tela inicial, nas janelas e nas cenas. Durante as falas fica só o botão de ação.
+- Tocar na tela passa a fala.
+
+**Decorar e fazenda com o dedo**
+- Antes, o toque na tela era ignorado no modo decorar e na fazenda. Agora tocar no chão põe o móvel ou o enfeite, e tocar num móvel colocado pega ele.
+- Botões de girar e guardar aparecem logo acima do painel, que ficou mais baixo no celular.
+
+**Tudo cabe na tela**
+- Criador de personagem:
+  - deitado: prévia e opções lado a lado;
+  - em pé: prévia em cima.
+- Janelas com rolagem própria, dentro das bordas seguras (entalhe e barra de gestos).
+- O banner de objetivo desce para baixo do minimapa em telas estreitas, e as tarefas do dia começam recolhidas.
+- O menu (≡) vai para baixo do cartão da personagem, longe dos botões.
+- Os avisos aparecem no topo.
+- Testado em Pixel 7 deitado e iPhone SE em pé: nenhum elemento sai da tela em 11 janelas e telas diferentes.
+
+**Celular em geral**
+- Sem zoom de dois toques, sem menu de toque longo, sem seleção de texto e sem "puxar para atualizar".
+- Áudio destravado do jeito que o iPhone exige (no fim do toque).
+- Qualidade inicial Média no celular, com a automática ligada.
+- Tela cheia (e travar deitado, no Android) ao tocar em Começar ou Continuar. Dá para desligar em Ajustes → Celular, onde também ficam "Tela cheia agora" e a vibração.
+- Vibração curta ao apanhar (Android).
+- Uma dica sugere deitar o celular quando ele está em pé.
+
 ## v1.44: Masmorra Cintilante, cozinhas, madeira e armas com modelos novos
 **Masmorra com 5 andares**
 - Na Caverna Cintilante, uma grade com anel azul (sala do leste) desce para a **Masmorra**: 5 andares embaixo da caverna, cada um maior que o anterior (de 44×44 a 60×60 tiles; a caverna tinha 44×40).
